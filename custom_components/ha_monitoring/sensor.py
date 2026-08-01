@@ -1,4 +1,4 @@
-"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts, mises à jour, réparations, entités indisponibles et appareils hors ligne."""
+"""Capteurs HA Monitoring avec prise en compte des exclusions."""
 from datetime import datetime, timedelta
 import logging
 
@@ -14,6 +14,14 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     CONF_OFFLINE_TIMEOUT,
     DEFAULT_OFFLINE_TIMEOUT,
+    CONF_EXCLUDED_ADDONS,
+    CONF_EXCLUDED_INTEGRATIONS,
+    CONF_EXCLUDED_AUTOMATIONS,
+    CONF_EXCLUDED_SCRIPTS,
+    CONF_EXCLUDED_UPDATES,
+    CONF_EXCLUDED_REPAIRS,
+    CONF_EXCLUDED_UNAVAILABLE,
+    CONF_EXCLUDED_OFFLINE,
     ICON_ADDONS,
     ICON_INTEGRATIONS,
     ICON_AUTOMATIONS,
@@ -61,33 +69,35 @@ async def async_setup_entry(hass, entry, async_add_entities):
     scan_interval_sec = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     scan_interval = timedelta(seconds=int(scan_interval_sec))
 
-    offline_timeout = entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-
     async_add_entities([
-        AddonErrorSensor(hass, scan_interval),
-        IntegrationErrorSensor(hass, scan_interval),
+        AddonErrorSensor(hass, entry, scan_interval),
+        IntegrationErrorSensor(hass, entry, scan_interval),
         TraceErrorSensor(
             hass,
+            entry=entry,
             domain="automation",
             unique_id=UNIQUE_ID_AUTOMATIONS,
             translation_key=TRANSLATION_KEY_AUTOMATIONS,
             icon=ICON_AUTOMATIONS,
             attr_key=ATTR_AUTOMATIONS_EN_ERREUR,
+            exclusion_key=CONF_EXCLUDED_AUTOMATIONS,
             scan_interval=scan_interval,
         ),
         TraceErrorSensor(
             hass,
+            entry=entry,
             domain="script",
             unique_id=UNIQUE_ID_SCRIPTS,
             translation_key=TRANSLATION_KEY_SCRIPTS,
             icon=ICON_SCRIPTS,
             attr_key=ATTR_SCRIPTS_EN_ERREUR,
+            exclusion_key=CONF_EXCLUDED_SCRIPTS,
             scan_interval=scan_interval,
         ),
-        UpdatePendingSensor(hass, scan_interval),
-        RepairPendingSensor(hass, scan_interval),
-        UnavailableEntitySensor(hass, scan_interval),
-        OfflineDeviceSensor(hass, scan_interval, int(offline_timeout)),
+        UpdatePendingSensor(hass, entry, scan_interval),
+        RepairPendingSensor(hass, entry, scan_interval),
+        UnavailableEntitySensor(hass, entry, scan_interval),
+        OfflineDeviceSensor(hass, entry, scan_interval),
     ], True)
 
 
@@ -99,8 +109,9 @@ class AddonErrorSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_ADDONS
     _attr_icon = ICON_ADDONS
 
-    def __init__(self, hass, scan_interval):
+    def __init__(self, hass, entry, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._attr_scan_interval = scan_interval
         self._state = 0
         self._failed_addons = []
@@ -127,9 +138,16 @@ class AddonErrorSensor(SensorEntity):
 
             addons_info = await client.get_addons_info()
             addons = addons_info.get("addons", [])
+            excluded = self._entry.options.get(CONF_EXCLUDED_ADDONS, [])
 
             failed = []
             for addon in addons:
+                name = addon.get("name", "")
+                slug = addon.get("slug", "")
+
+                if name in excluded or slug in excluded:
+                    continue
+
                 state = addon.get("state")
                 boot = addon.get("boot")
                 watchdog = addon.get("watchdog", False)
@@ -138,7 +156,7 @@ class AddonErrorSensor(SensorEntity):
                 is_stopped = state in ["stopped", "unknown"]
 
                 if is_monitored and is_stopped:
-                    failed.append(addon.get("name", addon.get("slug")))
+                    failed.append(name or slug)
 
             self._failed_addons = failed
             self._state = len(failed)
@@ -155,8 +173,9 @@ class IntegrationErrorSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_INTEGRATIONS
     _attr_icon = ICON_INTEGRATIONS
 
-    def __init__(self, hass, scan_interval):
+    def __init__(self, hass, entry, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._attr_scan_interval = scan_interval
         self._state = 0
         self._failed_integrations = []
@@ -176,10 +195,13 @@ class IntegrationErrorSensor(SensorEntity):
         try:
             failed = []
             entries = self._hass.config_entries.async_entries()
+            excluded = self._entry.options.get(CONF_EXCLUDED_INTEGRATIONS, [])
 
             for entry in entries:
                 if entry.state in INTEGRATION_ERROR_STATES:
                     name = entry.title if entry.title else entry.domain
+                    if name in excluded or entry.domain in excluded:
+                        continue
                     failed.append(name)
 
             self._failed_integrations = failed
@@ -194,13 +216,15 @@ class TraceErrorSensor(SensorEntity):
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass, domain, unique_id, translation_key, icon, attr_key, scan_interval):
+    def __init__(self, hass, entry, domain, unique_id, translation_key, icon, attr_key, exclusion_key, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._domain = domain
         self._attr_unique_id = unique_id
         self._attr_translation_key = translation_key
         self._attr_icon = icon
         self._attr_key = attr_key
+        self._exclusion_key = exclusion_key
         self._attr_scan_interval = scan_interval
         self._state = 0
         self._failed_items = []
@@ -224,6 +248,8 @@ class TraceErrorSensor(SensorEntity):
             return
 
         failed = []
+        excluded = self._entry.options.get(self._exclusion_key, [])
+
         try:
             for key, traces in list(trace_data.items()):
                 if not (key.startswith(f"{self._domain}.") or key.startswith(f"{self._domain} ")):
@@ -251,6 +277,8 @@ class TraceErrorSensor(SensorEntity):
                     friendly_name = None
 
                     if entity_id:
+                        if entity_id in excluded:
+                            continue
                         state = self._hass.states.get(entity_id)
                         if state:
                             friendly_name = state.attributes.get("friendly_name") or entity_id
@@ -258,11 +286,17 @@ class TraceErrorSensor(SensorEntity):
                     if not friendly_name:
                         for state in self._hass.states.async_all(self._domain):
                             if state.attributes.get("id") and str(state.attributes.get("id")) in key:
+                                if state.entity_id in excluded:
+                                    friendly_name = "EXCLUDED"
+                                    break
                                 friendly_name = state.attributes.get("friendly_name") or state.entity_id
                                 break
 
+                    if friendly_name == "EXCLUDED":
+                        continue
+
                     friendly_name = friendly_name or key
-                    if friendly_name not in failed:
+                    if friendly_name not in excluded and friendly_name not in failed:
                         failed.append(friendly_name)
 
             self._failed_items = failed
@@ -280,8 +314,9 @@ class UpdatePendingSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_UPDATES
     _attr_icon = ICON_UPDATES
 
-    def __init__(self, hass, scan_interval):
+    def __init__(self, hass, entry, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._attr_scan_interval = scan_interval
         self._state = 0
         self._pending_updates = []
@@ -300,7 +335,12 @@ class UpdatePendingSensor(SensorEntity):
     async def async_update(self):
         try:
             pending = []
+            excluded = self._entry.options.get(CONF_EXCLUDED_UPDATES, [])
+
             for state_obj in self._hass.states.async_all("update"):
+                if state_obj.entity_id in excluded:
+                    continue
+
                 if state_obj.state == "on":
                     name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
                     if name not in pending:
@@ -321,8 +361,9 @@ class RepairPendingSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_REPAIRS
     _attr_icon = ICON_REPAIRS
 
-    def __init__(self, hass, scan_interval):
+    def __init__(self, hass, entry, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._attr_scan_interval = scan_interval
         self._state = 0
         self._pending_repairs = []
@@ -342,9 +383,13 @@ class RepairPendingSensor(SensorEntity):
         try:
             issue_registry = ir.async_get(self._hass)
             pending = []
+            excluded = self._entry.options.get(CONF_EXCLUDED_REPAIRS, [])
 
             for issue in issue_registry.issues.values():
                 issue_name = f"{issue.domain}: {issue.issue_id}"
+                if issue_name in excluded or issue.domain in excluded or issue.issue_id in excluded:
+                    continue
+
                 if issue_name not in pending:
                     pending.append(issue_name)
 
@@ -363,8 +408,9 @@ class UnavailableEntitySensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_UNAVAILABLE
     _attr_icon = ICON_UNAVAILABLE
 
-    def __init__(self, hass, scan_interval):
+    def __init__(self, hass, entry, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._attr_scan_interval = scan_interval
         self._state = 0
         self._unavailable_entities = []
@@ -383,7 +429,12 @@ class UnavailableEntitySensor(SensorEntity):
     async def async_update(self):
         try:
             unavailable = []
+            excluded = self._entry.options.get(CONF_EXCLUDED_UNAVAILABLE, [])
+
             for state_obj in self._hass.states.async_all():
+                if state_obj.entity_id in excluded:
+                    continue
+
                 if state_obj.state == STATE_UNAVAILABLE:
                     name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
                     if name not in unavailable:
@@ -404,10 +455,10 @@ class OfflineDeviceSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_OFFLINE
     _attr_icon = ICON_OFFLINE
 
-    def __init__(self, hass, scan_interval, offline_timeout_hours):
+    def __init__(self, hass, entry, scan_interval):
         self._hass = hass
+        self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._offline_timeout_hours = offline_timeout_hours
         self._state = 0
         self._offline_devices = []
 
@@ -417,20 +468,26 @@ class OfflineDeviceSensor(SensorEntity):
 
     @property
     def extra_state_attributes(self):
+        offline_timeout = self._entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
         return {
             ATTR_APPAREILS_HORS_LIGNE: self._offline_devices,
             ATTR_TOTAL_HORS_LIGNE: len(self._offline_devices),
-            "seuil_inactivite_heures": self._offline_timeout_hours,
+            "seuil_inactivite_heures": offline_timeout,
         }
 
     async def async_update(self):
         """Détecte les appareils muets en analysant les capteurs et attributs 'last_seen'."""
         try:
             now = dt_util.now()
-            cutoff = now - timedelta(hours=self._offline_timeout_hours)
+            offline_timeout = self._entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
+            cutoff = now - timedelta(hours=int(offline_timeout))
             offline = []
+            excluded = self._entry.options.get(CONF_EXCLUDED_OFFLINE, [])
 
             for state_obj in self._hass.states.async_all():
+                if state_obj.entity_id in excluded:
+                    continue
+
                 if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
                     continue
 
@@ -462,7 +519,7 @@ class OfflineDeviceSensor(SensorEntity):
                             if last_seen_dt:
                                 break
 
-                # 3. Évaluer si la date dépasse le seuil paramétré
+                # 3. Évaluer si la date dépasse le seuil
                 if last_seen_dt:
                     if dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
                         name = state_obj.attributes.get("friendly_name") or entity_id
