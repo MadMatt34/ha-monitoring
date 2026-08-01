@@ -1,16 +1,19 @@
-"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts, mises à jour, réparations et entités indisponibles."""
-from datetime import timedelta
+"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts, mises à jour, réparations, entités indisponibles et appareils hors ligne."""
+from datetime import datetime, timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.hassio import HASSIO_DATA
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.util import dt as dt_util
 
 from .const import (
     DOMAIN,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    CONF_OFFLINE_TIMEOUT,
+    DEFAULT_OFFLINE_TIMEOUT,
     ICON_ADDONS,
     ICON_INTEGRATIONS,
     ICON_AUTOMATIONS,
@@ -18,6 +21,7 @@ from .const import (
     ICON_UPDATES,
     ICON_REPAIRS,
     ICON_UNAVAILABLE,
+    ICON_OFFLINE,
     UNIQUE_ID_ADDONS,
     UNIQUE_ID_INTEGRATIONS,
     UNIQUE_ID_AUTOMATIONS,
@@ -25,6 +29,7 @@ from .const import (
     UNIQUE_ID_UPDATES,
     UNIQUE_ID_REPAIRS,
     UNIQUE_ID_UNAVAILABLE,
+    UNIQUE_ID_OFFLINE,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_INTEGRATIONS,
     TRANSLATION_KEY_AUTOMATIONS,
@@ -32,6 +37,7 @@ from .const import (
     TRANSLATION_KEY_UPDATES,
     TRANSLATION_KEY_REPAIRS,
     TRANSLATION_KEY_UNAVAILABLE,
+    TRANSLATION_KEY_OFFLINE,
     ATTR_ADDONS_EN_ERREUR,
     ATTR_INTEGRATIONS_EN_ERREUR,
     ATTR_AUTOMATIONS_EN_ERREUR,
@@ -39,9 +45,11 @@ from .const import (
     ATTR_MISES_A_JOUR_EN_ATTENTE,
     ATTR_CORRECTIONS_EN_ATTENTE,
     ATTR_ENTITES_INDISPONIBLES,
+    ATTR_APPAREILS_HORS_LIGNE,
     ATTR_TOTAL_EN_ERREUR,
     ATTR_TOTAL_EN_ATTENTE,
     ATTR_TOTAL_INDISPONIBLES,
+    ATTR_TOTAL_HORS_LIGNE,
     INTEGRATION_ERROR_STATES,
 )
 
@@ -52,6 +60,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     """Ajoute les capteurs de surveillance via Config Entry."""
     scan_interval_sec = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     scan_interval = timedelta(seconds=int(scan_interval_sec))
+
+    offline_timeout = entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
     async_add_entities([
         AddonErrorSensor(hass, scan_interval),
@@ -77,6 +87,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         UpdatePendingSensor(hass, scan_interval),
         RepairPendingSensor(hass, scan_interval),
         UnavailableEntitySensor(hass, scan_interval),
+        OfflineDeviceSensor(hass, scan_interval, int(offline_timeout)),
     ], True)
 
 
@@ -345,7 +356,7 @@ class RepairPendingSensor(SensorEntity):
 
 
 class UnavailableEntitySensor(SensorEntity):
-    """Capteur indiquant le nombre et la liste des entités indisponibles (zombies)."""
+    """Capteur indiquant le nombre et la liste des entités indisponibles."""
 
     _attr_has_entity_name = True
     _attr_translation_key = TRANSLATION_KEY_UNAVAILABLE
@@ -370,7 +381,6 @@ class UnavailableEntitySensor(SensorEntity):
         }
 
     async def async_update(self):
-        """Parcourt toutes les entités pour recenser celles en état 'unavailable'."""
         try:
             unavailable = []
             for state_obj in self._hass.states.async_all():
@@ -384,3 +394,83 @@ class UnavailableEntitySensor(SensorEntity):
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Entités indisponibles) : %s", err)
+
+
+class OfflineDeviceSensor(SensorEntity):
+    """Capteur indiquant les appareils n'ayant pas donné de signe de vie depuis X heures."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = TRANSLATION_KEY_OFFLINE
+    _attr_unique_id = UNIQUE_ID_OFFLINE
+    _attr_icon = ICON_OFFLINE
+
+    def __init__(self, hass, scan_interval, offline_timeout_hours):
+        self._hass = hass
+        self._attr_scan_interval = scan_interval
+        self._offline_timeout_hours = offline_timeout_hours
+        self._state = 0
+        self._offline_devices = []
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            ATTR_APPAREILS_HORS_LIGNE: self._offline_devices,
+            ATTR_TOTAL_HORS_LIGNE: len(self._offline_devices),
+            "seuil_inactivite_heures": self._offline_timeout_hours,
+        }
+
+    async def async_update(self):
+        """Détecte les appareils muets en analysant les capteurs et attributs 'last_seen'."""
+        try:
+            now = dt_util.now()
+            cutoff = now - timedelta(hours=self._offline_timeout_hours)
+            offline = []
+
+            for state_obj in self._hass.states.async_all():
+                if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                    continue
+
+                last_seen_dt = None
+                entity_id = state_obj.entity_id
+
+                # 1. Traiter les capteurs dédiés à la dernière connexion
+                is_last_seen_entity = any(
+                    term in entity_id for term in ("last_seen", "derniere_connexion", "last_reported")
+                )
+                if is_last_seen_entity:
+                    last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
+
+                # 2. Chercher dans les attributs d'entité
+                if not last_seen_dt and state_obj.attributes:
+                    for attr_key in ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp"):
+                        val = state_obj.attributes.get(attr_key)
+                        if val:
+                            if isinstance(val, (int, float)):
+                                try:
+                                    last_seen_dt = dt_util.utc_from_timestamp(val)
+                                except Exception:
+                                    pass
+                            elif isinstance(val, str):
+                                last_seen_dt = dt_util.parse_datetime(val)
+                            elif isinstance(val, datetime):
+                                last_seen_dt = val
+
+                            if last_seen_dt:
+                                break
+
+                # 3. Évaluer si la date dépasse le seuil paramétré
+                if last_seen_dt:
+                    if dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
+                        name = state_obj.attributes.get("friendly_name") or entity_id
+                        if name not in offline:
+                            offline.append(name)
+
+            self._offline_devices = offline
+            self._state = len(offline)
+
+        except Exception as err:
+            _LOGGER.error("Erreur HA Monitoring (Appareils hors ligne) : %s", err)
