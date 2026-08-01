@@ -1,9 +1,10 @@
-"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts et mises à jour."""
+"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts, mises à jour et réparations."""
 from datetime import timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.hassio import HASSIO_DATA
+from homeassistant.helpers import issue_registry as ir
 
 from .const import (
     DOMAIN,
@@ -14,21 +15,25 @@ from .const import (
     ICON_AUTOMATIONS,
     ICON_SCRIPTS,
     ICON_UPDATES,
+    ICON_REPAIRS,
     UNIQUE_ID_ADDONS,
     UNIQUE_ID_INTEGRATIONS,
     UNIQUE_ID_AUTOMATIONS,
     UNIQUE_ID_SCRIPTS,
     UNIQUE_ID_UPDATES,
+    UNIQUE_ID_REPAIRS,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_INTEGRATIONS,
     TRANSLATION_KEY_AUTOMATIONS,
     TRANSLATION_KEY_SCRIPTS,
     TRANSLATION_KEY_UPDATES,
+    TRANSLATION_KEY_REPAIRS,
     ATTR_ADDONS_EN_ERREUR,
     ATTR_INTEGRATIONS_EN_ERREUR,
     ATTR_AUTOMATIONS_EN_ERREUR,
     ATTR_SCRIPTS_EN_ERREUR,
     ATTR_MISES_A_JOUR_EN_ATTENTE,
+    ATTR_CORRECTIONS_EN_ATTENTE,
     ATTR_TOTAL_EN_ERREUR,
     ATTR_TOTAL_EN_ATTENTE,
     INTEGRATION_ERROR_STATES,
@@ -64,6 +69,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             scan_interval=scan_interval,
         ),
         UpdatePendingSensor(hass, scan_interval),
+        RepairPendingSensor(hass, scan_interval),
     ], True)
 
 
@@ -264,19 +270,16 @@ class UpdatePendingSensor(SensorEntity):
 
     @property
     def state(self):
-        """Retourne le nombre de mises à jour disponibles."""
         return self._state
 
     @property
     def extra_state_attributes(self):
-        """Retourne la liste et le total en attributs."""
         return {
             ATTR_MISES_A_JOUR_EN_ATTENTE: self._pending_updates,
             ATTR_TOTAL_EN_ATTENTE: len(self._pending_updates)
         }
 
     async def async_update(self):
-        """Analyse l'ensemble des entités du domaine 'update'."""
         try:
             pending = []
             for state_obj in self._hass.states.async_all("update"):
@@ -290,3 +293,47 @@ class UpdatePendingSensor(SensorEntity):
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Mises à jour) : %s", err)
+
+
+class RepairPendingSensor(SensorEntity):
+    """Capteur indiquant le nombre et la liste des réparations/issues en attente."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = TRANSLATION_KEY_REPAIRS
+    _attr_unique_id = UNIQUE_ID_REPAIRS
+    _attr_icon = ICON_REPAIRS
+
+    def __init__(self, hass, scan_interval):
+        self._hass = hass
+        self._attr_scan_interval = scan_interval
+        self._state = 0
+        self._pending_repairs = []
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            ATTR_CORRECTIONS_EN_ATTENTE: self._pending_repairs,
+            ATTR_TOTAL_EN_ATTENTE: len(self._pending_repairs)
+        }
+
+    async def async_update(self):
+        """Récupère la liste des réparations actives depuis le registre des problèmes."""
+        try:
+            issue_registry = ir.async_get(self._hass)
+            pending = []
+
+            for issue in issue_registry.issues.values():
+                # Nom d'affichage sous la forme "Domaine: Identifiant du problème"
+                issue_name = f"{issue.domain}: {issue.issue_id}"
+                if issue_name not in pending:
+                    pending.append(issue_name)
+
+            self._pending_repairs = pending
+            self._state = len(pending)
+
+        except Exception as err:
+            _LOGGER.error("Erreur HA Monitoring (Réparations) : %s", err)
