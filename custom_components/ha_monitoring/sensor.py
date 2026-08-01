@@ -3,7 +3,6 @@ from datetime import datetime, timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.hassio import is_hassio
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
@@ -61,11 +60,12 @@ from .const import (
     INTEGRATION_ERROR_STATES,
 )
 
+_LOGGER = logging.getLogger(__name__)
+
+
 def is_hassio_running(hass) -> bool:
     """Vérifie si Home Assistant tourne sous Supervisor/Hassio."""
     return "hassio" in hass.config.components
-
-_LOGGER = logging.getLogger(__name__)
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -117,12 +117,12 @@ class AddonErrorSensor(SensorEntity):
         self._hass = hass
         self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._failed_addons = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -132,17 +132,21 @@ class AddonErrorSensor(SensorEntity):
         }
 
     async def async_update(self):
-        if "hassio" not in self._hass.config.components:
+        if not is_hassio_running(self._hass):
+            return
+
+        client = self._hass.data.get("hassio")
+        if not client:
             return
 
         try:
-            if not is_hassio_running(self._hass):
-                return
-            client = self._hass.data.get("hassio")
-            if not client:
+            if hasattr(client, "async_get_addons_info"):
+                addons_info = await client.async_get_addons_info()
+            elif hasattr(client, "get_addons_info"):
+                addons_info = await client.get_addons_info()
+            else:
                 return
 
-            addons_info = await client.get_addons_info()
             addons = addons_info.get("addons", [])
             excluded = self._entry.options.get(CONF_EXCLUDED_ADDONS, [])
 
@@ -165,7 +169,7 @@ class AddonErrorSensor(SensorEntity):
                     failed.append(name or slug)
 
             self._failed_addons = failed
-            self._state = len(failed)
+            self._attr_native_value = len(failed)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Add-ons) : %s", err)
@@ -183,12 +187,12 @@ class IntegrationErrorSensor(SensorEntity):
         self._hass = hass
         self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._failed_integrations = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -211,7 +215,7 @@ class IntegrationErrorSensor(SensorEntity):
                     failed.append(name)
 
             self._failed_integrations = failed
-            self._state = len(failed)
+            self._attr_native_value = len(failed)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Intégrations) : %s", err)
@@ -232,12 +236,12 @@ class TraceErrorSensor(SensorEntity):
         self._attr_key = attr_key
         self._exclusion_key = exclusion_key
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._failed_items = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -249,7 +253,7 @@ class TraceErrorSensor(SensorEntity):
     async def async_update(self):
         trace_data = self._hass.data.get("trace")
         if not trace_data:
-            self._state = 0
+            self._attr_native_value = 0
             self._failed_items = []
             return
 
@@ -291,7 +295,8 @@ class TraceErrorSensor(SensorEntity):
 
                     if not friendly_name:
                         for state in self._hass.states.async_all(self._domain):
-                            if state.attributes.get("id") and str(state.attributes.get("id")) in key:
+                            item_id = state.attributes.get("id")
+                            if item_id is not None and str(item_id) in key:
                                 if state.entity_id in excluded:
                                     friendly_name = "EXCLUDED"
                                     break
@@ -306,7 +311,7 @@ class TraceErrorSensor(SensorEntity):
                         failed.append(friendly_name)
 
             self._failed_items = failed
-            self._state = len(failed)
+            self._attr_native_value = len(failed)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (%s) : %s", self._domain, err)
@@ -324,12 +329,12 @@ class UpdatePendingSensor(SensorEntity):
         self._hass = hass
         self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._pending_updates = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -353,7 +358,7 @@ class UpdatePendingSensor(SensorEntity):
                         pending.append(name)
 
             self._pending_updates = pending
-            self._state = len(pending)
+            self._attr_native_value = len(pending)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Mises à jour) : %s", err)
@@ -371,12 +376,12 @@ class RepairPendingSensor(SensorEntity):
         self._hass = hass
         self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._pending_repairs = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -392,6 +397,12 @@ class RepairPendingSensor(SensorEntity):
             excluded = self._entry.options.get(CONF_EXCLUDED_REPAIRS, [])
 
             for issue in issue_registry.issues.values():
+                # Ignorer les issues non actives ou ignorées
+                if hasattr(issue, "active") and not issue.active:
+                    continue
+                if getattr(issue, "dismissed_version", None) is not None:
+                    continue
+
                 issue_name = f"{issue.domain}: {issue.issue_id}"
                 if issue_name in excluded or issue.domain in excluded or issue.issue_id in excluded:
                     continue
@@ -400,7 +411,7 @@ class RepairPendingSensor(SensorEntity):
                     pending.append(issue_name)
 
             self._pending_repairs = pending
-            self._state = len(pending)
+            self._attr_native_value = len(pending)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Réparations) : %s", err)
@@ -418,12 +429,12 @@ class UnavailableEntitySensor(SensorEntity):
         self._hass = hass
         self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._unavailable_entities = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -447,7 +458,7 @@ class UnavailableEntitySensor(SensorEntity):
                         unavailable.append(name)
 
             self._unavailable_entities = unavailable
-            self._state = len(unavailable)
+            self._attr_native_value = len(unavailable)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Entités indisponibles) : %s", err)
@@ -465,12 +476,12 @@ class OfflineDeviceSensor(SensorEntity):
         self._hass = hass
         self._entry = entry
         self._attr_scan_interval = scan_interval
-        self._state = 0
+        self._attr_native_value = 0
         self._offline_devices = []
 
     @property
-    def state(self):
-        return self._state
+    def native_value(self):
+        return self._attr_native_value
 
     @property
     def extra_state_attributes(self):
@@ -486,7 +497,7 @@ class OfflineDeviceSensor(SensorEntity):
         try:
             now = dt_util.now()
             offline_timeout = self._entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-            cutoff = now - timedelta(hours=int(offline_timeout))
+            cutoff = now - timedelta(hours=float(offline_timeout))
             offline = []
             excluded = self._entry.options.get(CONF_EXCLUDED_OFFLINE, [])
 
@@ -511,10 +522,12 @@ class OfflineDeviceSensor(SensorEntity):
                 if not last_seen_dt and state_obj.attributes:
                     for attr_key in ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp"):
                         val = state_obj.attributes.get(attr_key)
-                        if val:
+                        if val is not None:
                             if isinstance(val, (int, float)):
                                 try:
-                                    last_seen_dt = dt_util.utc_from_timestamp(val)
+                                    # Correction pour les timestamps en millisecondes
+                                    ts = val / 1000.0 if val > 1e11 else float(val)
+                                    last_seen_dt = dt_util.utc_from_timestamp(ts)
                                 except Exception:
                                     pass
                             elif isinstance(val, str):
@@ -533,7 +546,7 @@ class OfflineDeviceSensor(SensorEntity):
                             offline.append(name)
 
             self._offline_devices = offline
-            self._state = len(offline)
+            self._attr_native_value = len(offline)
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Appareils hors ligne) : %s", err)
