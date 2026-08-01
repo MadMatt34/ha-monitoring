@@ -40,7 +40,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             coordinator, entry,
             data_key="monitoring_addons",
             entity_key="monitoring_addons",
-            name="Monitoring Add-ons",
+            name="Monitoring Applications",
             icon=ICON_ADDONS,
             list_attr=ATTR_ADDONS_EN_ERREUR,
             total_attr=ATTR_TOTAL_EN_ERREUR,
