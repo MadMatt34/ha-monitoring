@@ -61,6 +61,10 @@ from .const import (
     INTEGRATION_ERROR_STATES,
 )
 
+def is_hassio_running(hass) -> bool:
+    """Vérifie si Home Assistant tourne sous Supervisor/Hassio."""
+    return "hassio" in hass.config.components
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -132,7 +136,7 @@ class AddonErrorSensor(SensorEntity):
             return
 
         try:
-            if is_hassio(self._hass):
+            if is_hassio_running(self._hass):
                 client = self._hass.data.get("hassio")
             if not client:
                 return
