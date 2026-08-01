@@ -6,7 +6,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.components.hassio import HASSIO_DATA
+from homeassistant.components.hassio import is_hassio
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -123,11 +123,10 @@ class BackupStatusBinarySensor(BinarySensorEntity):
         if size_bytes_or_mb is None:
             return None
         
-        # Si la taille est déjà fournie en Mo (float/int par Supervisor)
         if isinstance(size_bytes_or_mb, (int, float)):
-            if size_bytes_or_mb > 1024 * 1024:  # Si donné en octets
+            if size_bytes_or_mb > 1024 * 1024:
                 mb = size_bytes_or_mb / (1024 * 1024)
-            else:  # Si donné en Mo
+            else:
                 mb = size_bytes_or_mb
 
             if mb >= 1024:
@@ -141,17 +140,13 @@ class BackupStatusBinarySensor(BinarySensorEntity):
         next_scheduled = None
 
         # 1. Tentative via l'API Supervisor / HASSIO
-        if "hassio" in self._hass.config.components:
+        if is_hassio(self._hass):
             try:
-                client = self._hass.data.get(HASSIO_DATA)
+                client = self._hass.data.get("hassio")
                 if client:
                     backups_info = await client.get_backups()
                     if backups_info and "backups" in backups_info:
                         backups_list = backups_info.get("backups", [])
-
-                    # Vérification de la planification automatique Supervisor
-                    info = await client.get_info()
-                    # Exemple: si une tâche programmée existe
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
@@ -171,7 +166,6 @@ class BackupStatusBinarySensor(BinarySensorEntity):
                                 "failed": getattr(b, "failed", False),
                             })
                 
-                # Vérification de la prochaine planification Core
                 if hasattr(backup_manager, "config") and hasattr(backup_manager.config, "create_backup"):
                     schedule = getattr(backup_manager.config, "schedule", None)
                     if schedule and hasattr(schedule, "next_execution"):
@@ -201,15 +195,12 @@ class BackupStatusBinarySensor(BinarySensorEntity):
         sorted_backups = sorted(backups_list, key=get_date, reverse=True)
         latest_backup = sorted_backups[0]
 
-        # Analyse du statut de la dernière sauvegarde
         is_failed = latest_backup.get("failed", False) or latest_backup.get("status") == "failed"
         self._is_on = not is_failed
 
-        # Date de la sauvegarde analysée
         last_dt = get_date(latest_backup)
         self._date_sauvegarde = last_dt.isoformat() if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else str(latest_backup.get("date"))
 
-        # Recherche de la dernière sauvegarde réussie
         last_successful_dt = None
         for b in sorted_backups:
             if not b.get("failed", False) and b.get("status") != "failed":
@@ -221,7 +212,6 @@ class BackupStatusBinarySensor(BinarySensorEntity):
         else:
             self._date_derniere_reussie = self._date_sauvegarde if self._is_on else "Aucune"
 
-        # Prochaine sauvegarde planifiée
         if next_scheduled:
             if isinstance(next_scheduled, datetime):
                 self._date_prochaine_planifiee = next_scheduled.isoformat()
@@ -230,5 +220,4 @@ class BackupStatusBinarySensor(BinarySensorEntity):
         else:
             self._date_prochaine_planifiee = "Non planifiée"
 
-        # Taille de la sauvegarde
         self._taille_sauvegarde = self._format_size(latest_backup.get("size"))
