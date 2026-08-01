@@ -12,6 +12,8 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     CONF_OFFLINE_TIMEOUT,
     DEFAULT_OFFLINE_TIMEOUT,
+    CONF_STARTUP_DELAY,
+    DEFAULT_STARTUP_DELAY,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_INTEGRATIONS,
     CONF_EXCLUDED_AUTOMATIONS,
@@ -25,12 +27,17 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+# Dans imports de const.py
+# Dans get_schema(options=None):
+# À ajouter dans la définition du vol.Schema({...}) :
+--------------------
 def get_schema(options=None):
     """Construit le schéma du formulaire avec sélecteurs et exclusions."""
     options = options or {}
 
     current_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
+    current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
     return vol.Schema(
         {
@@ -56,6 +63,18 @@ def get_schema(options=None):
                     step=1,
                     mode=selector.NumberSelectorMode.BOX,
                     unit_of_measurement="h",
+                )
+            ),
+            vol.Required(
+                CONF_STARTUP_DELAY,
+                default=current_startup_delay,
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=0,
+                    max=1800,
+                    step=30,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="s",
                 )
             ),
             # Exclusions - Textes / Tags
