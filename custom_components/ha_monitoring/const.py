@@ -11,6 +11,9 @@ DEFAULT_SCAN_INTERVAL = 60  # Secondes
 CONF_OFFLINE_TIMEOUT = "offline_timeout"
 DEFAULT_OFFLINE_TIMEOUT = 24  # Heures
 
+CONF_STARTUP_DELAY = "startup_delay"
+DEFAULT_STARTUP_DELAY = 180  # 180 secondes (3 minutes)
+
 # Clés d'exclusions
 CONF_EXCLUDED_ADDONS = "excluded_addons"
 CONF_EXCLUDED_INTEGRATIONS = "excluded_integrations"
