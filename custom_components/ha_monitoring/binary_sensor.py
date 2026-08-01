@@ -6,7 +6,6 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.components.hassio import is_hassio
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -26,6 +25,11 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def is_hassio_running(hass) -> bool:
+    """Vérifie si Home Assistant tourne sous Supervisor/Hassio."""
+    return "hassio" in hass.config.components
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -139,13 +143,20 @@ class BackupStatusBinarySensor(BinarySensorEntity):
         backups_list = []
         next_scheduled = None
 
-        # 1. Tentative via l'API Supervisor / HASSIO
-        if is_hassio(self._hass):
+        # 1. Tentative via l'API Supervisor / HASSIO sans dépendance d'import
+        if is_hassio_running(self._hass):
             try:
                 client = self._hass.data.get("hassio")
                 if client:
-                    backups_info = await client.get_backups()
-                    if backups_info and "backups" in backups_info:
+                    backups_info = None
+                    if hasattr(client, "async_get_backups"):
+                        backups_info = await client.async_get_backups()
+                    elif hasattr(client, "get_backups"):
+                        backups_info = await client.get_backups()
+                    elif hasattr(client, "send_command"):
+                        backups_info = await client.send_command("/backups", method="get")
+
+                    if isinstance(backups_info, dict) and "backups" in backups_info:
                         backups_list = backups_info.get("backups", [])
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
