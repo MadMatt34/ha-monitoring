@@ -31,6 +31,7 @@ ICON_UPDATES = "mdi:package-up"
 ICON_REPAIRS = "mdi:wrench-alert"
 ICON_UNAVAILABLE = "mdi:ghost-outline"
 ICON_OFFLINE = "mdi:wifi-off"
+ICON_BACKUP = "mdi:backup-restore"  # <--- Nouveau
 
 # Identifiants uniques
 UNIQUE_ID_ADDONS = "ha_monitoring_addons_in_error_sensor"
@@ -42,6 +43,7 @@ UNIQUE_ID_UPDATES = "ha_monitoring_updates_pending_sensor"
 UNIQUE_ID_REPAIRS = "ha_monitoring_repairs_pending_sensor"
 UNIQUE_ID_UNAVAILABLE = "ha_monitoring_unavailable_entities_sensor"
 UNIQUE_ID_OFFLINE = "ha_monitoring_offline_devices_sensor"
+UNIQUE_ID_BACKUP = "ha_monitoring_backup_status"  # <--- Nouveau
 
 # Clés de traduction
 TRANSLATION_KEY_ADDONS = "addons_in_error"
@@ -53,6 +55,7 @@ TRANSLATION_KEY_UPDATES = "updates_pending"
 TRANSLATION_KEY_REPAIRS = "repairs_pending"
 TRANSLATION_KEY_UNAVAILABLE = "unavailable_entities"
 TRANSLATION_KEY_OFFLINE = "offline_devices"
+TRANSLATION_KEY_BACKUP = "backup_status"  # <--- Nouveau
 
 # Attributs
 ATTR_ADDONS_EN_ERREUR = "addons_en_erreur"
@@ -67,6 +70,12 @@ ATTR_TOTAL_EN_ERREUR = "total_en_erreur"
 ATTR_TOTAL_EN_ATTENTE = "total_en_attente"
 ATTR_TOTAL_INDISPONIBLES = "total_indisponibles"
 ATTR_TOTAL_HORS_LIGNE = "total_hors_ligne"
+
+# Attributs Sauvegarde
+ATTR_DATE_SAUVEGARDE = "date_sauvegarde"  # <--- Nouveau
+ATTR_DATE_DERNIERE_REUSSIE = "date_derniere_reussie"  # <--- Nouveau
+ATTR_DATE_PROCHAINE_PLANIFIEE = "date_prochaine_planifiee"  # <--- Nouveau
+ATTR_TAILLE_SAUVEGARDE = "taille_sauvegarde"  # <--- Nouveau
 
 # États d'erreur d'une ConfigEntry (Intégrations)
 INTEGRATION_ERROR_STATES = {
