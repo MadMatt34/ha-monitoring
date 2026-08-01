@@ -1,4 +1,37 @@
 {
+  "config": {
+    "step": {
+      "user": {
+        "title": "HA Monitoring",
+        "description": "Configurez l'intervalle d'actualisation des capteurs de surveillance.",
+        "data": {
+          "scan_interval": "Intervalle de rafraîchissement (en secondes)"
+        }
+      }
+    },
+    "error": {
+      "invalid_number": "Veuillez saisir un nombre entier valide (ex: 60).",
+      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes."
+    },
+    "abort": {
+      "already_configured": "L'intégration HA Monitoring est déjà configurée."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Options de HA Monitoring",
+        "description": "Modifier l'intervalle de rafraîchissement des capteurs.",
+        "data": {
+          "scan_interval": "Intervalle de rafraîchissement (en secondes)"
+        }
+      }
+    },
+    "error": {
+      "invalid_number": "Veuillez saisir un nombre entier valide (ex: 60).",
+      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes."
+    }
+  },
   "entity": {
     "sensor": {
       "addons_in_error": {
