@@ -45,6 +45,9 @@
       },
       "scripts_in_error": {
         "name": "Scripts en erreur"
+      },
+      "updates_pending": {
+        "name": "Mises à jour en attente"
       }
     },
     "binary_sensor": {
