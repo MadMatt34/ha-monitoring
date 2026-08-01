@@ -27,10 +27,6 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
-# Dans imports de const.py
-# Dans get_schema(options=None):
-# À ajouter dans la définition du vol.Schema({...}) :
---------------------
 def get_schema(options=None):
     """Construit le schéma du formulaire avec sélecteurs et exclusions."""
     options = options or {}
