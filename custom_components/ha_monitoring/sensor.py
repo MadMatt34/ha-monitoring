@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.components.hassio import HASSIO_DATA
+from homeassistant.components.hassio import is_hassio
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.util import dt as dt_util
