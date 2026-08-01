@@ -1,4 +1,4 @@
-"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations et scripts."""
+"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts et mises à jour."""
 from datetime import timedelta
 import logging
 
@@ -13,19 +13,24 @@ from .const import (
     ICON_INTEGRATIONS,
     ICON_AUTOMATIONS,
     ICON_SCRIPTS,
+    ICON_UPDATES,
     UNIQUE_ID_ADDONS,
     UNIQUE_ID_INTEGRATIONS,
     UNIQUE_ID_AUTOMATIONS,
     UNIQUE_ID_SCRIPTS,
+    UNIQUE_ID_UPDATES,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_INTEGRATIONS,
     TRANSLATION_KEY_AUTOMATIONS,
     TRANSLATION_KEY_SCRIPTS,
+    TRANSLATION_KEY_UPDATES,
     ATTR_ADDONS_EN_ERREUR,
     ATTR_INTEGRATIONS_EN_ERREUR,
     ATTR_AUTOMATIONS_EN_ERREUR,
     ATTR_SCRIPTS_EN_ERREUR,
+    ATTR_MISES_A_JOUR_EN_ATTENTE,
     ATTR_TOTAL_EN_ERREUR,
+    ATTR_TOTAL_EN_ATTENTE,
     INTEGRATION_ERROR_STATES,
 )
 
@@ -58,6 +63,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
             attr_key=ATTR_SCRIPTS_EN_ERREUR,
             scan_interval=scan_interval,
         ),
+        UpdatePendingSensor(hass, scan_interval),
     ], True)
 
 
@@ -240,3 +246,47 @@ class TraceErrorSensor(SensorEntity):
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (%s) : %s", self._domain, err)
+
+
+class UpdatePendingSensor(SensorEntity):
+    """Capteur indiquant le nombre et la liste des mises à jour en attente."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = TRANSLATION_KEY_UPDATES
+    _attr_unique_id = UNIQUE_ID_UPDATES
+    _attr_icon = ICON_UPDATES
+
+    def __init__(self, hass, scan_interval):
+        self._hass = hass
+        self._attr_scan_interval = scan_interval
+        self._state = 0
+        self._pending_updates = []
+
+    @property
+    def state(self):
+        """Retourne le nombre de mises à jour disponibles."""
+        return self._state
+
+    @property
+    def extra_state_attributes(self):
+        """Retourne la liste et le total en attributs."""
+        return {
+            ATTR_MISES_A_JOUR_EN_ATTENTE: self._pending_updates,
+            ATTR_TOTAL_EN_ATTENTE: len(self._pending_updates)
+        }
+
+    async def async_update(self):
+        """Analyse l'ensemble des entités du domaine 'update'."""
+        try:
+            pending = []
+            for state_obj in self._hass.states.async_all("update"):
+                if state_obj.state == "on":
+                    name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
+                    if name not in pending:
+                        pending.append(name)
+
+            self._pending_updates = pending
+            self._state = len(pending)
+
+        except Exception as err:
+            _LOGGER.error("Erreur HA Monitoring (Mises à jour) : %s", err)
