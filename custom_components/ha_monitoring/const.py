@@ -3,7 +3,10 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntryState
 
 DOMAIN = "ha_monitoring"
-DEFAULT_SCAN_INTERVAL = timedelta(seconds=60)
+
+# Paramètres de configuration
+CONF_SCAN_INTERVAL = "scan_interval"
+DEFAULT_SCAN_INTERVAL = 60  # Secondes
 
 # Icônes MDI
 ICON_ADDONS = "mdi:puzzle-alert"
@@ -12,14 +15,14 @@ ICON_AUTOMATIONS = "mdi:robot-dead"
 ICON_SCRIPTS = "mdi:script-text-outline"
 ICON_STATUS = "mdi:shield-alert"
 
-# Identifiants uniques (Unique IDs)
+# Identifiants uniques
 UNIQUE_ID_ADDONS = "ha_monitoring_addons_in_error_sensor"
 UNIQUE_ID_INTEGRATIONS = "ha_monitoring_integrations_in_error_sensor"
 UNIQUE_ID_AUTOMATIONS = "ha_monitoring_automations_in_error"
 UNIQUE_ID_SCRIPTS = "ha_monitoring_scripts_in_error"
 UNIQUE_ID_STATUS = "ha_monitoring_status"
 
-# Clés de traduction (translations/fr.json)
+# Clés de traduction
 TRANSLATION_KEY_ADDONS = "addons_in_error"
 TRANSLATION_KEY_INTEGRATIONS = "integrations_in_error"
 TRANSLATION_KEY_AUTOMATIONS = "automations_in_error"
