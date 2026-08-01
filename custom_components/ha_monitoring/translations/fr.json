@@ -48,6 +48,9 @@
       },
       "updates_pending": {
         "name": "Mises à jour en attente"
+      },
+      "repairs_pending": {
+        "name": "Corrections en attente"
       }
     },
     "binary_sensor": {
