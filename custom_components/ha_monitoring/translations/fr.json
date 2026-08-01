@@ -1,0 +1,18 @@
+{
+  "entity": {
+    "sensor": {
+      "addons_in_error": {
+        "name": "Add-ons en erreur"
+      },
+      "integrations_in_error": {
+        "name": "Intégrations en erreur"
+      },
+      "automations_in_error": {
+        "name": "Automations en erreur"
+      },
+      "scripts_in_error": {
+        "name": "Scripts en erreur"
+      }
+    }
+  }
+}
