@@ -64,7 +64,8 @@
       "offline_devices": { "name": "Appareils hors ligne" }
     },
     "binary_sensor": {
-      "global_status": { "name": "Statut du système" }
+      "global_status": { "name": "Statut du système" },
+      "backup_status": { "name": "Statut de la sauvegarde" }
     }
   }
 }
