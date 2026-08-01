@@ -7,6 +7,7 @@
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
           "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
+          "startup_delay": "Délai de grâce au démarrage (en secondes)",
           "excluded_addons": "Add-ons à exclure (noms ou slugs)",
           "excluded_integrations": "Intégrations à exclure (titres ou domaines)",
           "excluded_repairs": "Réparations à exclure (mots-clés / identifiants)",
@@ -35,6 +36,7 @@
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
           "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
+          "startup_delay": "Délai de grâce au démarrage (en secondes)",
           "excluded_addons": "Add-ons à exclure (noms ou slugs)",
           "excluded_integrations": "Intégrations à exclure (titres ou domaines)",
           "excluded_repairs": "Réparations à exclure (mots-clés / identifiants)",
