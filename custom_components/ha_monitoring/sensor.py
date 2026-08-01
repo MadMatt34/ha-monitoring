@@ -1,9 +1,10 @@
-"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts, mises à jour et réparations."""
+"""Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations, scripts, mises à jour, réparations et entités indisponibles."""
 from datetime import timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.hassio import HASSIO_DATA
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.helpers import issue_registry as ir
 
 from .const import (
@@ -16,26 +17,31 @@ from .const import (
     ICON_SCRIPTS,
     ICON_UPDATES,
     ICON_REPAIRS,
+    ICON_UNAVAILABLE,
     UNIQUE_ID_ADDONS,
     UNIQUE_ID_INTEGRATIONS,
     UNIQUE_ID_AUTOMATIONS,
     UNIQUE_ID_SCRIPTS,
     UNIQUE_ID_UPDATES,
     UNIQUE_ID_REPAIRS,
+    UNIQUE_ID_UNAVAILABLE,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_INTEGRATIONS,
     TRANSLATION_KEY_AUTOMATIONS,
     TRANSLATION_KEY_SCRIPTS,
     TRANSLATION_KEY_UPDATES,
     TRANSLATION_KEY_REPAIRS,
+    TRANSLATION_KEY_UNAVAILABLE,
     ATTR_ADDONS_EN_ERREUR,
     ATTR_INTEGRATIONS_EN_ERREUR,
     ATTR_AUTOMATIONS_EN_ERREUR,
     ATTR_SCRIPTS_EN_ERREUR,
     ATTR_MISES_A_JOUR_EN_ATTENTE,
     ATTR_CORRECTIONS_EN_ATTENTE,
+    ATTR_ENTITES_INDISPONIBLES,
     ATTR_TOTAL_EN_ERREUR,
     ATTR_TOTAL_EN_ATTENTE,
+    ATTR_TOTAL_INDISPONIBLES,
     INTEGRATION_ERROR_STATES,
 )
 
@@ -70,6 +76,7 @@ async def async_setup_entry(hass, entry, async_add_entities):
         ),
         UpdatePendingSensor(hass, scan_interval),
         RepairPendingSensor(hass, scan_interval),
+        UnavailableEntitySensor(hass, scan_interval),
     ], True)
 
 
@@ -321,13 +328,11 @@ class RepairPendingSensor(SensorEntity):
         }
 
     async def async_update(self):
-        """Récupère la liste des réparations actives depuis le registre des problèmes."""
         try:
             issue_registry = ir.async_get(self._hass)
             pending = []
 
             for issue in issue_registry.issues.values():
-                # Nom d'affichage sous la forme "Domaine: Identifiant du problème"
                 issue_name = f"{issue.domain}: {issue.issue_id}"
                 if issue_name not in pending:
                     pending.append(issue_name)
@@ -337,3 +342,45 @@ class RepairPendingSensor(SensorEntity):
 
         except Exception as err:
             _LOGGER.error("Erreur HA Monitoring (Réparations) : %s", err)
+
+
+class UnavailableEntitySensor(SensorEntity):
+    """Capteur indiquant le nombre et la liste des entités indisponibles (zombies)."""
+
+    _attr_has_entity_name = True
+    _attr_translation_key = TRANSLATION_KEY_UNAVAILABLE
+    _attr_unique_id = UNIQUE_ID_UNAVAILABLE
+    _attr_icon = ICON_UNAVAILABLE
+
+    def __init__(self, hass, scan_interval):
+        self._hass = hass
+        self._attr_scan_interval = scan_interval
+        self._state = 0
+        self._unavailable_entities = []
+
+    @property
+    def state(self):
+        return self._state
+
+    @property
+    def extra_state_attributes(self):
+        return {
+            ATTR_ENTITES_INDISPONIBLES: self._unavailable_entities,
+            ATTR_TOTAL_INDISPONIBLES: len(self._unavailable_entities)
+        }
+
+    async def async_update(self):
+        """Parcourt toutes les entités pour recenser celles en état 'unavailable'."""
+        try:
+            unavailable = []
+            for state_obj in self._hass.states.async_all():
+                if state_obj.state == STATE_UNAVAILABLE:
+                    name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
+                    if name not in unavailable:
+                        unavailable.append(name)
+
+            self._unavailable_entities = unavailable
+            self._state = len(unavailable)
+
+        except Exception as err:
+            _LOGGER.error("Erreur HA Monitoring (Entités indisponibles) : %s", err)
