@@ -136,8 +136,9 @@ class AddonErrorSensor(SensorEntity):
             return
 
         try:
-            if is_hassio_running(self._hass):
-                client = self._hass.data.get("hassio")
+            if not is_hassio_running(self._hass):
+                return
+            client = self._hass.data.get("hassio")
             if not client:
                 return
 
