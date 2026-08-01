@@ -1,552 +1,175 @@
-"""Capteurs HA Monitoring avec prise en compte des exclusions."""
-from datetime import datetime, timedelta
+"""Capteurs HA Monitoring alimentés par le Coordinator central."""
 import logging
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.helpers import issue_registry as ir
-from homeassistant.util import dt as dt_util
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
-    DOMAIN,
-    CONF_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL,
-    CONF_OFFLINE_TIMEOUT,
-    DEFAULT_OFFLINE_TIMEOUT,
-    CONF_EXCLUDED_ADDONS,
-    CONF_EXCLUDED_INTEGRATIONS,
-    CONF_EXCLUDED_AUTOMATIONS,
-    CONF_EXCLUDED_SCRIPTS,
-    CONF_EXCLUDED_UPDATES,
-    CONF_EXCLUDED_REPAIRS,
-    CONF_EXCLUDED_UNAVAILABLE,
-    CONF_EXCLUDED_OFFLINE,
-    ICON_ADDONS,
-    ICON_INTEGRATIONS,
-    ICON_AUTOMATIONS,
-    ICON_SCRIPTS,
-    ICON_UPDATES,
-    ICON_REPAIRS,
-    ICON_UNAVAILABLE,
-    ICON_OFFLINE,
-    UNIQUE_ID_ADDONS,
-    UNIQUE_ID_INTEGRATIONS,
-    UNIQUE_ID_AUTOMATIONS,
-    UNIQUE_ID_SCRIPTS,
-    UNIQUE_ID_UPDATES,
-    UNIQUE_ID_REPAIRS,
-    UNIQUE_ID_UNAVAILABLE,
-    UNIQUE_ID_OFFLINE,
-    TRANSLATION_KEY_ADDONS,
-    TRANSLATION_KEY_INTEGRATIONS,
-    TRANSLATION_KEY_AUTOMATIONS,
-    TRANSLATION_KEY_SCRIPTS,
-    TRANSLATION_KEY_UPDATES,
-    TRANSLATION_KEY_REPAIRS,
-    TRANSLATION_KEY_UNAVAILABLE,
-    TRANSLATION_KEY_OFFLINE,
     ATTR_ADDONS_EN_ERREUR,
-    ATTR_INTEGRATIONS_EN_ERREUR,
+    ATTR_APPAREILS_HORS_LIGNE,
     ATTR_AUTOMATIONS_EN_ERREUR,
-    ATTR_SCRIPTS_EN_ERREUR,
-    ATTR_MISES_A_JOUR_EN_ATTENTE,
     ATTR_CORRECTIONS_EN_ATTENTE,
     ATTR_ENTITES_INDISPONIBLES,
-    ATTR_APPAREILS_HORS_LIGNE,
-    ATTR_TOTAL_EN_ERREUR,
+    ATTR_INTEGRATIONS_EN_ERREUR,
+    ATTR_MISES_A_JOUR_EN_ATTENTE,
+    ATTR_SCRIPTS_EN_ERREUR,
     ATTR_TOTAL_EN_ATTENTE,
-    ATTR_TOTAL_INDISPONIBLES,
+    ATTR_TOTAL_EN_ERREUR,
     ATTR_TOTAL_HORS_LIGNE,
-    INTEGRATION_ERROR_STATES,
+    ATTR_TOTAL_INDISPONIBLES,
+    DOMAIN,
+    ICON_ADDONS,
+    ICON_AUTOMATIONS,
+    ICON_INTEGRATIONS,
+    ICON_OFFLINE,
+    ICON_REPAIRS,
+    ICON_SCRIPTS,
+    ICON_UNAVAILABLE,
+    ICON_UPDATES,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def is_hassio_running(hass) -> bool:
-    """Vérifie si Home Assistant tourne sous Supervisor/Hassio."""
-    return "hassio" in hass.config.components
-
-
 async def async_setup_entry(hass, entry, async_add_entities):
-    """Ajoute les capteurs de surveillance via Config Entry."""
-    scan_interval_sec = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    scan_interval = timedelta(seconds=int(scan_interval_sec))
+    """Ajoute l'ensemble des capteurs de surveillance à partir du Coordinator."""
+    coordinator = hass.data[DOMAIN][entry.entry_id]
 
-    async_add_entities([
-        AddonErrorSensor(hass, entry, scan_interval),
-        IntegrationErrorSensor(hass, entry, scan_interval),
-        TraceErrorSensor(
-            hass,
-            entry=entry,
-            domain="automation",
-            unique_id=UNIQUE_ID_AUTOMATIONS,
-            translation_key=TRANSLATION_KEY_AUTOMATIONS,
+    sensors = [
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_addons",
+            entity_key="monitoring_addons",
+            name="Monitoring Add-ons",
+            icon=ICON_ADDONS,
+            list_attr=ATTR_ADDONS_EN_ERREUR,
+            total_attr=ATTR_TOTAL_EN_ERREUR,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_integrations",
+            entity_key="monitoring_integrations",
+            name="Monitoring Intégrations",
+            icon=ICON_INTEGRATIONS,
+            list_attr=ATTR_INTEGRATIONS_EN_ERREUR,
+            total_attr=ATTR_TOTAL_EN_ERREUR,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_automations",
+            entity_key="monitoring_automations",
+            name="Monitoring Automatisations",
             icon=ICON_AUTOMATIONS,
-            attr_key=ATTR_AUTOMATIONS_EN_ERREUR,
-            exclusion_key=CONF_EXCLUDED_AUTOMATIONS,
-            scan_interval=scan_interval,
+            list_attr=ATTR_AUTOMATIONS_EN_ERREUR,
+            total_attr=ATTR_TOTAL_EN_ERREUR,
         ),
-        TraceErrorSensor(
-            hass,
-            entry=entry,
-            domain="script",
-            unique_id=UNIQUE_ID_SCRIPTS,
-            translation_key=TRANSLATION_KEY_SCRIPTS,
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_scripts",
+            entity_key="monitoring_scripts",
+            name="Monitoring Scripts",
             icon=ICON_SCRIPTS,
-            attr_key=ATTR_SCRIPTS_EN_ERREUR,
-            exclusion_key=CONF_EXCLUDED_SCRIPTS,
-            scan_interval=scan_interval,
+            list_attr=ATTR_SCRIPTS_EN_ERREUR,
+            total_attr=ATTR_TOTAL_EN_ERREUR,
         ),
-        UpdatePendingSensor(hass, entry, scan_interval),
-        RepairPendingSensor(hass, entry, scan_interval),
-        UnavailableEntitySensor(hass, entry, scan_interval),
-        OfflineDeviceSensor(hass, entry, scan_interval),
-    ], True)
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_updates",
+            entity_key="monitoring_updates",
+            name="Monitoring Mises à jour",
+            icon=ICON_UPDATES,
+            list_attr=ATTR_MISES_A_JOUR_EN_ATTENTE,
+            total_attr=ATTR_TOTAL_EN_ATTENTE,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_repairs",
+            entity_key="monitoring_repairs",
+            name="Monitoring Réparations",
+            icon=ICON_REPAIRS,
+            list_attr=ATTR_CORRECTIONS_EN_ATTENTE,
+            total_attr=ATTR_TOTAL_EN_ATTENTE,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_unavailable",
+            entity_key="monitoring_unavailable_entities",
+            name="Monitoring Entités indisponibles",
+            icon=ICON_UNAVAILABLE,
+            list_attr=ATTR_ENTITES_INDISPONIBLES,
+            total_attr=ATTR_TOTAL_INDISPONIBLES,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator, entry,
+            data_key="monitoring_offline",
+            entity_key="monitoring_offline_devices",
+            name="Monitoring Appareils hors ligne",
+            icon=ICON_OFFLINE,
+            list_attr=ATTR_APPAREILS_HORS_LIGNE,
+            total_attr=ATTR_TOTAL_HORS_LIGNE,
+            extra_keys=["timeout"],
+        ),
+    ]
+
+    async_add_entities(sensors)
 
 
-class AddonErrorSensor(SensorEntity):
-    """Capteur indiquant le nombre et la liste des add-ons en erreur."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = TRANSLATION_KEY_ADDONS
-    _attr_unique_id = UNIQUE_ID_ADDONS
-    _attr_icon = ICON_ADDONS
-
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._failed_addons = []
-
-    @property
-    def native_value(self):
-        return self._attr_native_value
-
-    @property
-    def extra_state_attributes(self):
-        return {
-            ATTR_ADDONS_EN_ERREUR: self._failed_addons,
-            ATTR_TOTAL_EN_ERREUR: len(self._failed_addons)
-        }
-
-    async def async_update(self):
-        if not is_hassio_running(self._hass):
-            return
-
-        client = self._hass.data.get("hassio")
-        if not client:
-            return
-
-        try:
-            if hasattr(client, "async_get_addons_info"):
-                addons_info = await client.async_get_addons_info()
-            elif hasattr(client, "get_addons_info"):
-                addons_info = await client.get_addons_info()
-            else:
-                return
-
-            addons = addons_info.get("addons", [])
-            excluded = self._entry.options.get(CONF_EXCLUDED_ADDONS, [])
-
-            failed = []
-            for addon in addons:
-                name = addon.get("name", "")
-                slug = addon.get("slug", "")
-
-                if name in excluded or slug in excluded:
-                    continue
-
-                state = addon.get("state")
-                boot = addon.get("boot")
-                watchdog = addon.get("watchdog", False)
-
-                is_monitored = watchdog or (boot == "auto")
-                is_stopped = state in ["stopped", "unknown"]
-
-                if is_monitored and is_stopped:
-                    failed.append(name or slug)
-
-            self._failed_addons = failed
-            self._attr_native_value = len(failed)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (Add-ons) : %s", err)
-
-
-class IntegrationErrorSensor(SensorEntity):
-    """Capteur indiquant le nombre et la liste des intégrations en erreur."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = TRANSLATION_KEY_INTEGRATIONS
-    _attr_unique_id = UNIQUE_ID_INTEGRATIONS
-    _attr_icon = ICON_INTEGRATIONS
-
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._failed_integrations = []
-
-    @property
-    def native_value(self):
-        return self._attr_native_value
-
-    @property
-    def extra_state_attributes(self):
-        return {
-            ATTR_INTEGRATIONS_EN_ERREUR: self._failed_integrations,
-            ATTR_TOTAL_EN_ERREUR: len(self._failed_integrations)
-        }
-
-    async def async_update(self):
-        try:
-            failed = []
-            entries = self._hass.config_entries.async_entries()
-            excluded = self._entry.options.get(CONF_EXCLUDED_INTEGRATIONS, [])
-
-            for entry in entries:
-                if entry.state in INTEGRATION_ERROR_STATES:
-                    name = entry.title if entry.title else entry.domain
-                    if name in excluded or entry.domain in excluded:
-                        continue
-                    failed.append(name)
-
-            self._failed_integrations = failed
-            self._attr_native_value = len(failed)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (Intégrations) : %s", err)
-
-
-class TraceErrorSensor(SensorEntity):
-    """Capteur générique pour les Traces (Automations / Scripts)."""
+class HAMonitoringGenericSensor(CoordinatorEntity, SensorEntity):
+    """Capteur générique lié au DataUpdateCoordinator de HA Monitoring."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass, entry, domain, unique_id, translation_key, icon, attr_key, exclusion_key, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._domain = domain
-        self._attr_unique_id = unique_id
-        self._attr_translation_key = translation_key
+    def __init__(
+        self,
+        coordinator,
+        entry,
+        data_key: str,
+        entity_key: str,
+        name: str,
+        icon: str,
+        list_attr: str,
+        total_attr: str,
+        extra_keys: list = None,
+    ):
+        super().__init__(coordinator)
+        self._data_key = data_key
+        self._attr_name = name
         self._attr_icon = icon
-        self._attr_key = attr_key
-        self._exclusion_key = exclusion_key
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._failed_items = []
+        self._list_attr = list_attr
+        self._total_attr = total_attr
+        self._extra_keys = extra_keys or []
+
+        # Unique ID et Entity ID préfixés
+        self._attr_unique_id = f"{entry.entry_id}_{entity_key}"
+        self.entity_id = f"sensor.{entity_key}"
 
     @property
-    def native_value(self):
-        return self._attr_native_value
+    def native_value(self) -> int:
+        """Retourne le nombre total d'éléments détectés."""
+        if not self.coordinator.data:
+            return 0
+        data = self.coordinator.data.get(self._data_key, {})
+        return data.get("total", 0)
 
     @property
-    def extra_state_attributes(self):
-        return {
-            self._attr_key: self._failed_items,
-            ATTR_TOTAL_EN_ERREUR: len(self._failed_items)
+    def extra_state_attributes(self) -> dict:
+        """Retourne la liste détaillée et les métadonnées."""
+        if not self.coordinator.data:
+            return {self._list_attr: [], self._total_attr: 0}
+
+        data = self.coordinator.data.get(self._data_key, {})
+        items = data.get("items", [])
+        total = data.get("total", 0)
+
+        attrs = {
+            self._list_attr: items,
+            self._total_attr: total,
+            "temporisation_demarrage_active": self.coordinator.data.get("in_startup_delay", False),
         }
 
-    async def async_update(self):
-        trace_data = self._hass.data.get("trace")
-        if not trace_data:
-            self._attr_native_value = 0
-            self._failed_items = []
-            return
+        # Clés supplémentaires (ex: seuil d'inactivité pour hors-ligne)
+        for key in self._extra_keys:
+            if key in data:
+                attrs[f"seuil_{key}"] = data[key]
 
-        failed = []
-        excluded = self._entry.options.get(self._exclusion_key, [])
-
-        try:
-            for key, traces in list(trace_data.items()):
-                if not (key.startswith(f"{self._domain}.") or key.startswith(f"{self._domain} ")):
-                    continue
-
-                if not traces:
-                    continue
-
-                try:
-                    trace_list = list(traces.values()) if isinstance(traces, dict) else list(traces)
-                    if not trace_list:
-                        continue
-                    latest_trace = trace_list[-1]
-                except Exception:
-                    continue
-
-                error = None
-                if hasattr(latest_trace, "as_dict"):
-                    error = latest_trace.as_dict().get("error")
-                elif isinstance(latest_trace, dict):
-                    error = latest_trace.get("error")
-
-                if error:
-                    entity_id = key if key.startswith(f"{self._domain}.") else None
-                    friendly_name = None
-
-                    if entity_id:
-                        if entity_id in excluded:
-                            continue
-                        state = self._hass.states.get(entity_id)
-                        if state:
-                            friendly_name = state.attributes.get("friendly_name") or entity_id
-
-                    if not friendly_name:
-                        for state in self._hass.states.async_all(self._domain):
-                            item_id = state.attributes.get("id")
-                            if item_id is not None and str(item_id) in key:
-                                if state.entity_id in excluded:
-                                    friendly_name = "EXCLUDED"
-                                    break
-                                friendly_name = state.attributes.get("friendly_name") or state.entity_id
-                                break
-
-                    if friendly_name == "EXCLUDED":
-                        continue
-
-                    friendly_name = friendly_name or key
-                    if friendly_name not in excluded and friendly_name not in failed:
-                        failed.append(friendly_name)
-
-            self._failed_items = failed
-            self._attr_native_value = len(failed)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (%s) : %s", self._domain, err)
-
-
-class UpdatePendingSensor(SensorEntity):
-    """Capteur indiquant le nombre et la liste des mises à jour en attente."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = TRANSLATION_KEY_UPDATES
-    _attr_unique_id = UNIQUE_ID_UPDATES
-    _attr_icon = ICON_UPDATES
-
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._pending_updates = []
-
-    @property
-    def native_value(self):
-        return self._attr_native_value
-
-    @property
-    def extra_state_attributes(self):
-        return {
-            ATTR_MISES_A_JOUR_EN_ATTENTE: self._pending_updates,
-            ATTR_TOTAL_EN_ATTENTE: len(self._pending_updates)
-        }
-
-    async def async_update(self):
-        try:
-            pending = []
-            excluded = self._entry.options.get(CONF_EXCLUDED_UPDATES, [])
-
-            for state_obj in self._hass.states.async_all("update"):
-                if state_obj.entity_id in excluded:
-                    continue
-
-                if state_obj.state == "on":
-                    name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
-                    if name not in pending:
-                        pending.append(name)
-
-            self._pending_updates = pending
-            self._attr_native_value = len(pending)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (Mises à jour) : %s", err)
-
-
-class RepairPendingSensor(SensorEntity):
-    """Capteur indiquant le nombre et la liste des réparations/issues en attente."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = TRANSLATION_KEY_REPAIRS
-    _attr_unique_id = UNIQUE_ID_REPAIRS
-    _attr_icon = ICON_REPAIRS
-
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._pending_repairs = []
-
-    @property
-    def native_value(self):
-        return self._attr_native_value
-
-    @property
-    def extra_state_attributes(self):
-        return {
-            ATTR_CORRECTIONS_EN_ATTENTE: self._pending_repairs,
-            ATTR_TOTAL_EN_ATTENTE: len(self._pending_repairs)
-        }
-
-    async def async_update(self):
-        try:
-            issue_registry = ir.async_get(self._hass)
-            pending = []
-            excluded = self._entry.options.get(CONF_EXCLUDED_REPAIRS, [])
-
-            for issue in issue_registry.issues.values():
-                # Ignorer les issues non actives ou ignorées
-                if hasattr(issue, "active") and not issue.active:
-                    continue
-                if getattr(issue, "dismissed_version", None) is not None:
-                    continue
-
-                issue_name = f"{issue.domain}: {issue.issue_id}"
-                if issue_name in excluded or issue.domain in excluded or issue.issue_id in excluded:
-                    continue
-
-                if issue_name not in pending:
-                    pending.append(issue_name)
-
-            self._pending_repairs = pending
-            self._attr_native_value = len(pending)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (Réparations) : %s", err)
-
-
-class UnavailableEntitySensor(SensorEntity):
-    """Capteur indiquant le nombre et la liste des entités indisponibles."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = TRANSLATION_KEY_UNAVAILABLE
-    _attr_unique_id = UNIQUE_ID_UNAVAILABLE
-    _attr_icon = ICON_UNAVAILABLE
-
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._unavailable_entities = []
-
-    @property
-    def native_value(self):
-        return self._attr_native_value
-
-    @property
-    def extra_state_attributes(self):
-        return {
-            ATTR_ENTITES_INDISPONIBLES: self._unavailable_entities,
-            ATTR_TOTAL_INDISPONIBLES: len(self._unavailable_entities)
-        }
-
-    async def async_update(self):
-        try:
-            unavailable = []
-            excluded = self._entry.options.get(CONF_EXCLUDED_UNAVAILABLE, [])
-
-            for state_obj in self._hass.states.async_all():
-                if state_obj.entity_id in excluded:
-                    continue
-
-                if state_obj.state == STATE_UNAVAILABLE:
-                    name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
-                    if name not in unavailable:
-                        unavailable.append(name)
-
-            self._unavailable_entities = unavailable
-            self._attr_native_value = len(unavailable)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (Entités indisponibles) : %s", err)
-
-
-class OfflineDeviceSensor(SensorEntity):
-    """Capteur indiquant les appareils n'ayant pas donné de signe de vie depuis X heures."""
-
-    _attr_has_entity_name = True
-    _attr_translation_key = TRANSLATION_KEY_OFFLINE
-    _attr_unique_id = UNIQUE_ID_OFFLINE
-    _attr_icon = ICON_OFFLINE
-
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._attr_native_value = 0
-        self._offline_devices = []
-
-    @property
-    def native_value(self):
-        return self._attr_native_value
-
-    @property
-    def extra_state_attributes(self):
-        offline_timeout = self._entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-        return {
-            ATTR_APPAREILS_HORS_LIGNE: self._offline_devices,
-            ATTR_TOTAL_HORS_LIGNE: len(self._offline_devices),
-            "seuil_inactivite_heures": offline_timeout,
-        }
-
-    async def async_update(self):
-        """Détecte les appareils muets en analysant les capteurs et attributs 'last_seen'."""
-        try:
-            now = dt_util.now()
-            offline_timeout = self._entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-            cutoff = now - timedelta(hours=float(offline_timeout))
-            offline = []
-            excluded = self._entry.options.get(CONF_EXCLUDED_OFFLINE, [])
-
-            for state_obj in self._hass.states.async_all():
-                if state_obj.entity_id in excluded:
-                    continue
-
-                if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
-                    continue
-
-                last_seen_dt = None
-                entity_id = state_obj.entity_id
-
-                # 1. Traiter les capteurs dédiés à la dernière connexion
-                is_last_seen_entity = any(
-                    term in entity_id for term in ("last_seen", "derniere_connexion", "last_reported")
-                )
-                if is_last_seen_entity:
-                    last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
-
-                # 2. Chercher dans les attributs d'entité
-                if not last_seen_dt and state_obj.attributes:
-                    for attr_key in ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp"):
-                        val = state_obj.attributes.get(attr_key)
-                        if val is not None:
-                            if isinstance(val, (int, float)):
-                                try:
-                                    # Correction pour les timestamps en millisecondes
-                                    ts = val / 1000.0 if val > 1e11 else float(val)
-                                    last_seen_dt = dt_util.utc_from_timestamp(ts)
-                                except Exception:
-                                    pass
-                            elif isinstance(val, str):
-                                last_seen_dt = dt_util.parse_datetime(val)
-                            elif isinstance(val, datetime):
-                                last_seen_dt = val
-
-                            if last_seen_dt:
-                                break
-
-                # 3. Évaluer si la date dépasse le seuil
-                if last_seen_dt:
-                    if dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
-                        name = state_obj.attributes.get("friendly_name") or entity_id
-                        if name not in offline:
-                            offline.append(name)
-
-            self._offline_devices = offline
-            self._attr_native_value = len(offline)
-
-        except Exception as err:
-            _LOGGER.error("Erreur HA Monitoring (Appareils hors ligne) : %s", err)
+        return attrs
