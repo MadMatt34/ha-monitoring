@@ -51,6 +51,9 @@
       },
       "repairs_pending": {
         "name": "Corrections en attente"
+      },
+      "unavailable_entities": {
+        "name": "Entités indisponibles"
       }
     },
     "binary_sensor": {
