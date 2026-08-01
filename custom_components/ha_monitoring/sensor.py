@@ -132,7 +132,8 @@ class AddonErrorSensor(SensorEntity):
             return
 
         try:
-            client = self._hass.data.get(HASSIO_DATA)
+            if is_hassio(self._hass):
+                client = self._hass.data.get("hassio")
             if not client:
                 return
 
