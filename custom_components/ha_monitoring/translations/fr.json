@@ -13,6 +13,11 @@
       "scripts_in_error": {
         "name": "Scripts en erreur"
       }
+    },
+    "binary_sensor": {
+      "global_status": {
+        "name": "Statut du système"
+      }
     }
   }
 }
