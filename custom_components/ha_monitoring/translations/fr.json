@@ -54,18 +54,18 @@
   },
   "entity": {
     "sensor": {
-      "addons_in_error": { "name": "Add-ons en erreur" },
-      "integrations_in_error": { "name": "Intégrations en erreur" },
-      "automations_in_error": { "name": "Automations en erreur" },
-      "scripts_in_error": { "name": "Scripts en erreur" },
-      "updates_pending": { "name": "Mises à jour en attente" },
-      "repairs_pending": { "name": "Corrections en attente" },
-      "unavailable_entities": { "name": "Entités indisponibles" },
-      "offline_devices": { "name": "Appareils hors ligne" }
+      "addons_in_error": { "name": "Monitoring Applications en erreur" },
+      "integrations_in_error": { "name": "Monitoring Intégrations en erreur" },
+      "automations_in_error": { "name": "Monitoring Automatisations en erreur" },
+      "scripts_in_error": { "name": "Monitoring Scripts en erreur" },
+      "updates_pending": { "name": "Monitoring Mises à jour en attente" },
+      "repairs_pending": { "name": "Monitoring Corrections en attente" },
+      "unavailable_entities": { "name": "Monitoring Entités indisponibles" },
+      "offline_devices": { "name": "Monitoring Appareils hors ligne" }
     },
     "binary_sensor": {
-      "global_status": { "name": "Statut du système" },
-      "backup_status": { "name": "Statut de la sauvegarde" }
+      "global_status": { "name": "Monitoring Statut Global" },
+      "backup_status": { "name": "Monitoring Etat de la sauvegarde" }
     }
   }
 }
