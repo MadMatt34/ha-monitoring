@@ -12,16 +12,26 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     CONF_OFFLINE_TIMEOUT,
     DEFAULT_OFFLINE_TIMEOUT,
+    CONF_EXCLUDED_ADDONS,
+    CONF_EXCLUDED_INTEGRATIONS,
+    CONF_EXCLUDED_AUTOMATIONS,
+    CONF_EXCLUDED_SCRIPTS,
+    CONF_EXCLUDED_UPDATES,
+    CONF_EXCLUDED_REPAIRS,
+    CONF_EXCLUDED_UNAVAILABLE,
+    CONF_EXCLUDED_OFFLINE,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def get_schema(
-    current_interval: int = DEFAULT_SCAN_INTERVAL,
-    current_timeout: int = DEFAULT_OFFLINE_TIMEOUT,
-):
-    """Construit le schéma de formulaire avec champ texte pour l'intervalle et champ numérique pour le timeout."""
+def get_schema(options=None):
+    """Construit le schéma du formulaire avec sélecteurs et exclusions."""
+    options = options or {}
+
+    current_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
+
     return vol.Schema(
         {
             vol.Required(
@@ -42,17 +52,73 @@ def get_schema(
                     unit_of_measurement="h",
                 )
             ),
+            # Exclusions - Textes / Tags
+            vol.Optional(
+                CONF_EXCLUDED_ADDONS,
+                default=options.get(CONF_EXCLUDED_ADDONS, []),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[], custom_value=True, multiple=True
+                )
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_INTEGRATIONS,
+                default=options.get(CONF_EXCLUDED_INTEGRATIONS, []),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[], custom_value=True, multiple=True
+                )
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_REPAIRS,
+                default=options.get(CONF_EXCLUDED_REPAIRS, []),
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=[], custom_value=True, multiple=True
+                )
+            ),
+            # Exclusions - Entités Home Assistant
+            vol.Optional(
+                CONF_EXCLUDED_AUTOMATIONS,
+                default=options.get(CONF_EXCLUDED_AUTOMATIONS, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="automation", multiple=True)
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_SCRIPTS,
+                default=options.get(CONF_EXCLUDED_SCRIPTS, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="script", multiple=True)
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_UPDATES,
+                default=options.get(CONF_EXCLUDED_UPDATES, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(domain="update", multiple=True)
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_UNAVAILABLE,
+                default=options.get(CONF_EXCLUDED_UNAVAILABLE, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(multiple=True)
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_OFFLINE,
+                default=options.get(CONF_EXCLUDED_OFFLINE, []),
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(multiple=True)
+            ),
         }
     )
 
 
 class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
-    """Flux d'installation initiale via l'interface."""
+    """Flux d'installation initiale."""
 
     VERSION = 1
 
     async def async_step_user(self, user_input=None):
-        """Formulaire d'ajout de l'intégration."""
+        """Formulaire initial d'ajout de l'intégration."""
         errors = {}
 
         if self._async_current_entries():
@@ -68,13 +134,14 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 elif timeout < 1:
                     errors[CONF_OFFLINE_TIMEOUT] = "invalid_timeout"
                 else:
+                    options_data = dict(user_input)
+                    options_data[CONF_SCAN_INTERVAL] = interval
+                    options_data[CONF_OFFLINE_TIMEOUT] = timeout
+
                     return self.async_create_entry(
                         title="HA Monitoring",
                         data={},
-                        options={
-                            CONF_SCAN_INTERVAL: interval,
-                            CONF_OFFLINE_TIMEOUT: timeout,
-                        },
+                        options=options_data,
                     )
             except ValueError:
                 errors["base"] = "invalid_number"
@@ -88,25 +155,19 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @staticmethod
     @callback
     def async_get_options_flow(config_entry):
-        """Renvoie le gestionnaire d'options."""
+        """Gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
-    """Flux de modification des options (bouton CONFIGURER)."""
+    """Flux de modification des options (Bouton CONFIGURER)."""
 
     def __init__(self, config_entry):
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
-        """Formulaire d'édition des paramètres."""
+        """Formulaire d'édition des options."""
         errors = {}
-        current_interval = self.config_entry.options.get(
-            CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL
-        )
-        current_timeout = self.config_entry.options.get(
-            CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT
-        )
 
         if user_input is not None:
             try:
@@ -118,18 +179,19 @@ class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
                 elif timeout < 1:
                     errors[CONF_OFFLINE_TIMEOUT] = "invalid_timeout"
                 else:
+                    options_data = dict(user_input)
+                    options_data[CONF_SCAN_INTERVAL] = interval
+                    options_data[CONF_OFFLINE_TIMEOUT] = timeout
+
                     return self.async_create_entry(
                         title="",
-                        data={
-                            CONF_SCAN_INTERVAL: interval,
-                            CONF_OFFLINE_TIMEOUT: timeout,
-                        },
+                        data=options_data,
                     )
             except ValueError:
                 errors["base"] = "invalid_number"
 
         return self.async_show_form(
             step_id="init",
-            data_schema=get_schema(current_interval, current_timeout),
+            data_schema=get_schema(self.config_entry.options),
             errors=errors,
         )
