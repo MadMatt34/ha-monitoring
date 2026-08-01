@@ -3,7 +3,7 @@
   "name": "HA Monitoring",
   "codeowners": [],
   "config_flow": true,
-  "dependencies": ["hassio"],
+  "dependencies": [],
   "documentation": "https://github.com/home-assistant",
   "iot_class": "local_polling",
   "version": "1.1.0"
