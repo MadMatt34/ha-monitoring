@@ -1,4 +1,4 @@
-"""Capteur pour surveiller les add-ons en erreur."""
+"""Capteur pour surveiller les add-ons en erreur (support du Watchdog)."""
 from datetime import timedelta
 import logging
 
@@ -24,11 +24,6 @@ class AddonErrorSensor(SensorEntity):
         self._attr_icon = "mdi:puzzle-alert"
 
     @property
-    <li>
-      **State & Attributes**
-    </li>
-    
-    @property
     def state(self):
         """Retourne le nombre d'add-ons en erreur."""
         return self._state
@@ -43,13 +38,11 @@ class AddonErrorSensor(SensorEntity):
 
     async def async_update(self):
         """Récupère les données depuis le Supervisor."""
-        # Vérification si Hass.io / Supervisor est disponible
         if "hassio" not in self._hass.config.components:
             _LOGGER.warning("Supervisor non disponible sur ce système.")
             return
 
         try:
-            # Appel de l'API interne du Supervisor via le client Hassio de HA
             client = self._hass.data.get(HASSIO_DATA)
             if not client:
                 return
@@ -59,12 +52,18 @@ class AddonErrorSensor(SensorEntity):
 
             failed = []
             for addon in addons:
-                # Un add-on est considéré en erreur s'il est configuré en auto-start (boot: auto)
-                # mais qu'il est arrêté (state: stopped ou unknown)
                 state = addon.get("state")
                 boot = addon.get("boot")
-                
-                if boot == "auto" and state in ["stopped", "unknown"]:
+                watchdog = addon.get("watchdog", False)
+
+                # Critère d'erreur : L'add-on est arrêté/inconnu ALORS QUE :
+                # - Le watchdog est activé (surveillance active demandée)
+                # OU
+                # - Le démarrage automatique est activé (boot: auto)
+                is_monitored = watchdog or (boot == "auto")
+                is_stopped = state in ["stopped", "unknown"]
+
+                if is_monitored and is_stopped:
                     failed.append(addon.get("name", addon.get("slug")))
 
             self._failed_addons = failed
