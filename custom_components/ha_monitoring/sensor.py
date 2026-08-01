@@ -1,13 +1,34 @@
 """Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations et scripts."""
-from datetime import timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.components.hassio import HASSIO_DATA
-from homeassistant.config_entries import ConfigEntryState
+
+from .const import (
+    DOMAIN,
+    DEFAULT_SCAN_INTERVAL,
+    ICON_ADDONS,
+    ICON_INTEGRATIONS,
+    ICON_AUTOMATIONS,
+    ICON_SCRIPTS,
+    UNIQUE_ID_ADDONS,
+    UNIQUE_ID_INTEGRATIONS,
+    UNIQUE_ID_AUTOMATIONS,
+    UNIQUE_ID_SCRIPTS,
+    TRANSLATION_KEY_ADDONS,
+    TRANSLATION_KEY_INTEGRATIONS,
+    TRANSLATION_KEY_AUTOMATIONS,
+    TRANSLATION_KEY_SCRIPTS,
+    ATTR_ADDONS_EN_ERREUR,
+    ATTR_INTEGRATIONS_EN_ERREUR,
+    ATTR_AUTOMATIONS_EN_ERREUR,
+    ATTR_SCRIPTS_EN_ERREUR,
+    ATTR_TOTAL_EN_ERREUR,
+    INTEGRATION_ERROR_STATES,
+)
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = timedelta(seconds=60)
+SCAN_INTERVAL = DEFAULT_SCAN_INTERVAL
 
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
@@ -15,21 +36,37 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
     async_add_entities([
         AddonErrorSensor(hass),
         IntegrationErrorSensor(hass),
-        TraceErrorSensor(hass, domain="automation", name="Automations en erreur", unique_id="ha_monitoring_automations_in_error", icon="mdi:robot-dead"),
-        TraceErrorSensor(hass, domain="script", name="Scripts en erreur", unique_id="ha_monitoring_scripts_in_error", icon="mdi:script-text-outline"),
+        TraceErrorSensor(
+            hass,
+            domain="automation",
+            unique_id=UNIQUE_ID_AUTOMATIONS,
+            translation_key=TRANSLATION_KEY_AUTOMATIONS,
+            icon=ICON_AUTOMATIONS,
+            attr_key=ATTR_AUTOMATIONS_EN_ERREUR,
+        ),
+        TraceErrorSensor(
+            hass,
+            domain="script",
+            unique_id=UNIQUE_ID_SCRIPTS,
+            translation_key=TRANSLATION_KEY_SCRIPTS,
+            icon=ICON_SCRIPTS,
+            attr_key=ATTR_SCRIPTS_EN_ERREUR,
+        ),
     ], True)
 
 
 class AddonErrorSensor(SensorEntity):
     """Capteur indiquant le nombre et la liste des add-ons en erreur."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = TRANSLATION_KEY_ADDONS
+    _attr_unique_id = UNIQUE_ID_ADDONS
+    _attr_icon = ICON_ADDONS
+
     def __init__(self, hass):
         self._hass = hass
         self._state = 0
         self._failed_addons = []
-        self._attr_name = "Add-ons en erreur"
-        self._attr_unique_id = "ha_monitoring_addons_in_error_sensor"
-        self._attr_icon = "mdi:puzzle-alert"
 
     @property
     def state(self):
@@ -40,8 +77,8 @@ class AddonErrorSensor(SensorEntity):
     def extra_state_attributes(self):
         """Retourne les attributs du capteur."""
         return {
-            "addons_en_erreur": self._failed_addons,
-            "total_en_erreur": len(self._failed_addons)
+            ATTR_ADDONS_EN_ERREUR: self._failed_addons,
+            ATTR_TOTAL_EN_ERREUR: len(self._failed_addons)
         }
 
     async def async_update(self):
@@ -80,13 +117,15 @@ class AddonErrorSensor(SensorEntity):
 class IntegrationErrorSensor(SensorEntity):
     """Capteur indiquant le nombre et la liste des intégrations en erreur."""
 
+    _attr_has_entity_name = True
+    _attr_translation_key = TRANSLATION_KEY_INTEGRATIONS
+    _attr_unique_id = UNIQUE_ID_INTEGRATIONS
+    _attr_icon = ICON_INTEGRATIONS
+
     def __init__(self, hass):
         self._hass = hass
         self._state = 0
         self._failed_integrations = []
-        self._attr_name = "Intégrations en erreur"
-        self._attr_unique_id = "ha_monitoring_integrations_in_error_sensor"
-        self._attr_icon = "mdi:alert-circle-outline"
 
     @property
     def state(self):
@@ -97,8 +136,8 @@ class IntegrationErrorSensor(SensorEntity):
     def extra_state_attributes(self):
         """Retourne les attributs du capteur."""
         return {
-            "integrations_en_erreur": self._failed_integrations,
-            "total_en_erreur": len(self._failed_integrations)
+            ATTR_INTEGRATIONS_EN_ERREUR: self._failed_integrations,
+            ATTR_TOTAL_EN_ERREUR: len(self._failed_integrations)
         }
 
     async def async_update(self):
@@ -107,14 +146,8 @@ class IntegrationErrorSensor(SensorEntity):
             failed = []
             entries = self._hass.config_entries.async_entries()
 
-            error_states = {
-                ConfigEntryState.SETUP_ERROR,
-                ConfigEntryState.SETUP_RETRY,
-                ConfigEntryState.MIGRATION_ERROR,
-            }
-
             for entry in entries:
-                if entry.state in error_states:
+                if entry.state in INTEGRATION_ERROR_STATES:
                     name = entry.title if entry.title else entry.domain
                     failed.append(name)
 
@@ -128,14 +161,17 @@ class IntegrationErrorSensor(SensorEntity):
 class TraceErrorSensor(SensorEntity):
     """Capteur générique pour vérifier les erreurs d'exécution via le gestionnaire de Traces (Automations / Scripts)."""
 
-    def __init__(self, hass, domain, name, unique_id, icon):
+    _attr_has_entity_name = True
+
+    def __init__(self, hass, domain, unique_id, translation_key, icon, attr_key):
         self._hass = hass
         self._domain = domain
+        self._attr_unique_id = unique_id
+        self._attr_translation_key = translation_key
+        self._attr_icon = icon
+        self._attr_key = attr_key
         self._state = 0
         self._failed_items = []
-        self._attr_name = name
-        self._attr_unique_id = unique_id
-        self._attr_icon = icon
 
     @property
     def state(self):
@@ -145,10 +181,9 @@ class TraceErrorSensor(SensorEntity):
     @property
     def extra_state_attributes(self):
         """Retourne la liste et le total en attributs."""
-        attr_key = f"{self._domain}s_en_erreur"
         return {
-            attr_key: self._failed_items,
-            "total_en_erreur": len(self._failed_items)
+            self._attr_key: self._failed_items,
+            ATTR_TOTAL_EN_ERREUR: len(self._failed_items)
         }
 
     async def async_update(self):
@@ -162,14 +197,12 @@ class TraceErrorSensor(SensorEntity):
         failed = []
         try:
             for key, traces in list(trace_data.items()):
-                # Vérifie si la clé concerne le domaine (ex: "automation.xxx" ou "script.xxx")
                 if not (key.startswith(f"{self._domain}.") or key.startswith(f"{self._domain} ")):
                     continue
 
                 if not traces:
                     continue
 
-                # Récupère la trace de la dernière exécution
                 try:
                     trace_list = list(traces.values()) if isinstance(traces, dict) else list(traces)
                     if not trace_list:
@@ -178,7 +211,6 @@ class TraceErrorSensor(SensorEntity):
                 except Exception:
                     continue
 
-                # Vérification de la présence d'une erreur dans la trace
                 error = None
                 if hasattr(latest_trace, "as_dict"):
                     error = latest_trace.as_dict().get("error")
@@ -186,7 +218,6 @@ class TraceErrorSensor(SensorEntity):
                     error = latest_trace.get("error")
 
                 if error:
-                    # Résolution du nom convivial (friendly_name)
                     entity_id = key if key.startswith(f"{self._domain}.") else None
                     friendly_name = None
 
