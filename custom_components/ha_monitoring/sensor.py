@@ -1,4 +1,5 @@
 """Capteurs HA Monitoring pour surveiller add-ons, intégrations, automations et scripts."""
+from datetime import timedelta
 import logging
 
 from homeassistant.components.sensor import SensorEntity
@@ -6,6 +7,7 @@ from homeassistant.components.hassio import HASSIO_DATA
 
 from .const import (
     DOMAIN,
+    CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     ICON_ADDONS,
     ICON_INTEGRATIONS,
@@ -28,14 +30,16 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = DEFAULT_SCAN_INTERVAL
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Ajoute l'ensemble des capteurs de surveillance HA Monitoring."""
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Ajoute les capteurs de surveillance via Config Entry."""
+    scan_interval_sec = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    scan_interval = timedelta(seconds=int(scan_interval_sec))
+
     async_add_entities([
-        AddonErrorSensor(hass),
-        IntegrationErrorSensor(hass),
+        AddonErrorSensor(hass, scan_interval),
+        IntegrationErrorSensor(hass, scan_interval),
         TraceErrorSensor(
             hass,
             domain="automation",
@@ -43,6 +47,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             translation_key=TRANSLATION_KEY_AUTOMATIONS,
             icon=ICON_AUTOMATIONS,
             attr_key=ATTR_AUTOMATIONS_EN_ERREUR,
+            scan_interval=scan_interval,
         ),
         TraceErrorSensor(
             hass,
@@ -51,6 +56,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
             translation_key=TRANSLATION_KEY_SCRIPTS,
             icon=ICON_SCRIPTS,
             attr_key=ATTR_SCRIPTS_EN_ERREUR,
+            scan_interval=scan_interval,
         ),
     ], True)
 
@@ -63,28 +69,25 @@ class AddonErrorSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_ADDONS
     _attr_icon = ICON_ADDONS
 
-    def __init__(self, hass):
+    def __init__(self, hass, scan_interval):
         self._hass = hass
+        self._attr_scan_interval = scan_interval
         self._state = 0
         self._failed_addons = []
 
     @property
     def state(self):
-        """Retourne le nombre d'add-ons en erreur."""
         return self._state
 
     @property
     def extra_state_attributes(self):
-        """Retourne les attributs du capteur."""
         return {
             ATTR_ADDONS_EN_ERREUR: self._failed_addons,
             ATTR_TOTAL_EN_ERREUR: len(self._failed_addons)
         }
 
     async def async_update(self):
-        """Récupère les données depuis le Supervisor."""
         if "hassio" not in self._hass.config.components:
-            _LOGGER.warning("Supervisor non disponible sur ce système.")
             return
 
         try:
@@ -122,26 +125,24 @@ class IntegrationErrorSensor(SensorEntity):
     _attr_unique_id = UNIQUE_ID_INTEGRATIONS
     _attr_icon = ICON_INTEGRATIONS
 
-    def __init__(self, hass):
+    def __init__(self, hass, scan_interval):
         self._hass = hass
+        self._attr_scan_interval = scan_interval
         self._state = 0
         self._failed_integrations = []
 
     @property
     def state(self):
-        """Retourne le nombre d'intégrations en erreur."""
         return self._state
 
     @property
     def extra_state_attributes(self):
-        """Retourne les attributs du capteur."""
         return {
             ATTR_INTEGRATIONS_EN_ERREUR: self._failed_integrations,
             ATTR_TOTAL_EN_ERREUR: len(self._failed_integrations)
         }
 
     async def async_update(self):
-        """Récupère les intégrations en erreur via config_entries."""
         try:
             failed = []
             entries = self._hass.config_entries.async_entries()
@@ -159,35 +160,33 @@ class IntegrationErrorSensor(SensorEntity):
 
 
 class TraceErrorSensor(SensorEntity):
-    """Capteur générique pour vérifier les erreurs d'exécution via le gestionnaire de Traces (Automations / Scripts)."""
+    """Capteur générique pour les Traces (Automations / Scripts)."""
 
     _attr_has_entity_name = True
 
-    def __init__(self, hass, domain, unique_id, translation_key, icon, attr_key):
+    def __init__(self, hass, domain, unique_id, translation_key, icon, attr_key, scan_interval):
         self._hass = hass
         self._domain = domain
         self._attr_unique_id = unique_id
         self._attr_translation_key = translation_key
         self._attr_icon = icon
         self._attr_key = attr_key
+        self._attr_scan_interval = scan_interval
         self._state = 0
         self._failed_items = []
 
     @property
     def state(self):
-        """Retourne le nombre d'éléments en erreur."""
         return self._state
 
     @property
     def extra_state_attributes(self):
-        """Retourne la liste et le total en attributs."""
         return {
             self._attr_key: self._failed_items,
             ATTR_TOTAL_EN_ERREUR: len(self._failed_items)
         }
 
     async def async_update(self):
-        """Analyse le store de traces pour repérer la dernière exécution de chaque entité."""
         trace_data = self._hass.data.get("trace")
         if not trace_data:
             self._state = 0
