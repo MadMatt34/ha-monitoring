@@ -10,20 +10,23 @@ ICON_ADDONS = "mdi:puzzle-alert"
 ICON_INTEGRATIONS = "mdi:alert-circle-outline"
 ICON_AUTOMATIONS = "mdi:robot-dead"
 ICON_SCRIPTS = "mdi:script-text-outline"
+ICON_STATUS = "mdi:shield-alert"
 
 # Identifiants uniques (Unique IDs)
 UNIQUE_ID_ADDONS = "ha_monitoring_addons_in_error_sensor"
 UNIQUE_ID_INTEGRATIONS = "ha_monitoring_integrations_in_error_sensor"
 UNIQUE_ID_AUTOMATIONS = "ha_monitoring_automations_in_error"
 UNIQUE_ID_SCRIPTS = "ha_monitoring_scripts_in_error"
+UNIQUE_ID_STATUS = "ha_monitoring_status"
 
-# Clés de traduction (déclarées dans translations/fr.json)
+# Clés de traduction (translations/fr.json)
 TRANSLATION_KEY_ADDONS = "addons_in_error"
 TRANSLATION_KEY_INTEGRATIONS = "integrations_in_error"
 TRANSLATION_KEY_AUTOMATIONS = "automations_in_error"
 TRANSLATION_KEY_SCRIPTS = "scripts_in_error"
+TRANSLATION_KEY_STATUS = "global_status"
 
-# Noms des attributs d'état
+# Attributs
 ATTR_ADDONS_EN_ERREUR = "addons_en_erreur"
 ATTR_INTEGRATIONS_EN_ERREUR = "integrations_en_erreur"
 ATTR_AUTOMATIONS_EN_ERREUR = "automations_en_erreur"
