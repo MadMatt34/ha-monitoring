@@ -34,34 +34,46 @@ def is_hassio_running(hass) -> bool:
 
 async def async_setup_entry(hass, entry, async_add_entities):
     """Configuration des capteurs binaires via Config Entry."""
+    coordinator = hass.data[DOMAIN][entry.entry_id]
     scan_interval_sec = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
     scan_interval = timedelta(seconds=int(scan_interval_sec))
 
     async_add_entities([
-        GlobalStatusBinarySensor(hass, entry, scan_interval),
+        GlobalStatusBinarySensor(coordinator, entry),
         BackupStatusBinarySensor(hass, entry, scan_interval),
-    ], True)
+    ])
 
-
-class GlobalStatusBinarySensor(BinarySensorEntity):
+class GlobalStatusBinarySensor(CoordinatorEntity, BinarySensorEntity):
     """Capteur binaire indiquant le statut global du système."""
 
     _attr_has_entity_name = True
     _attr_translation_key = TRANSLATION_KEY_STATUS
-    _attr_unique_id = UNIQUE_ID_STATUS
     _attr_icon = ICON_STATUS
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
 
-    def __init__(self, hass, entry, scan_interval):
-        self._hass = hass
-        self._entry = entry
-        self._attr_scan_interval = scan_interval
-        self._is_on = False
+    def __init__(self, coordinator, entry):
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_STATUS}"
+        self.entity_id = f"binary_sensor.{UNIQUE_ID_STATUS}"
 
     @property
-    def is_on(self):
+    def is_on(self) -> bool:
         """Renvoie True s'il y a un problème sur le système."""
-        return self._is_on
+        if not self.coordinator.data or self.coordinator.data.get("in_startup_delay", False):
+            return False
+
+        # Vérification des catégories d'erreurs dans le coordinator
+        keys_to_check = [
+            "monitoring_addons",
+            "monitoring_integrations",
+            "monitoring_automations",
+            "monitoring_scripts",
+        ]
+        for key in keys_to_check:
+            data = self.coordinator.data.get(key, {})
+            if data.get("total", 0) > 0:
+                return True
+        return False
 
     async def async_update(self):
         """Vérifie si l'un des capteurs de surveillance est en alerte."""
