@@ -3,15 +3,17 @@
     "step": {
       "user": {
         "title": "HA Monitoring",
-        "description": "Configurez l'intervalle d'actualisation des capteurs de surveillance.",
+        "description": "Configurez l'intervalle d'actualisation et le seuil d'inactivité des appareils.",
         "data": {
-          "scan_interval": "Intervalle de rafraîchissement (en secondes)"
+          "scan_interval": "Intervalle de rafraîchissement (en secondes)",
+          "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)"
         }
       }
     },
     "error": {
-      "invalid_number": "Veuillez saisir un nombre entier valide (ex: 60).",
-      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes."
+      "invalid_number": "Veuillez saisir un nombre entier valide.",
+      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes.",
+      "invalid_timeout": "Le seuil d'inactivité doit être d'au moins 1 heure."
     },
     "abort": {
       "already_configured": "L'intégration HA Monitoring est déjà configurée."
@@ -21,15 +23,17 @@
     "step": {
       "init": {
         "title": "Options de HA Monitoring",
-        "description": "Modifier l'intervalle de rafraîchissement des capteurs.",
+        "description": "Modifier les paramètres de surveillance.",
         "data": {
-          "scan_interval": "Intervalle de rafraîchissement (en secondes)"
+          "scan_interval": "Intervalle de rafraîchissement (en secondes)",
+          "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)"
         }
       }
     },
     "error": {
-      "invalid_number": "Veuillez saisir un nombre entier valide (ex: 60).",
-      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes."
+      "invalid_number": "Veuillez saisir un nombre entier valide.",
+      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes.",
+      "invalid_timeout": "Le seuil d'inactivité doit être d'au moins 1 heure."
     }
   },
   "entity": {
@@ -54,6 +58,9 @@
       },
       "unavailable_entities": {
         "name": "Entités indisponibles"
+      },
+      "offline_devices": {
+        "name": "Appareils hors ligne"
       }
     },
     "binary_sensor": {
