@@ -9,18 +9,6 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
-    ATTR_ADDONS_EN_ERREUR,
-    ATTR_APPAREILS_HORS_LIGNE,
-    ATTR_AUTOMATIONS_EN_ERREUR,
-    ATTR_CORRECTIONS_EN_ATTENTE,
-    ATTR_ENTITES_INDISPONIBLES,
-    ATTR_INTEGRATIONS_EN_ERREUR,
-    ATTR_MISES_A_JOUR_EN_ATTENTE,
-    ATTR_SCRIPTS_EN_ERREUR,
-    ATTR_TOTAL_EN_ATTENTE,
-    ATTR_TOTAL_EN_ERREUR,
-    ATTR_TOTAL_HORS_LIGNE,
-    ATTR_TOTAL_INDISPONIBLES,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_AUTOMATIONS,
     CONF_EXCLUDED_INTEGRATIONS,
@@ -87,7 +75,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         options = self.entry.options
 
-        # Collecte parallèle des métriques
+        # Collecte des métriques
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = self._get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
         automations = self._get_trace_errors("automation", options.get(CONF_EXCLUDED_AUTOMATIONS, []))
@@ -99,6 +87,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             options.get(CONF_EXCLUDED_OFFLINE, []),
             options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
         )
+        backup_info = await self._async_get_backup_info()
 
         return {
             "in_startup_delay": False,
@@ -114,6 +103,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "total": len(offline),
                 "timeout": offline_timeout,
             },
+            "monitoring_backup": backup_info,
         }
 
     def _empty_results(self, in_startup_delay: bool) -> dict:
@@ -129,6 +119,132 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "monitoring_repairs": {"items": [], "total": 0},
             "monitoring_unavailable": {"items": [], "total": 0},
             "monitoring_offline": {"items": [], "total": 0, "timeout": timeout},
+            "monitoring_backup": {
+                "is_ok": True,
+                "date_sauvegarde": None,
+                "date_derniere_reussie": None,
+                "date_prochaine_planifiee": "Démarrage...",
+                "taille_sauvegarde": None,
+            },
+        }
+
+    def _format_size(self, size_bytes_or_mb) -> str | None:
+        """Formate la taille en Mo ou Go."""
+        if size_bytes_or_mb is None:
+            return None
+
+        if isinstance(size_bytes_or_mb, (int, float)):
+            if size_bytes_or_mb > 1024 * 1024:
+                mb = size_bytes_or_mb / (1024 * 1024)
+            else:
+                mb = size_bytes_or_mb
+
+            if mb >= 1024:
+                return f"{round(mb / 1024, 2)} Go"
+            return f"{round(mb, 2)} Mo"
+        return str(size_bytes_or_mb)
+
+    async def _async_get_backup_info(self) -> dict:
+        """Interroge le gestionnaire de sauvegardes Supervisor ou Core."""
+        backups_list = []
+        next_scheduled = None
+
+        # 1. Tentative via l'API Supervisor / HASSIO
+        if is_hassio_running(self.hass):
+            try:
+                client = self.hass.data.get("hassio")
+                if client:
+                    backups_info = None
+                    if hasattr(client, "async_get_backups"):
+                        backups_info = await client.async_get_backups()
+                    elif hasattr(client, "get_backups"):
+                        backups_info = await client.get_backups()
+                    elif hasattr(client, "send_command"):
+                        backups_info = await client.send_command("/backups", method="get")
+
+                    if isinstance(backups_info, dict) and "backups" in backups_info:
+                        backups_list = backups_info.get("backups", [])
+            except Exception as err:
+                _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
+
+        # 2. Fallback via le module Backup natif de Home Assistant Core
+        if not backups_list and "backup" in self.hass.data:
+            try:
+                backup_manager = self.hass.data["backup"]
+                if hasattr(backup_manager, "backups"):
+                    raw_backups = backup_manager.backups
+                    if isinstance(raw_backups, dict):
+                        for b in raw_backups.values():
+                            backups_list.append({
+                                "slug": getattr(b, "slug", None) or getattr(b, "id", ""),
+                                "name": getattr(b, "name", ""),
+                                "date": getattr(b, "date", None),
+                                "size": getattr(b, "size", 0),
+                                "failed": getattr(b, "failed", False),
+                            })
+
+                if hasattr(backup_manager, "config") and hasattr(backup_manager.config, "create_backup"):
+                    schedule = getattr(backup_manager.config, "schedule", None)
+                    if schedule and hasattr(schedule, "next_execution"):
+                        next_scheduled = schedule.next_execution
+            except Exception as err:
+                _LOGGER.debug("Erreur récupération sauvegardes via Backup Core : %s", err)
+
+        if not backups_list:
+            return {
+                "is_ok": False,
+                "date_sauvegarde": None,
+                "date_derniere_reussie": None,
+                "date_prochaine_planifiee": str(next_scheduled) if next_scheduled else "Non configurée",
+                "taille_sauvegarde": None,
+            }
+
+        def get_date(b):
+            d = b.get("date")
+            if isinstance(d, datetime):
+                return dt_util.as_utc(d)
+            if isinstance(d, str):
+                parsed = dt_util.parse_datetime(d)
+                if parsed:
+                    return dt_util.as_utc(parsed)
+            return datetime.min.replace(tzinfo=dt_util.UTC)
+
+        sorted_backups = sorted(backups_list, key=get_date, reverse=True)
+        latest_backup = sorted_backups[0]
+
+        is_failed = latest_backup.get("failed", False) or latest_backup.get("status") == "failed"
+        is_ok = not is_failed
+
+        last_dt = get_date(latest_backup)
+        date_sauvegarde = last_dt.isoformat() if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else str(latest_backup.get("date"))
+
+        last_successful_dt = None
+        for b in sorted_backups:
+            if not b.get("failed", False) and b.get("status") != "failed":
+                last_successful_dt = get_date(b)
+                break
+
+        if last_successful_dt and last_successful_dt != datetime.min.replace(tzinfo=dt_util.UTC):
+            date_derniere_reussie = last_successful_dt.isoformat()
+        else:
+            date_derniere_reussie = date_sauvegarde if is_ok else "Aucune"
+
+        if next_scheduled:
+            if isinstance(next_scheduled, datetime):
+                date_prochaine_planifiee = next_scheduled.isoformat()
+            else:
+                date_prochaine_planifiee = str(next_scheduled)
+        else:
+            date_prochaine_planifiee = "Non planifiée"
+
+        taille_sauvegarde = self._format_size(latest_backup.get("size"))
+
+        return {
+            "is_ok": is_ok,
+            "date_sauvegarde": date_sauvegarde,
+            "date_derniere_reussie": date_derniere_reussie,
+            "date_prochaine_planifiee": date_prochaine_planifiee,
+            "taille_sauvegarde": taille_sauvegarde,
         }
 
     async def _async_get_addons(self, excluded: list) -> list:
