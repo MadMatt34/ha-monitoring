@@ -7,7 +7,8 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     """Configuration initiale de l'intégration HA Monitoring."""
-    hass.async_create_task(
-        hass.helpers.discovery.async_load_platform("sensor", DOMAIN, {}, config)
-    )
+    for platform in ["sensor", "binary_sensor"]:
+        hass.async_create_task(
+            hass.helpers.discovery.async_load_platform(platform, DOMAIN, {}, config)
+        )
     return True
