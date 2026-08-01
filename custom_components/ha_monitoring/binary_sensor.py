@@ -1,4 +1,5 @@
 """Capteur binaire global pour HA Monitoring."""
+from datetime import timedelta
 import logging
 
 from homeassistant.components.binary_sensor import (
@@ -8,6 +9,7 @@ from homeassistant.components.binary_sensor import (
 
 from .const import (
     DOMAIN,
+    CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     UNIQUE_ID_STATUS,
     TRANSLATION_KEY_STATUS,
@@ -15,12 +17,14 @@ from .const import (
 )
 
 _LOGGER = logging.getLogger(__name__)
-SCAN_INTERVAL = DEFAULT_SCAN_INTERVAL
 
 
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Ajoute le capteur binaire de surveillance."""
-    async_add_entities([HAMonitoringStatusSensor(hass)], True)
+async def async_setup_entry(hass, entry, async_add_entities):
+    """Ajoute le capteur binaire via Config Entry."""
+    scan_interval_sec = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    scan_interval = timedelta(seconds=int(scan_interval_sec))
+
+    async_add_entities([HAMonitoringStatusSensor(hass, scan_interval)], True)
 
 
 class HAMonitoringStatusSensor(BinarySensorEntity):
@@ -32,23 +36,21 @@ class HAMonitoringStatusSensor(BinarySensorEntity):
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
     _attr_icon = ICON_STATUS
 
-    def __init__(self, hass):
+    def __init__(self, hass, scan_interval):
         self._hass = hass
+        self._attr_scan_interval = scan_interval
         self._is_on = False
         self._summary = {}
 
     @property
     def is_on(self):
-        """Retourne True (on) si au moins une erreur est détectée."""
         return self._is_on
 
     @property
     def extra_state_attributes(self):
-        """Retourne un dictionnaire récapitulatif des compteurs d'erreurs."""
         return self._summary
 
     async def async_update(self):
-        """Vérifie l'état des 4 capteurs de surveillance."""
         monitored_sensors = [
             "sensor.add_ons_en_erreur",
             "sensor.integrations_en_erreur",
