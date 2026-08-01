@@ -3,10 +3,18 @@
     "step": {
       "user": {
         "title": "HA Monitoring",
-        "description": "Configurez l'intervalle d'actualisation et le seuil d'inactivité des appareils.",
+        "description": "Configurez les délais d'actualisation et les listes d'exclusions par type de surveillance.",
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
-          "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)"
+          "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
+          "excluded_addons": "Add-ons à exclure (noms ou slugs)",
+          "excluded_integrations": "Intégrations à exclure (titres ou domaines)",
+          "excluded_repairs": "Réparations à exclure (mots-clés / identifiants)",
+          "excluded_automations": "Automations à exclure",
+          "excluded_scripts": "Scripts à exclure",
+          "excluded_updates": "Mises à jour à exclure",
+          "excluded_unavailable": "Entités indisponibles à exclure",
+          "excluded_offline": "Appareils/Capteurs hors ligne à exclure"
         }
       }
     },
@@ -23,10 +31,18 @@
     "step": {
       "init": {
         "title": "Options de HA Monitoring",
-        "description": "Modifier les paramètres de surveillance.",
+        "description": "Modifier les paramètres de surveillance et les exclusions.",
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
-          "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)"
+          "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
+          "excluded_addons": "Add-ons à exclure (noms ou slugs)",
+          "excluded_integrations": "Intégrations à exclure (titres ou domaines)",
+          "excluded_repairs": "Réparations à exclure (mots-clés / identifiants)",
+          "excluded_automations": "Automations à exclure",
+          "excluded_scripts": "Scripts à exclure",
+          "excluded_updates": "Mises à jour à exclure",
+          "excluded_unavailable": "Entités indisponibles à exclure",
+          "excluded_offline": "Appareils/Capteurs hors ligne à exclure"
         }
       }
     },
@@ -38,35 +54,17 @@
   },
   "entity": {
     "sensor": {
-      "addons_in_error": {
-        "name": "Add-ons en erreur"
-      },
-      "integrations_in_error": {
-        "name": "Intégrations en erreur"
-      },
-      "automations_in_error": {
-        "name": "Automations en erreur"
-      },
-      "scripts_in_error": {
-        "name": "Scripts en erreur"
-      },
-      "updates_pending": {
-        "name": "Mises à jour en attente"
-      },
-      "repairs_pending": {
-        "name": "Corrections en attente"
-      },
-      "unavailable_entities": {
-        "name": "Entités indisponibles"
-      },
-      "offline_devices": {
-        "name": "Appareils hors ligne"
-      }
+      "addons_in_error": { "name": "Add-ons en erreur" },
+      "integrations_in_error": { "name": "Intégrations en erreur" },
+      "automations_in_error": { "name": "Automations en erreur" },
+      "scripts_in_error": { "name": "Scripts en erreur" },
+      "updates_pending": { "name": "Mises à jour en attente" },
+      "repairs_pending": { "name": "Corrections en attente" },
+      "unavailable_entities": { "name": "Entités indisponibles" },
+      "offline_devices": { "name": "Appareils hors ligne" }
     },
     "binary_sensor": {
-      "global_status": {
-        "name": "Statut du système"
-      }
+      "global_status": { "name": "Statut du système" }
     }
   }
 }
