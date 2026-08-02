@@ -5,7 +5,6 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
-from homeassistant.helpers import config_validation as cv
 
 from .const import (
     DOMAIN,
@@ -175,7 +174,8 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(config_entry):
         """Gestionnaire d'options."""
-        return HAMonitoringOptionsFlowHandler()
+        return HAMonitoringOptionsFlowHandler(config_entry)
+
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère le menu d'options de HA Monitoring."""
@@ -187,5 +187,5 @@ class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            get_schema(self.config_entry.options)
+            data_schema=get_schema(self.config_entry.options),
         )
