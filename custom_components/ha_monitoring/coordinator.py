@@ -20,9 +20,11 @@ from .const import (
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
     CONF_STARTUP_DELAY,
+    CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STARTUP_DELAY,
+    DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
     INTEGRATION_ERROR_STATES,
 )
@@ -46,6 +48,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         self._boot_time = dt_util.utcnow()
         self._cached_backup_info = None
 
+        # Cache pour les traces d'automatisations et scripts
+        self._last_trace_check_time = None
+        self._cached_automations = []
+        self._cached_scripts = []
+
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
         super().__init__(
@@ -58,7 +65,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         # Écoute des événements de fin de sauvegarde
         self._setup_backup_listeners()
 
-    def _setup_backup_listeners( -> None:
+    def _setup_backup_listeners(self) -> None:
         """Écoute les événements déclenchés à la fin d'une sauvegarde (Core et Supervisor)."""
         @callback
         async def _async_on_backup_event(event):
@@ -109,14 +116,31 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             timeout_hours=offline_timeout,
         )
 
-        # 2. Collectes secondaires hors registre d'états
+        # 2. Analyse temporisée des traces d'automatisations & scripts (par défaut toutes les 15 min)
+        traces_scan_interval_min = options.get(
+            CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
+        )
+        traces_scan_interval_sec = float(traces_scan_interval_min) * 60
+
+        if (
+            self._last_trace_check_time is None
+            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
+        ):
+            _LOGGER.debug("Actualisation des traces d'automatisations et de scripts.")
+            self._cached_automations = self._get_trace_errors(
+                "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
+            )
+            self._cached_scripts = self._get_trace_errors(
+                "script", options.get(CONF_EXCLUDED_SCRIPTS, [])
+            )
+            self._last_trace_check_time = now
+
+        # 3. Collectes secondaires hors registre d'états
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = self._get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
-        automations = self._get_trace_errors("automation", options.get(CONF_EXCLUDED_AUTOMATIONS, []))
-        scripts = self._get_trace_errors("script", options.get(CONF_EXCLUDED_SCRIPTS, []))
         repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
 
-        # 3. Chargement de la sauvegarde si non encore mise en cache
+        # 4. Chargement de la sauvegarde si non encore mise en cache
         if self._cached_backup_info is None:
             self._cached_backup_info = await self._async_get_backup_info()
 
@@ -124,8 +148,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "in_startup_delay": False,
             "monitoring_addons": {"items": addons, "total": len(addons)},
             "monitoring_integrations": {"items": integrations, "total": len(integrations)},
-            "monitoring_automations": {"items": automations, "total": len(automations)},
-            "monitoring_scripts": {"items": scripts, "total": len(scripts)},
+            "monitoring_automations": {
+                "items": self._cached_automations,
+                "total": len(self._cached_automations),
+            },
+            "monitoring_scripts": {
+                "items": self._cached_scripts,
+                "total": len(self._cached_scripts),
+            },
             "monitoring_updates": {"items": updates, "total": len(updates)},
             "monitoring_repairs": {"items": repairs, "total": len(repairs)},
             "monitoring_unavailable": {"items": unavailable, "total": len(unavailable)},
@@ -231,6 +261,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "date_derniere_reussie": None,
                 "date_prochaine_planifiee": "Démarrage...",
                 "taille_sauvegarde": None,
+                "reason_failed": None,
             },
         }
 
@@ -287,6 +318,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                 "date": getattr(b, "date", None),
                                 "size": getattr(b, "size", 0),
                                 "failed": getattr(b, "failed", False),
+                                "reason": getattr(b, "reason", None) or getattr(b, "error", None),
                             })
 
                 if hasattr(backup_manager, "config") and hasattr(backup_manager.config, "create_backup"):
@@ -303,6 +335,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "date_derniere_reussie": None,
                 "date_prochaine_planifiee": str(next_scheduled) if next_scheduled else "Non configurée",
                 "taille_sauvegarde": None,
+                "reason_failed": "Aucune sauvegarde disponible",
             }
 
         def get_date(b):
@@ -320,6 +353,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         is_failed = latest_backup.get("failed", False) or latest_backup.get("status") == "failed"
         is_ok = not is_failed
+
+        reason_failed = None
+        if is_failed:
+            reason_failed = (
+                latest_backup.get("reason")
+                or latest_backup.get("error")
+                or latest_backup.get("failure_reason")
+                or "Raison d'échec inconnue"
+            )
 
         last_dt = get_date(latest_backup)
         date_sauvegarde = (
@@ -355,6 +397,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "date_derniere_reussie": date_derniere_reussie,
             "date_prochaine_planifiee": date_prochaine_planifiee,
             "taille_sauvegarde": taille_sauvegarde,
+            "reason_failed": reason_failed,
         }
 
     async def _async_get_addons(self, excluded: list) -> list:
