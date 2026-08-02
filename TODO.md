@@ -8,12 +8,11 @@ version EN (strings, translations, readme)
 TEST
 - backup en erreur
 - refresh manuel après une modif
-- changement des options individuellement
+- reload après une modif
+- changement des options individuellement (update:ok)
 
 CORRECT
-- infos backup non incomplètes (date next planif, reason failed)
-- click bouton pour forcer rafraichissement, ne pas remettre tout à zéro et ne pas tenir compte de la tempo de démarrage
-- reload de l'intég, ne pas remettre tout à zéro et ne pas tenir compte de la tempo de démarrage
+Nombre de zombies incorrect au démarrage/reload ???
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
@@ -30,3 +29,6 @@ DONE
 - dans l'attribut liste de l'entité updates, ajouter les informations de versions (version actuelle vers nouvelle version)
 - j'ai modifié le CONF_STARTUP_DELAY à 60 secondes depuis les options. Pour autant j'ai mesuré qu'il met 120 secondes (deux fois plus) avant de renseigner les entités
 - initialiser backup_status au démarrage de l'integ sans tenir compte tempo
+- infos backup non incomplètes (date next planif, reason failed)
+- click bouton pour forcer rafraichissement, ne pas remettre tout à zéro et ne pas tenir compte de la tempo de démarrage
+- reload de l'intég, ne pas remettre tout à zéro et ne pas tenir compte de la tempo de démarrage

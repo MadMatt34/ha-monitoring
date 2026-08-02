@@ -74,7 +74,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
     def __init__(self, hass: HomeAssistant, entry) -> None:
         self.entry = entry
-        self._boot_time = dt_util.utcnow()
+
+        # Stockage dans hass.data pour conserver la date du VRAI démarrage de HA
+        # (ne sera pas réinitialisé lors d'un rechargement de l'intégration)
+        if DOMAIN not in hass.data:
+            hass.data[DOMAIN] = {}
+        if "ha_start_time" not in hass.data[DOMAIN]:
+            hass.data[DOMAIN]["ha_start_time"] = dt_util.utcnow()
+
+        self._ha_start_time = hass.data[DOMAIN]["ha_start_time"]
+        self._skip_startup_delay = False
         self._cached_backup_info = None
         self._last_backup_failure_reason = None
         self._startup_timer_unsub = None
@@ -133,7 +142,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
 
-        self._boot_time = dt_util.utcnow() - timedelta(seconds=9999)
+        self._skip_startup_delay = True
         self._last_trace_check_time = None
         self._cached_backup_info = None
 
@@ -143,16 +152,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         """Récupère les métriques système."""
         startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
         now = dt_util.utcnow()
-        elapsed_seconds = (now - self._boot_time).total_seconds()
+        elapsed_seconds = (now - self._ha_start_time).total_seconds()
 
-        # Si HA est déjà démarré depuis plus longtemps que la temporisation, 
-        # on ignore la phase de démarrage même en cas de rechargement de l'intégration.
-        if self.hass.state == CoreState.running and elapsed_seconds >= startup_delay:
-            in_startup_phase = False
-        else:
-            in_startup_phase = (
-                self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
-            )
+        # Phase de démarrage uniquement si HA démarre ET que le temps écoulé depuis le boot est < délai
+        in_startup_phase = (
+            not self._skip_startup_delay
+            and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
+        )
 
         if self._cached_backup_info is None:
             self._cached_backup_info = await self._async_get_backup_info()
