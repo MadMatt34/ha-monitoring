@@ -145,9 +145,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._boot_time).total_seconds()
 
-        in_startup_phase = (
-            self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
-        )
+        # Si HA est déjà démarré depuis plus longtemps que la temporisation, 
+        # on ignore la phase de démarrage même en cas de rechargement de l'intégration.
+        if self.hass.state == CoreState.running and elapsed_seconds >= startup_delay:
+            in_startup_phase = False
+        else:
+            in_startup_phase = (
+                self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
+            )
 
         if self._cached_backup_info is None:
             self._cached_backup_info = await self._async_get_backup_info()
@@ -509,7 +514,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             for entity_id, entity_entry in ent_reg.entities.items():
                 if entity_entry.platform == "backup" and entity_entry.domain == "sensor":
                     state_obj = self.hass.states.get(entity_id)
-                    if state_obj and state_obj.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN, None, ""):
+                    if state_obj and state_obj.state not in (STATE_UNAVAILABLE, None, ""):
                         parsed_dt = dt_util.parse_datetime(state_obj.state)
                         if parsed_dt and parsed_dt > dt_util.utcnow():
                             next_scheduled = parsed_dt
