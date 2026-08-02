@@ -105,13 +105,20 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self.hass.state != CoreState.running or elapsed_seconds < startup_delay
         )
 
+        # On s'assure d'initialiser les infos de sauvegarde dès le premier cycle, même au démarrage
+        if self._cached_backup_info is None:
+            self._cached_backup_info = await self._async_get_backup_info()
+
         if in_startup_phase:
             remaining = max(0, int(startup_delay - elapsed_seconds))
             _LOGGER.debug(
                 "HA Monitoring en phase d'initialisation (%s s restantes). Alertes masquées.",
                 remaining,
             )
-            return self._empty_results(in_startup_delay=True)
+            # On retourne les résultats masqués mais avec la vraie information de sauvegarde
+            results = self._empty_results(in_startup_delay=True)
+            results["monitoring_backup"] = self._cached_backup_info
+            return results
 
         _LOGGER.debug("Analyse système optimisée active par HA Monitoring.")
 
