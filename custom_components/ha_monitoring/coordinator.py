@@ -255,9 +255,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                             if last_seen_dt:
                                 break
 
-                # Normalisation tz-aware en UTC
+                # Normalisation tz-aware
                 if last_seen_dt:
-                    last_seen_dt = dt_util.as_utc(last_seen_dt)
+                    if last_seen_dt.tzinfo is None:
+                        # Si la chaîne/timestamp est naïve, on lui attribue le fuseau UTC par défaut
+                        last_seen_dt = dt_util.utc_from_timestamp(last_seen_dt.timestamp()) if hasattr(last_seen_dt, "timestamp") else dt_util.as_utc(last_seen_dt)
+                    else:
+                        last_seen_dt = dt_util.as_utc(last_seen_dt)
 
                 # 3. Vérification du dépassement de délai
                 if last_seen_dt and last_seen_dt < cutoff:
@@ -280,7 +284,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                         if not any(item["device"] == display_name for item in offline):
                             offline.append({
                                 "device": display_name,
-                                "date": last_seen_dt.isoformat(),
+                                "date": dt_util.as_local(last_seen_dt).isoformat(),  # <--- Conversion en heure locale HA
                                 "platform": platform,
                             })
 
