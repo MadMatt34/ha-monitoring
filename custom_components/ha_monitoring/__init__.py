@@ -7,7 +7,7 @@ from .const import DOMAIN
 from .coordinator import HAMonitoringCoordinator  # Import du coordinator
 
 _LOGGER = logging.getLogger(__name__)
-PLATFORMS = ["sensor", "binary_sensor"]
+PLATFORMS = ["sensor", "binary_sensor", "button"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict):
