@@ -6,6 +6,7 @@
         "description": "Configurez les délais d'actualisation et les listes d'exclusions par type de surveillance.",
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
+          "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
           "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
           "startup_delay": "Délai de grâce au démarrage (en secondes)",
           "excluded_addons": "Add-ons à exclure (noms ou slugs)",
@@ -16,6 +17,9 @@
           "excluded_updates": "Mises à jour à exclure",
           "excluded_unavailable": "Entités indisponibles à exclure",
           "excluded_offline": "Appareils/Capteurs hors ligne à exclure"
+        },
+        "data_description": {
+          "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 15 min)."
         }
       }
     },
