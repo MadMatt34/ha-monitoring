@@ -5,11 +5,14 @@ import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import callback
 from homeassistant.helpers import selector
+from homeassistant.helpers import config_validation as cv
 
 from .const import (
     DOMAIN,
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
+    CONF_TRACES_SCAN_INTERVAL,
+    DEFAULT_TRACES_SCAN_INTERVAL,
     CONF_OFFLINE_TIMEOUT,
     DEFAULT_OFFLINE_TIMEOUT,
     CONF_STARTUP_DELAY,
@@ -32,6 +35,7 @@ def get_schema(options=None):
     options = options or {}
 
     current_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    current_traces_interval = options.get(CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL)
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
@@ -47,6 +51,18 @@ def get_schema(options=None):
                     step=5,
                     mode=selector.NumberSelectorMode.BOX,
                     unit_of_measurement="s",
+                )
+            ),
+            vol.Required(
+                CONF_TRACES_SCAN_INTERVAL,
+                default=current_traces_interval,
+            ): selector.NumberSelector(
+                selector.NumberSelectorConfig(
+                    min=1,
+                    max=1440,
+                    step=1,
+                    mode=selector.NumberSelectorMode.BOX,
+                    unit_of_measurement="m",
                 )
             ),
             vol.Required(
@@ -161,19 +177,15 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler()
 
-
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
-    """Flux de modification des options (Bouton CONFIGURER)."""
+    """Gère le menu d'options de HA Monitoring."""
 
     async def async_step_init(self, user_input=None):
-        """Formulaire d'édition des options."""
+        """Gère les options."""
         if user_input is not None:
-            return self.async_create_entry(
-                title="",
-                data=user_input,
-            )
+            return self.async_create_entry(title="", data=user_input)
 
         return self.async_show_form(
             step_id="init",
-            data_schema=get_schema(self.config_entry.options),
+            get_schema(self.config_entry.options)
         )
