@@ -43,6 +43,32 @@ def is_hassio_running(hass: HomeAssistant) -> bool:
     return "hassio" in hass.config.components
 
 
+def _format_date_local(val) -> str | None:
+    """Convertit un datetime ou une chaîne de date au format ISO avec le fuseau horaire local."""
+    if val is None or val == "":
+        return None
+
+    dt_obj = None
+    if isinstance(val, datetime):
+        dt_obj = val
+    elif isinstance(val, (int, float)):
+        try:
+            dt_obj = dt_util.utc_from_timestamp(val)
+        except Exception:
+            pass
+    elif isinstance(val, str):
+        dt_obj = dt_util.parse_datetime(val)
+        if not dt_obj:
+            return val  # Retourne les chaînes d'information directes (ex: "Non planifiée")
+
+    if dt_obj:
+        if dt_obj.tzinfo is None:
+            dt_obj = dt_util.as_utc(dt_obj)
+        return dt_util.as_local(dt_obj).isoformat()
+
+    return str(val)
+
+
 class HAMonitoringCoordinator(DataUpdateCoordinator):
     """Coordinator principal gérant les collectes et la temporisation."""
 
@@ -77,7 +103,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "Fin de sauvegarde détectée via l'événement '%s'. Actualisation de l'état.",
                 event.event_type,
             )
-            # Capture de la raison en cas d'échec explicite dans l'événement
             if event.event_type == "backup_failed" or event.data.get("status") == "failed":
                 self._last_backup_failure_reason = (
                     event.data.get("reason")
@@ -113,7 +138,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         self._boot_time = dt_util.utcnow() - timedelta(seconds=9999)
         self._last_trace_check_time = None
-        self._cached_backup_info = None  # Force le ré-interrogatoire des sauvegardes
+        self._cached_backup_info = None
 
         await self.async_refresh()
 
@@ -192,7 +217,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         integrations = await self._async_get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
         repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
 
-        # Note : self._cached_backup_info n'est PAS réinterrogé ici (reprise du cache)
         return {
             "in_startup_delay": False,
             "monitoring_addons": {"items": addons, "total": len(addons)},
@@ -322,7 +346,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                             offline.append(
                                 {
                                     "device": display_name,
-                                    "date": dt_util.as_local(last_seen_dt).isoformat(),
+                                    "date": _format_date_local(last_seen_dt),
                                     "platform": platform,
                                 }
                             )
@@ -358,7 +382,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return None
 
         if isinstance(size_val, (int, float)):
-            # Si supérieur à 10240, il s'agit vraisemblablement d'octets (Core Backup)
             if size_val > 10240:
                 mb = size_val / (1024 * 1024)
             else:
@@ -396,43 +419,88 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
         # 2. Module Backup Core (Manager HA)
-        if not backups_list and "backup" in self.hass.data:
+        if "backup" in self.hass.data:
             try:
                 backup_manager = self.hass.data["backup"]
                 raw_backups = None
 
-                if hasattr(backup_manager, "async_get_backups"):
-                    raw_backups = await backup_manager.async_get_backups()
-                elif hasattr(backup_manager, "backups"):
-                    raw_backups = backup_manager.backups
+                if not backups_list:
+                    if hasattr(backup_manager, "async_get_backups"):
+                        raw_backups = await backup_manager.async_get_backups()
+                    elif hasattr(backup_manager, "backups"):
+                        raw_backups = backup_manager.backups
 
-                if isinstance(raw_backups, dict):
-                    for b in raw_backups.values():
-                        if isinstance(b, dict):
-                            backups_list.append(b)
-                        else:
-                            backups_list.append({
-                                "slug": getattr(b, "slug", None) or getattr(b, "id", ""),
-                                "name": getattr(b, "name", ""),
-                                "date": getattr(b, "date", None),
-                                "size": getattr(b, "size", 0),
-                                "failed": getattr(b, "failed", False) or getattr(b, "status", "") == "failed",
-                                "reason": getattr(b, "reason", None) or getattr(b, "error", None),
-                            })
+                    if isinstance(raw_backups, dict):
+                        for b in raw_backups.values():
+                            if isinstance(b, dict):
+                                backups_list.append(b)
+                            else:
+                                backups_list.append({
+                                    "slug": getattr(b, "slug", None) or getattr(b, "id", ""),
+                                    "name": getattr(b, "name", ""),
+                                    "date": getattr(b, "date", None),
+                                    "size": getattr(b, "size", 0),
+                                    "failed": getattr(b, "failed", False) or getattr(b, "status", "") == "failed",
+                                    "reason": getattr(b, "reason", None) or getattr(b, "error", None),
+                                })
 
-                if hasattr(backup_manager, "config") and hasattr(backup_manager.config, "create_backup"):
-                    schedule = getattr(backup_manager.config, "schedule", None)
-                    if schedule and hasattr(schedule, "next_execution"):
-                        next_scheduled = schedule.next_execution
+                # Recherche approfondie de la prochaine planification dans le Backup Manager
+                if hasattr(backup_manager, "async_get_config") and callable(backup_manager.async_get_config):
+                    try:
+                        cfg = await backup_manager.async_get_config()
+                        if isinstance(cfg, dict):
+                            sch = cfg.get("schedule", {})
+                            if isinstance(sch, dict):
+                                next_scheduled = sch.get("next_execution") or sch.get("next_scheduled") or sch.get("next_date")
+                            elif hasattr(sch, "next_execution"):
+                                next_scheduled = getattr(sch, "next_execution", None)
+                        elif hasattr(cfg, "schedule"):
+                            sch = getattr(cfg, "schedule", None)
+                            if sch:
+                                next_scheduled = getattr(sch, "next_execution", None) or getattr(sch, "next_scheduled", None)
+                    except Exception as err:
+                        _LOGGER.debug("Erreur async_get_config backup : %s", err)
+
+                if not next_scheduled:
+                    for target in (backup_manager, getattr(backup_manager, "config", None)):
+                        if not target:
+                            continue
+                        sch = getattr(target, "schedule", None) or target
+                        for attr_name in ("next_execution", "next_scheduled", "next_date", "next_execution_date", "next_run"):
+                            val = getattr(sch, attr_name, None)
+                            if val is not None:
+                                next_scheduled = val
+                                break
+                            if isinstance(sch, dict) and attr_name in sch:
+                                next_scheduled = sch[attr_name]
+                                break
+                        if next_scheduled:
+                            break
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Backup Core : %s", err)
+
+        # 3. Fallback recherche planification Supervisor
+        if not next_scheduled and is_hassio_running(self.hass):
+            try:
+                client = self.hass.data.get("hassio")
+                if client and hasattr(client, "send_command"):
+                    cfg_resp = await client.send_command("/backups/config", method="get")
+                    if isinstance(cfg_resp, dict):
+                        data = cfg_resp.get("data", cfg_resp)
+                        next_scheduled = (
+                            data.get("next_execution")
+                            or data.get("next_scheduled")
+                            or data.get("next_backup")
+                        )
+            except Exception as err:
+                _LOGGER.debug("Erreur analyse planification Supervisor : %s", err)
 
         if not backups_list:
             return {
                 "is_ok": False,
                 "date_sauvegarde": None,
                 "date_derniere_reussie": None,
-                "date_prochaine_planifiee": str(next_scheduled) if next_scheduled else "Non configurée",
+                "date_prochaine_planifiee": _format_date_local(next_scheduled) if next_scheduled else "Non configurée",
                 "taille_sauvegarde": None,
                 "reason_failed": self._last_backup_failure_reason or "Aucune sauvegarde disponible",
             }
@@ -465,11 +533,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self._last_backup_failure_reason = reason_failed
 
         last_dt = get_date(latest_backup)
-        date_sauvegarde = (
-            last_dt.isoformat()
-            if last_dt != datetime.min.replace(tzinfo=dt_util.UTC)
-            else str(latest_backup.get("date"))
-        )
+        date_sauvegarde = _format_date_local(last_dt) if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else _format_date_local(latest_backup.get("date"))
 
         last_successful_dt = None
         for b in sorted_backups:
@@ -478,18 +542,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 break
 
         if last_successful_dt and last_successful_dt != datetime.min.replace(tzinfo=dt_util.UTC):
-            date_derniere_reussie = last_successful_dt.isoformat()
+            date_derniere_reussie = _format_date_local(last_successful_dt)
         else:
             date_derniere_reussie = date_sauvegarde if is_ok else "Aucune"
 
-        if next_scheduled:
-            if isinstance(next_scheduled, datetime):
-                date_prochaine_planifiee = next_scheduled.isoformat()
-            else:
-                date_prochaine_planifiee = str(next_scheduled)
-        else:
-            date_prochaine_planifiee = "Non planifiée"
-
+        date_prochaine_planifiee = _format_date_local(next_scheduled) if next_scheduled else "Non planifiée"
         taille_sauvegarde = self._format_size(latest_backup.get("size"))
 
         return {
