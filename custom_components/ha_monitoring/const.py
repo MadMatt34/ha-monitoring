@@ -26,6 +26,14 @@ CONF_EXCLUDED_UPDATES = "excluded_updates"
 CONF_EXCLUDED_REPAIRS = "excluded_repairs"
 CONF_EXCLUDED_UNAVAILABLE = "excluded_unavailable"
 CONF_EXCLUDED_OFFLINE = "excluded_offline"
+# Domaines ou entités indésirables masqués par défaut
+DEFAULT_EXCLUDED_UNAVAILABLE = [
+    "button",
+    "conversation",
+    "scene",
+    "stt",
+    "tts",
+]
 
 # Icônes MDI
 ICON_ADDONS = "mdi:puzzle-remove-outline"

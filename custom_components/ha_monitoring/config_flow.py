@@ -3,7 +3,7 @@ import logging
 import voluptuous as vol
 
 from homeassistant import config_entries
-from homeassistant.core import callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import selector
 
 from .const import (
@@ -23,13 +23,14 @@ from .const import (
     CONF_EXCLUDED_UPDATES,
     CONF_EXCLUDED_REPAIRS,
     CONF_EXCLUDED_UNAVAILABLE,
+    DEFAULT_EXCLUDED_UNAVAILABLE,
     CONF_EXCLUDED_OFFLINE,
 )
 
 _LOGGER = logging.getLogger(__name__)
 
 
-def get_schema(options=None):
+def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -> vol.Schema:
     """Construit le schéma du formulaire avec sélecteurs et exclusions."""
     options = options or {}
 
@@ -37,6 +38,25 @@ def get_schema(options=None):
     current_traces_interval = options.get(CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL)
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
+
+    # Récupération des valeurs actuelles ou par défaut pour indisponibles
+    current_excluded_unavailable = options.get(
+        CONF_EXCLUDED_UNAVAILABLE, DEFAULT_EXCLUDED_UNAVAILABLE
+    )
+
+    # Génération dynamique des choix (Domaines + Entités) si hass est disponible
+    unavailable_options = []
+    if hass is not None:
+        domains = sorted(list(hass.states.async_entity_ids_count().keys()))
+        all_entities = sorted([s.entity_id for s in hass.states.async_all()])
+
+        unavailable_options = [
+            selector.SelectOptionDict(value=d, label=f"📁 Domaine: {d}")
+            for d in domains
+        ] + [
+            selector.SelectOptionDict(value=e, label=f"🔹 Entité: {e}")
+            for e in all_entities
+        ]
 
     return vol.Schema(
         {
@@ -132,11 +152,17 @@ def get_schema(options=None):
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="update", multiple=True)
             ),
+            # Exclusions Hybrides - Entités Indisponibles (Domaines + Entités)
             vol.Optional(
                 CONF_EXCLUDED_UNAVAILABLE,
-                default=options.get(CONF_EXCLUDED_UNAVAILABLE) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(multiple=True)
+                default=current_excluded_unavailable,
+            ): selector.SelectSelector(
+                selector.SelectSelectorConfig(
+                    options=unavailable_options,
+                    custom_value=True,
+                    multiple=True,
+                    mode=selector.SelectSelectorMode.DROPDOWN,
+                )
             ),
             vol.Optional(
                 CONF_EXCLUDED_OFFLINE,
@@ -167,7 +193,7 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=get_schema(),
+            data_schema=get_schema(self.hass),
         )
 
     @staticmethod
@@ -182,7 +208,7 @@ class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialise le flux d'options."""
-        self._config_entry = config_entry
+        self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Gère l'étape initiale du menu d'options."""
@@ -191,5 +217,5 @@ class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
 
         return self.async_show_form(
             step_id="init",
-            data_schema=get_schema(self.config_entry.options),
+            data_schema=get_schema(self.hass, self.config_entry.options),
         )

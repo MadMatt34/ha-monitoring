@@ -20,6 +20,7 @@ from .const import (
     CONF_EXCLUDED_SCRIPTS,
     CONF_EXCLUDED_UNAVAILABLE,
     CONF_EXCLUDED_UPDATES,
+    DEFAULT_EXCLUDED_UNAVAILABLE,
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
     CONF_STARTUP_DELAY,
@@ -185,10 +186,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
+        excluded_unavailable = options.get(CONF_EXCLUDED_UNAVAILABLE, DEFAULT_EXCLUDED_UNAVAILABLE)
 
         updates, unavailable, offline = self._scan_all_states(
             excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
-            excluded_unavailable=options.get(CONF_EXCLUDED_UNAVAILABLE, []),
+            excluded_unavailable=excluded_unavailable,
             excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
             timeout_hours=offline_timeout,
         )
@@ -257,15 +259,17 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         for state_obj in self.hass.states.async_all():
             entity_id = state_obj.entity_id
+            domain = state_obj.domain
             friendly_name = state_obj.attributes.get("friendly_name") or entity_id
 
+            # Verification : exclusion par ID d'entité OU par Domaine
             if state_obj.state in (STATE_UNAVAILABLE):
-                if entity_id not in excluded_unavailable:
+                if entity_id not in excluded_unavailable and domain not in excluded_unavailable:
                     unavailable.append(
                         {
                             "entity_id": entity_id,
                             "name": friendly_name,
-                            "domain": state_obj.domain,
+                            "domain": domain,
                             "state": state_obj.state,
                         }
                     )
