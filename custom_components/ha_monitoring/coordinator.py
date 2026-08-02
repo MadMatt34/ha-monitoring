@@ -84,6 +84,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         ):
             self.hass.bus.async_listen(event_type, _async_on_backup_event)
 
+    async def async_force_refresh(self) -> None:
+        """Force la réinitialisation des caches et le rafraîchissement immédiat."""
+        _LOGGER.debug("Réinitialisation des caches pour scan forcé.")
+        self._last_trace_check_time = None
+        self._cached_backup_info = None
+        await self.async_request_refresh()
+
     async def _async_update_data(self) -> dict:
         """Récupère les métriques système en optimisant le parcours des états."""
         startup_delay = self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
