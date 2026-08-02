@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime, timedelta
 
-from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
+from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.loader import async_get_integration
 from homeassistant.helpers import issue_registry as ir
@@ -50,6 +50,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         self.entry = entry
         self._boot_time = dt_util.utcnow()
         self._cached_backup_info = None
+        self._last_backup_failure_reason = None
         self._startup_timer_unsub = None
 
         # Cache pour les traces d'automatisations et scripts
@@ -76,6 +77,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "Fin de sauvegarde détectée via l'événement '%s'. Actualisation de l'état.",
                 event.event_type,
             )
+            # Capture de la raison en cas d'échec explicite dans l'événement
+            if event.event_type == "backup_failed" or event.data.get("status") == "failed":
+                self._last_backup_failure_reason = (
+                    event.data.get("reason")
+                    or event.data.get("error")
+                    or event.data.get("message")
+                    or "Échec de sauvegarde signalé par événement"
+                )
+
             self._cached_backup_info = await self._async_get_backup_info()
             self.async_update_listeners()
 
@@ -101,10 +111,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
 
-        # Repousse le temps de démarrage pour contourner le startup delay
         self._boot_time = dt_util.utcnow() - timedelta(seconds=9999)
         self._last_trace_check_time = None
-        self._cached_backup_info = None
+        self._cached_backup_info = None  # Force le ré-interrogatoire des sauvegardes
 
         await self.async_refresh()
 
@@ -114,12 +123,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._boot_time).total_seconds()
 
-        # Phase de démarrage (Marge de précaution de 0.5s pour éviter les décalages d'arrondi)
         in_startup_phase = (
             self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
         )
 
-        # Initialisation des infos de sauvegarde dès le premier cycle
+        # Interrogation unique au premier lancement / rechargement
         if self._cached_backup_info is None:
             self._cached_backup_info = await self._async_get_backup_info()
 
@@ -130,7 +138,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 remaining,
             )
 
-            # Programmer un rafraîchissement précis à la fin exacte de la temporisation
             if not self._startup_timer_unsub and remaining > 0:
                 def _force_refresh_after_delay(_):
                     self._startup_timer_unsub = None
@@ -144,7 +151,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             results["monitoring_backup"] = self._cached_backup_info
             return results
 
-        # Nettoyage si la phase de démarrage est franchie
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
@@ -154,7 +160,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
-        # 1. Parcours UNIQUE du registre d'états (Updates, Unavailable, Offline)
+        # 1. Parcours UNIQUE du registre d'états
         updates, unavailable, offline = self._scan_all_states(
             excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
             excluded_unavailable=options.get(CONF_EXCLUDED_UNAVAILABLE, []),
@@ -162,7 +168,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             timeout_hours=offline_timeout,
         )
 
-        # 2. Analyse temporisée des traces d'automatisations & scripts (par défaut toutes les 15 min)
+        # 2. Analyse temporisée des traces
         traces_scan_interval_min = options.get(
             CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
         )
@@ -181,15 +187,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             )
             self._last_trace_check_time = now
 
-        # 3. Collectes secondaires hors registre d'états
+        # 3. Collectes secondaires
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await self._async_get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
         repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
 
-        # 4. Chargement de la sauvegarde si non encore mise en cache
-        if self._cached_backup_info is None:
-            self._cached_backup_info = await self._async_get_backup_info()
-
+        # Note : self._cached_backup_info n'est PAS réinterrogé ici (reprise du cache)
         return {
             "in_startup_delay": False,
             "monitoring_addons": {"items": addons, "total": len(addons)},
@@ -228,7 +231,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         unavailable = []
         offline = []
 
-        # Récupération des registres HA
         ent_reg = er.async_get(self.hass)
         dev_reg = dr.async_get(self.hass)
 
@@ -236,8 +238,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             entity_id = state_obj.entity_id
             friendly_name = state_obj.attributes.get("friendly_name") or entity_id
 
-            # A. Entités Indisponibles
-            if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+            if state_obj.state in (STATE_UNAVAILABLE):
                 if entity_id not in excluded_unavailable:
                     unavailable.append(
                         {
@@ -249,7 +250,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     )
                 continue
 
-            # B. Mises à jour en attente (Domaine update)
             if state_obj.domain == "update" and state_obj.state == "on":
                 if entity_id not in excluded_updates:
                     installed_version = state_obj.attributes.get("installed_version") or "Inconnue"
@@ -265,20 +265,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     )
                 continue
 
-            # C. Appareils hors ligne (Filtrage sur la terminaison du nom d'entité)
             if entity_id.endswith(("last_seen", "derniere_connexion")):
                 if entity_id in excluded_offline or state_obj.state in (
                     STATE_UNAVAILABLE,
-                    STATE_UNKNOWN,
                 ):
                     continue
 
                 last_seen_dt = None
-
-                # 1. Lecture prioritaire de la date dans l'état de l'entité
                 last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
 
-                # 2. Si l'état n'est pas une chaîne ISO valide, fallback sur les attributs
                 if not last_seen_dt and state_obj.attributes:
                     attrs = state_obj.attributes
                     for attr_key in LAST_SEEN_ATTRS:
@@ -298,7 +293,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                             if last_seen_dt:
                                 break
 
-                # Normalisation tz-aware
                 if last_seen_dt:
                     if last_seen_dt.tzinfo is None:
                         last_seen_dt = (
@@ -309,12 +303,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     else:
                         last_seen_dt = dt_util.as_utc(last_seen_dt)
 
-                # 3. Vérification du dépassement de délai
                 if last_seen_dt and last_seen_dt < cutoff:
                     device_name = None
                     platform = "inconnu"
 
-                    # Recherche des métriques dans le registre d'entités et d'appareils
                     entity_entry = ent_reg.async_get(entity_id)
                     if entity_entry:
                         platform = entity_entry.platform or "inconnu"
@@ -326,7 +318,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     display_name = device_name or friendly_name
 
                     if display_name not in excluded_offline and entity_id not in excluded_offline:
-                        # Évite les doublons si plusieurs entités last_seen pointent vers le même appareil
                         if not any(item["device"] == display_name for item in offline):
                             offline.append(
                                 {
@@ -361,21 +352,22 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             },
         }
 
-    def _format_size(self, size_bytes_or_mb) -> str | None:
-        """Formate la taille en Mo ou Go."""
-        if size_bytes_or_mb is None:
+    def _format_size(self, size_val) -> str | None:
+        """Formate la taille en Mo ou Go en gérant les octets et les Mégaoctets."""
+        if size_val is None:
             return None
 
-        if isinstance(size_bytes_or_mb, (int, float)):
-            if size_bytes_or_mb > 1024 * 1024:
-                mb = size_bytes_or_mb / (1024 * 1024)
+        if isinstance(size_val, (int, float)):
+            # Si supérieur à 10240, il s'agit vraisemblablement d'octets (Core Backup)
+            if size_val > 10240:
+                mb = size_val / (1024 * 1024)
             else:
-                mb = size_bytes_or_mb
+                mb = float(size_val)
 
             if mb >= 1024:
                 return f"{round(mb / 1024, 2)} Go"
             return f"{round(mb, 2)} Mo"
-        return str(size_bytes_or_mb)
+        return str(size_val)
 
     async def _async_get_backup_info(self) -> dict:
         """Interroge le gestionnaire de sauvegardes Supervisor ou Core."""
@@ -395,25 +387,36 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     elif hasattr(client, "send_command"):
                         backups_info = await client.send_command("/backups", method="get")
 
-                    if isinstance(backups_info, dict) and "backups" in backups_info:
-                        backups_list = backups_info.get("backups", [])
+                    if isinstance(backups_info, dict):
+                        if "data" in backups_info and isinstance(backups_info["data"], dict):
+                            backups_list = backups_info["data"].get("backups", [])
+                        elif "backups" in backups_info:
+                            backups_list = backups_info.get("backups", [])
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
-        # 2. Module Backup Core
+        # 2. Module Backup Core (Manager HA)
         if not backups_list and "backup" in self.hass.data:
             try:
                 backup_manager = self.hass.data["backup"]
-                if hasattr(backup_manager, "backups"):
+                raw_backups = None
+
+                if hasattr(backup_manager, "async_get_backups"):
+                    raw_backups = await backup_manager.async_get_backups()
+                elif hasattr(backup_manager, "backups"):
                     raw_backups = backup_manager.backups
-                    if isinstance(raw_backups, dict):
-                        for b in raw_backups.values():
+
+                if isinstance(raw_backups, dict):
+                    for b in raw_backups.values():
+                        if isinstance(b, dict):
+                            backups_list.append(b)
+                        else:
                             backups_list.append({
                                 "slug": getattr(b, "slug", None) or getattr(b, "id", ""),
                                 "name": getattr(b, "name", ""),
                                 "date": getattr(b, "date", None),
                                 "size": getattr(b, "size", 0),
-                                "failed": getattr(b, "failed", False),
+                                "failed": getattr(b, "failed", False) or getattr(b, "status", "") == "failed",
                                 "reason": getattr(b, "reason", None) or getattr(b, "error", None),
                             })
 
@@ -431,7 +434,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "date_derniere_reussie": None,
                 "date_prochaine_planifiee": str(next_scheduled) if next_scheduled else "Non configurée",
                 "taille_sauvegarde": None,
-                "reason_failed": "Aucune sauvegarde disponible",
+                "reason_failed": self._last_backup_failure_reason or "Aucune sauvegarde disponible",
             }
 
         def get_date(b):
@@ -450,14 +453,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         is_failed = latest_backup.get("failed", False) or latest_backup.get("status") == "failed"
         is_ok = not is_failed
 
-        reason_failed = None
+        reason_failed = self._last_backup_failure_reason
         if is_failed:
             reason_failed = (
                 latest_backup.get("reason")
                 or latest_backup.get("error")
                 or latest_backup.get("failure_reason")
+                or self._last_backup_failure_reason
                 or "Raison d'échec inconnue"
             )
+            self._last_backup_failure_reason = reason_failed
 
         last_dt = get_date(latest_backup)
         date_sauvegarde = (
