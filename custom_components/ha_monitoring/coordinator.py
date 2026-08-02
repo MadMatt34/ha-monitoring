@@ -156,7 +156,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         # 3. Collectes secondaires hors registre d'états
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
-        integrations = await self._get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
+        integrations = await self._async_get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
         repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
 
         # 4. Chargement de la sauvegarde si non encore mise en cache
@@ -447,7 +447,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             if hasattr(client, "async_get_addons_info"):
                 addons_info = await client.async_get_addons_info()
             elif hasattr(client, "get_addons_info"):
-                addons_info = await client.get_addons_info()
+                addons_info = await client._async_get_addons_info()
             else:
                 return []
 
