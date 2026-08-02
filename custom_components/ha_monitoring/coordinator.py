@@ -1,9 +1,9 @@
-"""DataUpdateCoordinator centralisé pour HA Monitoring."""
+"""DataUpdateCoordinator centralisé et optimisé pour HA Monitoring."""
 import logging
 from datetime import datetime, timedelta
 
 from homeassistant.components.sensor import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import CoreState, HomeAssistant
+from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -29,6 +29,9 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Attributs recherchés pour la date de dernière présence
+LAST_SEEN_ATTRS = ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp")
+
 
 def is_hassio_running(hass: HomeAssistant) -> bool:
     """Vérifie si Home Assistant s'exécute sous Supervisor/Hassio."""
@@ -41,6 +44,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry) -> None:
         self.entry = entry
         self._boot_time = dt_util.utcnow()
+        self._cached_backup_info = None
 
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
@@ -51,16 +55,37 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=int(scan_interval)),
         )
 
+        # Écoute des événements de fin de sauvegarde
+        self._setup_backup_listeners()
+
+    def _setup_backup_listeners( -> None:
+        """Écoute les événements déclenchés à la fin d'une sauvegarde (Core et Supervisor)."""
+        @callback
+        async def _async_on_backup_event(event):
+            _LOGGER.debug(
+                "Fin de sauvegarde détectée via l'événement '%s'. Actualisation de l'état.",
+                event.event_type,
+            )
+            self._cached_backup_info = await self._async_get_backup_info()
+            self.async_update_listeners()
+
+        for event_type in (
+            "backup_completed",
+            "backup_successful",
+            "backup_failed",
+            "hassio_backup_completed",
+        ):
+            self.hass.bus.async_listen(event_type, _async_on_backup_event)
+
     async def _async_update_data(self) -> dict:
-        """Récupère les métriques système en respectant le délai de démarrage."""
+        """Récupère les métriques système en optimisant le parcours des états."""
         startup_delay = self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._boot_time).total_seconds()
 
-        # Phase de démarrage : temporisation active si HA démarre encore ou délai non écoulé
+        # Phase de démarrage
         in_startup_phase = (
-            self.hass.state != CoreState.running
-            or elapsed_seconds < startup_delay
+            self.hass.state != CoreState.running or elapsed_seconds < startup_delay
         )
 
         if in_startup_phase:
@@ -71,23 +96,29 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             )
             return self._empty_results(in_startup_delay=True)
 
-        _LOGGER.debug("Analyse système active par HA Monitoring.")
+        _LOGGER.debug("Analyse système optimisée active par HA Monitoring.")
 
         options = self.entry.options
+        offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
-        # Collecte des métriques
+        # 1. Parcours UNIQUE du registre d'états (Updates, Unavailable, Offline)
+        updates, unavailable, offline = self._scan_all_states(
+            excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
+            excluded_unavailable=options.get(CONF_EXCLUDED_UNAVAILABLE, []),
+            excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
+            timeout_hours=offline_timeout,
+        )
+
+        # 2. Collectes secondaires hors registre d'états
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = self._get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
         automations = self._get_trace_errors("automation", options.get(CONF_EXCLUDED_AUTOMATIONS, []))
         scripts = self._get_trace_errors("script", options.get(CONF_EXCLUDED_SCRIPTS, []))
-        updates = self._get_pending_updates(options.get(CONF_EXCLUDED_UPDATES, []))
         repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
-        unavailable = self._get_unavailable_entities(options.get(CONF_EXCLUDED_UNAVAILABLE, []))
-        offline, offline_timeout = self._get_offline_devices(
-            options.get(CONF_EXCLUDED_OFFLINE, []),
-            options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT),
-        )
-        backup_info = await self._async_get_backup_info()
+
+        # 3. Chargement de la sauvegarde si non encore mise en cache
+        if self._cached_backup_info is None:
+            self._cached_backup_info = await self._async_get_backup_info()
 
         return {
             "in_startup_delay": False,
@@ -103,8 +134,83 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "total": len(offline),
                 "timeout": offline_timeout,
             },
-            "monitoring_backup": backup_info,
+            "monitoring_backup": self._cached_backup_info,
         }
+
+    def _scan_all_states(
+        self,
+        excluded_updates: list,
+        excluded_unavailable: list,
+        excluded_offline: list,
+        timeout_hours: float,
+    ) -> tuple[list, list, list]:
+        """Parcourt TOUS les états HA en une seule passe."""
+        now = dt_util.now()
+        cutoff = now - timedelta(hours=float(timeout_hours))
+
+        updates = []
+        unavailable = []
+        offline = []
+
+        for state_obj in self.hass.states.async_all():
+            entity_id = state_obj.entity_id
+            friendly_name = state_obj.attributes.get("friendly_name") or entity_id
+
+            # A. Entités Indisponibles
+            if state_obj.state == STATE_UNAVAILABLE:
+                if entity_id not in excluded_unavailable and friendly_name not in unavailable:
+                    unavailable.append(friendly_name)
+                continue
+
+            # B. Mises à jour en attente (Domaine update)
+            if entity_id.startswith("update."):
+                if (
+                    entity_id not in excluded_updates
+                    and state_obj.state == "on"
+                    and friendly_name not in updates
+                ):
+                    updates.append(friendly_name)
+                continue
+
+            # C. Appareils hors ligne (Strictement basés sur la terminaison de l'entity_id)
+            if entity_id.endswith(("last_seen", "derniere_connexion")):
+                if entity_id in excluded_offline or state_obj.state in (
+                    STATE_UNAVAILABLE,
+                    STATE_UNKNOWN,
+                ):
+                    continue
+
+                last_seen_dt = None
+
+                # Essai de parsing direct de l'état
+                last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
+
+                # Si l'état n'est pas une date valide, recherche dans les attributs connus
+                if not last_seen_dt and state_obj.attributes:
+                    attrs = state_obj.attributes
+                    for attr_key in LAST_SEEN_ATTRS:
+                        val = attrs.get(attr_key)
+                        if val is not None:
+                            if isinstance(val, (int, float)):
+                                try:
+                                    ts = val / 1000.0 if val > 1e11 else float(val)
+                                    last_seen_dt = dt_util.utc_from_timestamp(ts)
+                                except Exception:
+                                    pass
+                            elif isinstance(val, str):
+                                last_seen_dt = dt_util.parse_datetime(val)
+                            elif isinstance(val, datetime):
+                                last_seen_dt = val
+
+                            if last_seen_dt:
+                                break
+
+                # Vérification du dépassement de délai
+                if last_seen_dt and dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
+                    if friendly_name not in offline:
+                        offline.append(friendly_name)
+
+        return updates, unavailable, offline
 
     def _empty_results(self, in_startup_delay: bool) -> dict:
         """Résultats neutres pendant la temporisation de démarrage."""
@@ -216,7 +322,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         is_ok = not is_failed
 
         last_dt = get_date(latest_backup)
-        date_sauvegarde = last_dt.isoformat() if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else str(latest_backup.get("date"))
+        date_sauvegarde = (
+            last_dt.isoformat()
+            if last_dt != datetime.min.replace(tzinfo=dt_util.UTC)
+            else str(latest_backup.get("date"))
+        )
 
         last_successful_dt = None
         for b in sorted_backups:
@@ -248,6 +358,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         }
 
     async def _async_get_addons(self, excluded: list) -> list:
+        """Récupère la liste des add-ons en état anormal."""
         if not is_hassio_running(self.hass):
             return []
         client = self.hass.data.get("hassio")
@@ -270,7 +381,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 if name in excluded or slug in excluded:
                     continue
 
-                if (addon.get("watchdog", False) or addon.get("boot") == "auto") and addon.get("state") in ["stopped", "unknown"]:
+                if (addon.get("watchdog", False) or addon.get("boot") == "auto") and addon.get(
+                    "state"
+                ) in ["stopped", "unknown"]:
                     failed.append(name or slug)
             return failed
         except Exception as err:
@@ -278,6 +391,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return []
 
     def _get_failed_integrations(self, excluded: list) -> list:
+        """Récupère les intégrations en état d'erreur de chargement."""
         failed = []
         for entry in self.hass.config_entries.async_entries():
             if entry.state in INTEGRATION_ERROR_STATES:
@@ -287,6 +401,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         return failed
 
     def _get_trace_errors(self, domain: str, excluded: list) -> list:
+        """Extrait les erreurs des traces d'automatisations ou de scripts."""
         trace_data = self.hass.data.get("trace", {})
         failed = []
 
@@ -304,7 +419,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception:
                 continue
 
-            error = latest_trace.as_dict().get("error") if hasattr(latest_trace, "as_dict") else latest_trace.get("error") if isinstance(latest_trace, dict) else None
+            error = (
+                latest_trace.as_dict().get("error")
+                if hasattr(latest_trace, "as_dict")
+                else latest_trace.get("error")
+                if isinstance(latest_trace, dict)
+                else None
+            )
 
             if error:
                 entity_id = key if key.startswith(f"{domain}.") else None
@@ -336,18 +457,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         return failed
 
-    def _get_pending_updates(self, excluded: list) -> list:
-        pending = []
-        for state_obj in self.hass.states.async_all("update"):
-            if state_obj.entity_id in excluded:
-                continue
-            if state_obj.state == "on":
-                name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
-                if name not in pending:
-                    pending.append(name)
-        return pending
-
     def _get_pending_repairs(self, excluded: list) -> list:
+        """Récupère la liste des réparations en attente."""
         issue_registry = ir.async_get(self.hass)
         pending = []
         for issue in issue_registry.issues.values():
@@ -362,54 +473,3 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             if issue_name not in pending:
                 pending.append(issue_name)
         return pending
-
-    def _get_unavailable_entities(self, excluded: list) -> list:
-        unavailable = []
-        for state_obj in self.hass.states.async_all():
-            if state_obj.entity_id in excluded:
-                continue
-            if state_obj.state == STATE_UNAVAILABLE:
-                name = state_obj.attributes.get("friendly_name") or state_obj.entity_id
-                if name not in unavailable:
-                    unavailable.append(name)
-        return unavailable
-
-    def _get_offline_devices(self, excluded: list, timeout_hours: float) -> tuple[list, float]:
-        now = dt_util.now()
-        cutoff = now - timedelta(hours=float(timeout_hours))
-        offline = []
-
-        for state_obj in self.hass.states.async_all():
-            if state_obj.entity_id in excluded or state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
-                continue
-
-            last_seen_dt = None
-            entity_id = state_obj.entity_id
-
-            if any(term in entity_id for term in ("last_seen", "derniere_connexion", "last_reported")):
-                last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
-
-            if not last_seen_dt and state_obj.attributes:
-                for attr_key in ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp"):
-                    val = state_obj.attributes.get(attr_key)
-                    if val is not None:
-                        if isinstance(val, (int, float)):
-                            try:
-                                ts = val / 1000.0 if val > 1e11 else float(val)
-                                last_seen_dt = dt_util.utc_from_timestamp(ts)
-                            except Exception:
-                                pass
-                        elif isinstance(val, str):
-                            last_seen_dt = dt_util.parse_datetime(val)
-                        elif isinstance(val, datetime):
-                            last_seen_dt = val
-
-                        if last_seen_dt:
-                            break
-
-            if last_seen_dt and dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
-                name = state_obj.attributes.get("friendly_name") or entity_id
-                if name not in offline:
-                    offline.append(name)
-
-        return offline, timeout_hours
