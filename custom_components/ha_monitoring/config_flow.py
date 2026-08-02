@@ -176,6 +176,7 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
+
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options de configuration de HA Monitoring."""
 
