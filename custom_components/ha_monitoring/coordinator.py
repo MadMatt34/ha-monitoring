@@ -3,7 +3,7 @@ import logging
 from datetime import datetime, timedelta
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
-from homeassistant.core import CoreState, HomeAssistant, callback
+from homeassistant.core import CoreState, HomeAssistant
 from homeassistant.loader import async_get_integration
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
@@ -33,7 +33,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Attributs recherchés pour la date de dernière présence
+# Attributs de secours au cas où l'état ne soit pas directement parsable
 LAST_SEEN_ATTRS = ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp")
 
 
@@ -69,7 +69,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
     def _setup_backup_listeners(self) -> None:
         """Écoute les événements déclenchés à la fin d'une sauvegarde (Core et Supervisor)."""
-        @callback
         async def _async_on_backup_event(event):
             _LOGGER.debug(
                 "Fin de sauvegarde détectée via l'événement '%s'. Actualisation de l'état.",
@@ -89,7 +88,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
     async def async_force_refresh(self) -> None:
         """Force la réinitialisation des caches, annule la temporisation de démarrage et rafraîchit immédiatement."""
         _LOGGER.debug("Réinitialisation de tous les caches et annulation de la temporisation pour scan forcé.")
-        # On réinitialise l'heure de boot pour lever instantanément le délai de grâce au démarrage
         self._boot_time = dt_util.utcnow()
         self._last_trace_check_time = None
         self._cached_backup_info = None
@@ -107,7 +105,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self.hass.state != CoreState.running or elapsed_seconds < startup_delay
         )
 
-        # On s'assure d'initialiser les infos de sauvegarde dès le premier cycle, même au démarrage
+        # Initialisation des infos de sauvegarde dès le premier cycle
         if self._cached_backup_info is None:
             self._cached_backup_info = await self._async_get_backup_info()
 
@@ -117,7 +115,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 "HA Monitoring en phase d'initialisation (%s s restantes). Alertes masquées.",
                 remaining,
             )
-            # On retourne les résultats masqués mais avec la vraie information de sauvegarde
             results = self._empty_results(in_startup_delay=True)
             results["monitoring_backup"] = self._cached_backup_info
             return results
@@ -194,14 +191,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         timeout_hours: float,
     ) -> tuple[list, list, list]:
         """Parcourt TOUS les états HA en une seule passe."""
-        now = dt_util.now()
+        now = dt_util.utcnow()
         cutoff = now - timedelta(hours=float(timeout_hours))
 
         updates = []
         unavailable = []
         offline = []
 
-        # Récupération des registres HA pour la résolution des appareils
+        # Récupération des registres HA
         ent_reg = er.async_get(self.hass)
         dev_reg = dr.async_get(self.hass)
 
@@ -225,7 +222,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     updates.append(friendly_name)
                 continue
 
-            # C. Appareils hors ligne (Strictement basés sur la terminaison de l'entity_id)
+            # C. Appareils hors ligne (Filtrage sur la terminaison du nom d'entité)
             if entity_id.endswith(("last_seen", "derniere_connexion")):
                 if entity_id in excluded_offline or state_obj.state in (
                     STATE_UNAVAILABLE,
@@ -235,10 +232,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
                 last_seen_dt = None
 
-                # Essai de parsing direct de l'état
+                # 1. Lecture prioritaire de la date dans l'état de l'entité
                 last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
 
-                # Si l'état n'est pas une date valide, recherche dans les attributs connus
+                # 2. Si l'état n'est pas une chaîne ISO valide, fallback sur les attributs
                 if not last_seen_dt and state_obj.attributes:
                     attrs = state_obj.attributes
                     for attr_key in LAST_SEEN_ATTRS:
@@ -258,22 +255,34 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                             if last_seen_dt:
                                 break
 
-                # Vérification du dépassement de délai
-                if last_seen_dt and dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
-                    # Recherche du nom de l'appareil (Device) dans le registre
-                    device_name = None
-                    entity_entry = ent_reg.async_get(entity_id)
-                    if entity_entry and entity_entry.device_id:
-                        device_entry = dev_reg.async_get(entity_entry.device_id)
-                        if device_entry:
-                            # Priorité au nom personnalisé donné par l'utilisateur, sinon le nom d'origine de l'appareil
-                            device_name = device_entry.name_by_user or device_entry.name
+                # Normalisation tz-aware en UTC
+                if last_seen_dt:
+                    last_seen_dt = dt_util.as_utc(last_seen_dt)
 
-                    # Si l'entité n'est rattachée à aucun appareil, fallback sur le friendly_name
+                # 3. Vérification du dépassement de délai
+                if last_seen_dt and last_seen_dt < cutoff:
+                    device_name = None
+                    platform = "inconnu"
+
+                    # Recherche des métriques dans le registre d'entités et d'appareils
+                    entity_entry = ent_reg.async_get(entity_id)
+                    if entity_entry:
+                        platform = entity_entry.platform or "inconnu"
+                        if entity_entry.device_id:
+                            device_entry = dev_reg.async_get(entity_entry.device_id)
+                            if device_entry:
+                                device_name = device_entry.name_by_user or device_entry.name
+
                     display_name = device_name or friendly_name
 
-                    if display_name not in excluded_offline and display_name not in offline:
-                        offline.append(display_name)
+                    if display_name not in excluded_offline and entity_id not in excluded_offline:
+                        # Évite les doublons si plusieurs entités last_seen pointent vers le même appareil
+                        if not any(item["device"] == display_name for item in offline):
+                            offline.append({
+                                "device": display_name,
+                                "date": last_seen_dt.isoformat(),
+                                "platform": platform,
+                            })
 
         return updates, unavailable, offline
 
@@ -321,7 +330,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         backups_list = []
         next_scheduled = None
 
-        # 1. Tentative via l'API Supervisor / HASSIO
+        # 1. API Supervisor / HASSIO
         if is_hassio_running(self.hass):
             try:
                 client = self.hass.data.get("hassio")
@@ -339,7 +348,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
-        # 2. Fallback via le module Backup natif de Home Assistant Core
+        # 2. Module Backup Core
         if not backups_list and "backup" in self.hass.data:
             try:
                 backup_manager = self.hass.data["backup"]
@@ -447,7 +456,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             if hasattr(client, "async_get_addons_info"):
                 addons_info = await client.async_get_addons_info()
             elif hasattr(client, "get_addons_info"):
-                addons_info = await client._async_get_addons_info()
+                addons_info = await client.get_addons_info()
             else:
                 return []
 
@@ -473,18 +482,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         failed = []
         for entry in self.hass.config_entries.async_entries():
             if entry.state in INTEGRATION_ERROR_STATES:
-                # Vérification directe de l'exclusion du domaine technique (ex: "hue")
                 if entry.domain in excluded:
                     continue
 
-                # Récupération du nom officiel de l'intégration (ex: "Philips Hue")
                 try:
                     integration = await async_get_integration(self.hass, entry.domain)
                     integration_name = integration.name
                 except Exception:
                     integration_name = entry.domain.replace("_", " ").title()
 
-                # Vérification si le nom d'affichage est exclu ou déjà présent dans la liste
                 if integration_name not in excluded and integration_name not in failed:
                     failed.append(integration_name)
 
