@@ -4,7 +4,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
-from .coordinator import HAMonitoringCoordinator  # Import du coordinator
+from .coordinator import HAMonitoringCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 PLATFORMS = ["sensor", "binary_sensor", "button"]
@@ -39,6 +39,9 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Déchargement de l'intégration."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        coordinator = hass.data[DOMAIN].get(entry.entry_id)
+        if coordinator and hasattr(coordinator, "async_shutdown"):
+            await coordinator.async_shutdown()
         hass.data[DOMAIN].pop(entry.entry_id, None)
     return unload_ok
 
