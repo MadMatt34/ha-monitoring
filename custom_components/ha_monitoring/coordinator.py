@@ -85,8 +85,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self.hass.bus.async_listen(event_type, _async_on_backup_event)
 
     async def async_force_refresh(self) -> None:
-        """Force la réinitialisation des caches et le rafraîchissement immédiat."""
-        _LOGGER.debug("Réinitialisation des caches pour scan forcé.")
+        """Force la réinitialisation des caches, annule la tempo de démarrage et rafraîchit immédiatement."""
+        _LOGGER.debug("Réinitialisation des caches et annulation de la temporisation pour scan forcé.")
+        # On réinitialise l'heure de boot pour lever instantanément le délai de grâce au démarrage
+        self._boot_time = dt_util.utcnow()
         self._last_trace_check_time = None
         self._cached_backup_info = None
         await self.async_request_refresh()
