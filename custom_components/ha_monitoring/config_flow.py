@@ -172,8 +172,8 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry):
-        """Gestionnaire d'options."""
+    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
+        """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
