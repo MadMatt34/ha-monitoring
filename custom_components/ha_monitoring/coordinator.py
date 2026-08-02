@@ -384,7 +384,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 
             now = dt_util.now()
             
-            # Extraction propre de l'heure
             if isinstance(schedule_time_obj, time):
                 h, m = schedule_time_obj.hour, schedule_time_obj.minute
             elif hasattr(schedule_time_obj, "hour") and hasattr(schedule_time_obj, "minute"):
@@ -396,13 +395,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             target_time = time(hour=h, minute=m)
             target_dt = datetime.combine(now.date(), target_time, tzinfo=now.tzinfo)
             
-            # Planification journalière
             if state_str == "daily":
                 if now >= target_dt:
                     target_dt += timedelta(days=1)
                 return target_dt
                 
-            # Planification hebdomadaire
             days = {
                 "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, 
                 "friday": 4, "saturday": 5, "sunday": 6
@@ -419,15 +416,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 return target_dt
                 
         except Exception as err:
-            _LOGGER.debug("Erreur HA Monitoring calcul prochaine sauvegarde : %s", err)
+            _LOGGER.debug("Erreur calcul prochaine sauvegarde : %s", err)
             
         return None
 
     async def _async_get_backup_info(self) -> dict:
-        """Interroge le gestionnaire de sauvegardes Supervisor ou Core."""
+        """Interroge exclusivement le gestionnaire officiel (Backup Core / Supervisor)."""
         backups_list = []
         next_scheduled = None
 
+        # 1. Tentative avec Supervisor / Hassio (Nativement géré par l'intégration Backup)
         if is_hassio_running(self.hass):
             try:
                 client = self.hass.data.get("hassio")
@@ -446,6 +444,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
+        # 2. Tentative avec l'API Core Backup Manager
         if "backup" in self.hass.data:
             try:
                 backup_manager = self.hass.data["backup"]
@@ -497,7 +496,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                     state = state.value
                                 
                         if state and time_val:
-                            # Calcul de la prochaine occurrence
                             next_scheduled = self._calculate_next_backup(state, time_val)
                     except Exception as err:
                         _LOGGER.debug("Erreur async_get_config backup : %s", err)
@@ -505,15 +503,17 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Backup Core : %s", err)
 
-        # Filet de sécurité: Recherche dans les modules tiers (ex: HA Google Drive Backup ou Samba)
+        # 3. Recherche de la date via le capteur exposé PAR l'intégration officielle (platform = "backup")
         if not next_scheduled:
-            for sensor_id in ("sensor.backup_state", "sensor.samba_backup"):
-                state = self.hass.states.get(sensor_id)
-                if state and state.attributes:
-                    next_val = state.attributes.get("next_backup")
-                    if next_val:
-                        next_scheduled = next_val
-                        break
+            ent_reg = er.async_get(self.hass)
+            for entity_id, entity_entry in ent_reg.entities.items():
+                if entity_entry.platform == "backup" and entity_entry.domain == "sensor":
+                    state_obj = self.hass.states.get(entity_id)
+                    if state_obj and state_obj.state not in (STATE_UNAVAILABLE, STATE_UNKNOWN, None, ""):
+                        parsed_dt = dt_util.parse_datetime(state_obj.state)
+                        if parsed_dt and parsed_dt > dt_util.utcnow():
+                            next_scheduled = parsed_dt
+                            break
 
         if not backups_list:
             return {
