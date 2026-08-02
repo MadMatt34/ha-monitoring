@@ -1,3 +1,101 @@
+# HA Monitoring - Custom Component pour Home Assistant
+
+**HA Monitoring** est une intégration sur mesure pour Home Assistant conçue pour surveiller la santé globale de votre système. Elle centralise les alertes, les erreurs dans les automatisations/scripts, les entités indisponibles, les appareils hors ligne, les mises à jour en attente et l'état des sauvegardes.
+
+Toutes les entités créées par cette intégration sont automatiquement regroupées sous un **appareil unique nommé "Home Assistant"** pour une organisation optimale.
+
+---
+
+## 🚀 Fonctionnalités principales
+
+- **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche dynamiquement la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
+- **Surveillance globale :**
+  - **Applications (Addons) & Intégrations :** Détection des composants en erreur.
+  - **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution récentes.
+  - **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
+  - **Mises à jour & Réparations :** Suivi des mises à jour système et des alertes de réparation (Repairs).
+  - **Sauvegardes (Backups) :** Vérification de l'état de la dernière sauvegarde et attributs de suivi.
+- **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
+- **Bouton d'action :** Permet de forcer un rafraîchissement immédiat de toutes les métriques.
+- **Personnalisation fine via l'interface graphique :** Définition des fréquences de scan et sélection d'éléments à exclure de la surveillance.
+
+---
+
+## 🛠️ Configuration et Options
+
+L'intégration se configure entièrement via l'interface graphique (**Réglages** > **Appareils et services** > **HA Monitoring**).
+
+### Paramètres de fréquence et délais
+- **Intervalle de scan général (secondes) :** Fréquence de mise à jour des capteurs (défaut : 60s).
+- **Intervalle de scan des traces (minutes) :** Fréquence d'analyse des erreurs dans les traces d'automatisations et de scripts (défaut : 15 min, réglable de 1 min à 24h).
+- **Délai d'inactivité hors-ligne (heures) :** Seuil à partir duquel un appareil sans activité est considéré hors ligne.
+- **Temporisation au démarrage (secondes) :** Délai d'attente après le lancement de HA avant d'activer les remontées d'erreurs.
+
+### Exclusions configurables
+Vous pouvez ignorer certains éléments spécifiques pour éviter le bruit dans vos alertes :
+- Addons, Intégrations et Réparations à ignorer.
+- Entités spécifiques à exclure pour les automatisations, scripts, updates, entités indisponibles et appareils hors ligne.
+
+---
+
+## 📊 Entités fournies
+
+Toutes les entités sont rattachées au Device **Home Assistant** :
+
+### Capteurs (`sensor`)
+| Entité | Nom | Description / Attributs |
+| :--- | :--- | :--- |
+| `sensor.monitoring_addons` | Monitoring Applications | Nombre d'addons en erreur (liste dans les attributs). |
+| `sensor.monitoring_integrations` | Monitoring Intégrations | Nombre d'intégrations en échec. |
+| `sensor.monitoring_automations` | Monitoring Automatisations | Nombre d'automatisations ayant levé une erreur. |
+| `sensor.monitoring_scripts` | Monitoring Scripts | Nombre de scripts ayant levé une erreur. |
+| `sensor.monitoring_updates` | Monitoring Mises à jour | Nombre de mises à jour en attente. |
+| `sensor.monitoring_repairs` | Monitoring Réparations | Nombre de problèmes de réparation en attente. |
+| `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
+| `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs. |
+
+### Capteurs binaires (`binary_sensor`)
+| Entité | Device Class | Description |
+| :--- | :--- | :--- |
+| `binary_sensor.ha_monitoring_status` | `problem` | Passera à `ON` si au moins un problème (addon, intégration, automation ou script) est détecté. |
+| `binary_sensor.ha_monitoring_backup` | - | Indique si la dernière sauvegarde s'est déroulée avec succès. Fournit les dates et la taille de la sauvegarde en attributs. |
+
+### Bouton (`button`)
+| Entité | Action |
+| :--- | :--- |
+| `button.ha_monitoring_force_scan` | Déclenche un scan immédiat du Coordinator pour rafraîchir toutes les données sans attendre l'intervalle. |
+
+---
+
+## 📁 Structure du projet
+
+```text
+custom_components/ha_monitoring/
+├── __init__.py           # Initialisation de l'intégration et gestion du rechargement des options
+├── binary_sensor.py      # Capteurs binaires (statut global, sauvegarde)
+├── button.py             # Bouton pour forcer le rafraîchissement
+├── config_flow.py        # Formulaires de configuration initiale et du menu d'options
+├── const.py               # Constantes, icônes, clés de configuration et valeurs par défaut
+├── coordinator.py        # DataUpdateCoordinator central gérant le scan et la collecte de données
+├── entity.py             # Classe de base HAMonitoringBaseEntity rattachant l'ensemble au Device "Home Assistant"
+├── manifest.json         # Métadonnées de l'intégration
+├── sensor.py             # Capteurs de surveillance
+└── translations/         # Fichiers de traduction
+    ├── en.json
+    └── fr.json
+```
+
+---
+
+## 📥 Installation
+
+1. Copiez le dossier `ha_monitoring` dans votre répertoire `custom_components/` (ex: `/config/custom_components/ha_monitoring/`).
+2. Redémarrez Home Assistant.
+3. Allez dans **Paramètres** > **Appareils et services** > **Ajouter une intégration**.
+4. Cherchez **HA Monitoring** et validez.
+---
+---
+---
 # 🛡️ HA Monitoring — Surveillance Système pour Home Assistant
 
 **HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de votre système en temps réel. Elle centralise la détection des dysfonctionnements (add-ons, intégrations, automations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour, des réparations en attente et de l'état des sauvegardes.
