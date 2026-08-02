@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import CoreState, HomeAssistant, callback
+from homeassistant.loader import async_get_integration
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -450,14 +451,26 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             _LOGGER.error("Erreur HA Monitoring Addons : %s", err)
             return []
 
-    def _get_failed_integrations(self, excluded: list) -> list:
-        """Récupère les intégrations en état d'erreur de chargement."""
+    async def _async_get_failed_integrations(self, excluded: list) -> list:
+        """Récupère le nom officiel des intégrations en état d'erreur de chargement."""
         failed = []
         for entry in self.hass.config_entries.async_entries():
             if entry.state in INTEGRATION_ERROR_STATES:
-                name = entry.title or entry.domain
-                if name not in excluded and entry.domain not in excluded:
-                    failed.append(name)
+                # Vérification directe de l'exclusion du domaine technique (ex: "hue")
+                if entry.domain in excluded:
+                    continue
+
+                # Récupération du nom officiel de l'intégration (ex: "Philips Hue")
+                try:
+                    integration = await async_get_integration(self.hass, entry.domain)
+                    integration_name = integration.name
+                except Exception:
+                    integration_name = entry.domain.replace("_", " ").title()
+
+                # Vérification si le nom d'affichage est exclu ou déjà présent dans la liste
+                if integration_name not in excluded and integration_name not in failed:
+                    failed.append(integration_name)
+
         return failed
 
     def _get_trace_errors(self, domain: str, excluded: list) -> list:
