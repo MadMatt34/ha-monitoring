@@ -1,6 +1,6 @@
 """DataUpdateCoordinator centralisé et optimisé pour HA Monitoring."""
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 from homeassistant.const import STATE_UNAVAILABLE
 from homeassistant.core import CoreState, HomeAssistant
@@ -59,7 +59,7 @@ def _format_date_local(val) -> str | None:
     elif isinstance(val, str):
         dt_obj = dt_util.parse_datetime(val)
         if not dt_obj:
-            return val  # Retourne les chaînes d'information directes (ex: "Non planifiée")
+            return val  
 
     if dt_obj:
         if dt_obj.tzinfo is None:
@@ -79,7 +79,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         self._last_backup_failure_reason = None
         self._startup_timer_unsub = None
 
-        # Cache pour les traces d'automatisations et scripts
         self._last_trace_check_time = None
         self._cached_automations = []
         self._cached_scripts = []
@@ -93,14 +92,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             update_interval=timedelta(seconds=int(scan_interval)),
         )
 
-        # Écoute des événements de fin de sauvegarde
         self._setup_backup_listeners()
 
     def _setup_backup_listeners(self) -> None:
-        """Écoute les événements déclenchés à la fin d'une sauvegarde (Core et Supervisor)."""
+        """Écoute les événements déclenchés à la fin d'une sauvegarde."""
         async def _async_on_backup_event(event):
             _LOGGER.debug(
-                "Fin de sauvegarde détectée via l'événement '%s'. Actualisation de l'état.",
+                "Fin de sauvegarde détectée via l'événement '%s'.",
                 event.event_type,
             )
             if event.event_type == "backup_failed" or event.data.get("status") == "failed":
@@ -123,15 +121,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self.hass.bus.async_listen(event_type, _async_on_backup_event)
 
     async def async_shutdown(self) -> None:
-        """Libère les ressources et annule le timer lors du déchargement."""
+        """Libère les ressources."""
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
         await super().async_shutdown()
 
     async def async_force_refresh(self) -> None:
-        """Force la réinitialisation des caches, annule la temporisation de démarrage et rafraîchit immédiatement."""
-        _LOGGER.debug("Réinitialisation de tous les caches et annulation de la temporisation pour scan forcé.")
+        """Force le rafraîchissement immédiat de toutes les données."""
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
@@ -143,7 +140,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         await self.async_refresh()
 
     async def _async_update_data(self) -> dict:
-        """Récupère les métriques système en optimisant le parcours des états."""
+        """Récupère les métriques système."""
         startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._boot_time).total_seconds()
@@ -152,17 +149,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
         )
 
-        # Interrogation unique au premier lancement / rechargement
         if self._cached_backup_info is None:
             self._cached_backup_info = await self._async_get_backup_info()
 
         if in_startup_phase:
             remaining = max(0.0, startup_delay - elapsed_seconds)
-            _LOGGER.debug(
-                "HA Monitoring en phase d'initialisation (%.1f s restantes). Alertes masquées.",
-                remaining,
-            )
-
+            
             if not self._startup_timer_unsub and remaining > 0:
                 def _force_refresh_after_delay(_):
                     self._startup_timer_unsub = None
@@ -180,12 +172,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
 
-        _LOGGER.debug("Analyse système optimisée active par HA Monitoring.")
-
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
-        # 1. Parcours UNIQUE du registre d'états
         updates, unavailable, offline = self._scan_all_states(
             excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
             excluded_unavailable=options.get(CONF_EXCLUDED_UNAVAILABLE, []),
@@ -193,7 +182,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             timeout_hours=offline_timeout,
         )
 
-        # 2. Analyse temporisée des traces
         traces_scan_interval_min = options.get(
             CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
         )
@@ -203,7 +191,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self._last_trace_check_time is None
             or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
         ):
-            _LOGGER.debug("Actualisation des traces d'automatisations et de scripts.")
             self._cached_automations = self._get_trace_errors(
                 "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
             )
@@ -212,7 +199,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             )
             self._last_trace_check_time = now
 
-        # 3. Collectes secondaires
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await self._async_get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
         repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
@@ -291,11 +277,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
             if entity_id.endswith(("last_seen", "derniere_connexion")):
                 if entity_id in excluded_offline or state_obj.state in (
-                    STATE_UNAVAILABLE,
+                    STATE_UNAVAILABLE
                 ):
                     continue
 
-                last_seen_dt = None
                 last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
 
                 if not last_seen_dt and state_obj.attributes:
@@ -354,7 +339,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         return updates, unavailable, offline
 
     def _empty_results(self, in_startup_delay: bool) -> dict:
-        """Résultats neutres pendant la temporisation de démarrage."""
         timeout = self.entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
         return {
             "in_startup_delay": in_startup_delay,
@@ -377,7 +361,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         }
 
     def _format_size(self, size_val) -> str | None:
-        """Formate la taille en Mo ou Go en gérant les octets et les Mégaoctets."""
         if size_val is None:
             return None
 
@@ -392,12 +375,59 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return f"{round(mb, 2)} Mo"
         return str(size_val)
 
+    def _calculate_next_backup(self, schedule_state, schedule_time_obj) -> datetime | None:
+        """Calcule la date de la prochaine sauvegarde en fonction de la configuration HA Core."""
+        try:
+            state_str = str(schedule_state).split('.')[-1].lower()
+            if not state_str or state_str == "never":
+                return None
+                
+            now = dt_util.now()
+            
+            # Extraction propre de l'heure
+            if isinstance(schedule_time_obj, time):
+                h, m = schedule_time_obj.hour, schedule_time_obj.minute
+            elif hasattr(schedule_time_obj, "hour") and hasattr(schedule_time_obj, "minute"):
+                h, m = schedule_time_obj.hour, schedule_time_obj.minute
+            else:
+                parts = str(schedule_time_obj).split(":")
+                h, m = int(parts[0]), int(parts[1])
+                
+            target_time = time(hour=h, minute=m)
+            target_dt = datetime.combine(now.date(), target_time, tzinfo=now.tzinfo)
+            
+            # Planification journalière
+            if state_str == "daily":
+                if now >= target_dt:
+                    target_dt += timedelta(days=1)
+                return target_dt
+                
+            # Planification hebdomadaire
+            days = {
+                "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, 
+                "friday": 4, "saturday": 5, "sunday": 6
+            }
+            if state_str in days:
+                target_day = days[state_str]
+                current_day = now.weekday()
+                
+                days_ahead = target_day - current_day
+                if days_ahead < 0 or (days_ahead == 0 and now >= target_dt):
+                    days_ahead += 7
+                    
+                target_dt += timedelta(days=days_ahead)
+                return target_dt
+                
+        except Exception as err:
+            _LOGGER.debug("Erreur HA Monitoring calcul prochaine sauvegarde : %s", err)
+            
+        return None
+
     async def _async_get_backup_info(self) -> dict:
         """Interroge le gestionnaire de sauvegardes Supervisor ou Core."""
         backups_list = []
         next_scheduled = None
 
-        # 1. API Supervisor / HASSIO
         if is_hassio_running(self.hass):
             try:
                 client = self.hass.data.get("hassio")
@@ -405,8 +435,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     backups_info = None
                     if hasattr(client, "async_get_backups"):
                         backups_info = await client.async_get_backups()
-                    elif hasattr(client, "get_backups"):
-                        backups_info = await client.get_backups()
                     elif hasattr(client, "send_command"):
                         backups_info = await client.send_command("/backups", method="get")
 
@@ -418,7 +446,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
-        # 2. Module Backup Core (Manager HA)
         if "backup" in self.hass.data:
             try:
                 backup_manager = self.hass.data["backup"]
@@ -444,56 +471,49 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                     "reason": getattr(b, "reason", None) or getattr(b, "error", None),
                                 })
 
-                # Recherche approfondie de la prochaine planification dans le Backup Manager
-                if hasattr(backup_manager, "async_get_config") and callable(backup_manager.async_get_config):
+                # Recherche approfondie du planning via l'API HA Core Native
+                if hasattr(backup_manager, "async_get_config") or hasattr(backup_manager, "config"):
                     try:
-                        cfg = await backup_manager.async_get_config()
+                        cfg = None
+                        if hasattr(backup_manager, "async_get_config"):
+                            cfg = await backup_manager.async_get_config()
+                        else:
+                            cfg = backup_manager.config
+                            
+                        state = None
+                        time_val = None
+                        
                         if isinstance(cfg, dict):
-                            sch = cfg.get("schedule", {})
-                            if isinstance(sch, dict):
-                                next_scheduled = sch.get("next_execution") or sch.get("next_scheduled") or sch.get("next_date")
-                            elif hasattr(sch, "next_execution"):
-                                next_scheduled = getattr(sch, "next_execution", None)
-                        elif hasattr(cfg, "schedule"):
-                            sch = getattr(cfg, "schedule", None)
-                            if sch:
-                                next_scheduled = getattr(sch, "next_execution", None) or getattr(sch, "next_scheduled", None)
+                            cb = cfg.get("create_backup", {})
+                            if isinstance(cb, dict):
+                                state = cb.get("state")
+                                time_val = cb.get("time")
+                        else:
+                            cb = getattr(cfg, "create_backup", None)
+                            if cb:
+                                state = getattr(cb, "state", None)
+                                time_val = getattr(cb, "time", None)
+                                if hasattr(state, "value"):
+                                    state = state.value
+                                
+                        if state and time_val:
+                            # Calcul de la prochaine occurrence
+                            next_scheduled = self._calculate_next_backup(state, time_val)
                     except Exception as err:
                         _LOGGER.debug("Erreur async_get_config backup : %s", err)
 
-                if not next_scheduled:
-                    for target in (backup_manager, getattr(backup_manager, "config", None)):
-                        if not target:
-                            continue
-                        sch = getattr(target, "schedule", None) or target
-                        for attr_name in ("next_execution", "next_scheduled", "next_date", "next_execution_date", "next_run"):
-                            val = getattr(sch, attr_name, None)
-                            if val is not None:
-                                next_scheduled = val
-                                break
-                            if isinstance(sch, dict) and attr_name in sch:
-                                next_scheduled = sch[attr_name]
-                                break
-                        if next_scheduled:
-                            break
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Backup Core : %s", err)
 
-        # 3. Fallback recherche planification Supervisor
-        if not next_scheduled and is_hassio_running(self.hass):
-            try:
-                client = self.hass.data.get("hassio")
-                if client and hasattr(client, "send_command"):
-                    cfg_resp = await client.send_command("/backups/config", method="get")
-                    if isinstance(cfg_resp, dict):
-                        data = cfg_resp.get("data", cfg_resp)
-                        next_scheduled = (
-                            data.get("next_execution")
-                            or data.get("next_scheduled")
-                            or data.get("next_backup")
-                        )
-            except Exception as err:
-                _LOGGER.debug("Erreur analyse planification Supervisor : %s", err)
+        # Filet de sécurité: Recherche dans les modules tiers (ex: HA Google Drive Backup ou Samba)
+        if not next_scheduled:
+            for sensor_id in ("sensor.backup_state", "sensor.samba_backup"):
+                state = self.hass.states.get(sensor_id)
+                if state and state.attributes:
+                    next_val = state.attributes.get("next_backup")
+                    if next_val:
+                        next_scheduled = next_val
+                        break
 
         if not backups_list:
             return {
@@ -559,7 +579,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         }
 
     async def _async_get_addons(self, excluded: list) -> list:
-        """Récupère la liste des add-ons en état anormal."""
         if not is_hassio_running(self.hass):
             return []
         client = self.hass.data.get("hassio")
@@ -592,13 +611,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return []
 
     async def _async_get_failed_integrations(self, excluded: list) -> list:
-        """Récupère le nom officiel des intégrations en état d'erreur de chargement."""
         failed = []
         for entry in self.hass.config_entries.async_entries():
             if entry.state in INTEGRATION_ERROR_STATES:
                 if entry.domain in excluded:
                     continue
-
                 try:
                     integration = await async_get_integration(self.hass, entry.domain)
                     integration_name = integration.name
@@ -607,11 +624,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
                 if integration_name not in excluded and integration_name not in failed:
                     failed.append(integration_name)
-
         return failed
 
     def _get_trace_errors(self, domain: str, excluded: list) -> list:
-        """Extrait les erreurs des traces d'automatisations ou de scripts."""
         trace_data = self.hass.data.get("trace", {})
         failed = []
 
@@ -668,7 +683,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         return failed
 
     def _get_pending_repairs(self, excluded: list) -> list:
-        """Récupère la liste des réparations en attente."""
         issue_registry = ir.async_get(self.hass)
         pending = []
         for issue in issue_registry.issues.values():
