@@ -68,6 +68,9 @@
     "binary_sensor": {
       "global_status": { "name": "Monitoring Statut Global" },
       "backup_status": { "name": "Monitoring Etat de la sauvegarde" }
+    },
+    "button": {
+      "force_scan": { "name": "Monitoring Forcer le rafraîchissement" }
     }
   }
 }
