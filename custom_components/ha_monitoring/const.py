@@ -8,6 +8,9 @@ DOMAIN = "ha_monitoring"
 CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 60  # Secondes
 
+CONF_TRACES_SCAN_INTERVAL = "traces_scan_interval"
+DEFAULT_TRACES_SCAN_INTERVAL = 15  # en minutes
+
 CONF_OFFLINE_TIMEOUT = "offline_timeout"
 DEFAULT_OFFLINE_TIMEOUT = 24  # Heures
 
