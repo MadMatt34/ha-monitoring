@@ -176,12 +176,15 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
-
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
-    """Gère le menu d'options de HA Monitoring."""
+    """Gère les options de configuration de HA Monitoring."""
+
+    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialise le flux d'options."""
+        self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
-        """Gère les options."""
+        """Gère l'étape initiale du menu d'options."""
         if user_input is not None:
             return self.async_create_entry(title="", data=user_input)
 
