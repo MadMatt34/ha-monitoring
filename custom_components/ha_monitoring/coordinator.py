@@ -7,6 +7,7 @@ from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.loader import async_get_integration
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -200,6 +201,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         unavailable = []
         offline = []
 
+        # Récupération des registres HA pour la résolution des appareils
+        ent_reg = er.async_get(self.hass)
+        dev_reg = dr.async_get(self.hass)
+
         for state_obj in self.hass.states.async_all():
             entity_id = state_obj.entity_id
             friendly_name = state_obj.attributes.get("friendly_name") or entity_id
@@ -255,8 +260,20 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
                 # Vérification du dépassement de délai
                 if last_seen_dt and dt_util.as_utc(last_seen_dt) < dt_util.as_utc(cutoff):
-                    if friendly_name not in offline:
-                        offline.append(friendly_name)
+                    # Recherche du nom de l'appareil (Device) dans le registre
+                    device_name = None
+                    entity_entry = ent_reg.async_get(entity_id)
+                    if entity_entry and entity_entry.device_id:
+                        device_entry = dev_reg.async_get(entity_entry.device_id)
+                        if device_entry:
+                            # Priorité au nom personnalisé donné par l'utilisateur, sinon le nom d'origine de l'appareil
+                            device_name = device_entry.name_by_user or device_entry.name
+
+                    # Si l'entité n'est rattachée à aucun appareil, fallback sur le friendly_name
+                    display_name = device_name or friendly_name
+
+                    if display_name not in excluded_offline and display_name not in offline:
+                        offline.append(display_name)
 
         return updates, unavailable, offline
 
