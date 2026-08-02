@@ -34,7 +34,6 @@ class HAMonitoringForceScanButton(CoordinatorEntity[HAMonitoringCoordinator], Bu
         """Initialisation du bouton."""
         super().__init__(coordinator)
         self._entry = entry
-        self._attr_name = "Forcer le rafraîchissement"
         self._attr_unique_id = f"{entry.entry_id}_force_scan"
         self._attr_device_info = {
             "identifiers": {(DOMAIN, entry.entry_id)},
