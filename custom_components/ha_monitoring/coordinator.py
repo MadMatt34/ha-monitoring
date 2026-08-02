@@ -8,6 +8,7 @@ from homeassistant.loader import async_get_integration
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import device_registry as dr, entity_registry as er
+from homeassistant.helpers.event import async_call_later
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -49,6 +50,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         self.entry = entry
         self._boot_time = dt_util.utcnow()
         self._cached_backup_info = None
+        self._startup_timer_unsub = None
 
         # Cache pour les traces d'automatisations et scripts
         self._last_trace_check_time = None
@@ -85,10 +87,22 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         ):
             self.hass.bus.async_listen(event_type, _async_on_backup_event)
 
+    async def async_shutdown(self) -> None:
+        """Libère les ressources et annule le timer lors du déchargement."""
+        if self._startup_timer_unsub:
+            self._startup_timer_unsub()
+            self._startup_timer_unsub = None
+        await super().async_shutdown()
+
     async def async_force_refresh(self) -> None:
         """Force la réinitialisation des caches, annule la temporisation de démarrage et rafraîchit immédiatement."""
         _LOGGER.debug("Réinitialisation de tous les caches et annulation de la temporisation pour scan forcé.")
-        self._boot_time = dt_util.utcnow()
+        if self._startup_timer_unsub:
+            self._startup_timer_unsub()
+            self._startup_timer_unsub = None
+
+        # Repousse le temps de démarrage pour contourner le startup delay
+        self._boot_time = dt_util.utcnow() - timedelta(seconds=9999)
         self._last_trace_check_time = None
         self._cached_backup_info = None
 
@@ -96,13 +110,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict:
         """Récupère les métriques système en optimisant le parcours des états."""
-        startup_delay = self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
+        startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._boot_time).total_seconds()
 
-        # Phase de démarrage
+        # Phase de démarrage (Marge de précaution de 0.5s pour éviter les décalages d'arrondi)
         in_startup_phase = (
-            self.hass.state != CoreState.running or elapsed_seconds < startup_delay
+            self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
         )
 
         # Initialisation des infos de sauvegarde dès le premier cycle
@@ -110,14 +124,30 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             self._cached_backup_info = await self._async_get_backup_info()
 
         if in_startup_phase:
-            remaining = max(0, int(startup_delay - elapsed_seconds))
+            remaining = max(0.0, startup_delay - elapsed_seconds)
             _LOGGER.debug(
-                "HA Monitoring en phase d'initialisation (%s s restantes). Alertes masquées.",
+                "HA Monitoring en phase d'initialisation (%.1f s restantes). Alertes masquées.",
                 remaining,
             )
+
+            # Programmer un rafraîchissement précis à la fin exacte de la temporisation
+            if not self._startup_timer_unsub and remaining > 0:
+                def _force_refresh_after_delay(_):
+                    self._startup_timer_unsub = None
+                    self.hass.async_create_task(self.async_refresh())
+
+                self._startup_timer_unsub = async_call_later(
+                    self.hass, remaining + 0.1, _force_refresh_after_delay
+                )
+
             results = self._empty_results(in_startup_delay=True)
             results["monitoring_backup"] = self._cached_backup_info
             return results
+
+        # Nettoyage si la phase de démarrage est franchie
+        if self._startup_timer_unsub:
+            self._startup_timer_unsub()
+            self._startup_timer_unsub = None
 
         _LOGGER.debug("Analyse système optimisée active par HA Monitoring.")
 
@@ -183,7 +213,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "monitoring_backup": self._cached_backup_info,
         }
 
-def _scan_all_states(
+    def _scan_all_states(
         self,
         excluded_updates: list,
         excluded_unavailable: list,
