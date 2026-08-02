@@ -5,7 +5,6 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     ATTR_DATE_DERNIERE_REUSSIE,
@@ -20,6 +19,7 @@ from .const import (
     UNIQUE_ID_BACKUP,
     UNIQUE_ID_STATUS,
 )
+from .entity import HAMonitoringBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,10 +34,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
     ])
 
 
-class GlobalStatusBinarySensor(CoordinatorEntity, BinarySensorEntity):
+class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
     """Capteur binaire indiquant le statut global du système."""
 
-    _attr_has_entity_name = True
     _attr_translation_key = TRANSLATION_KEY_STATUS
     _attr_icon = ICON_STATUS
     _attr_device_class = BinarySensorDeviceClass.PROBLEM
@@ -66,10 +65,9 @@ class GlobalStatusBinarySensor(CoordinatorEntity, BinarySensorEntity):
         return False
 
 
-class BackupStatusBinarySensor(CoordinatorEntity, BinarySensorEntity):
+class BackupStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
     """Capteur binaire indiquant si la dernière sauvegarde a réussi."""
 
-    _attr_has_entity_name = True
     _attr_translation_key = TRANSLATION_KEY_BACKUP
     _attr_icon = ICON_BACKUP
 
