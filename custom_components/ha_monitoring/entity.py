@@ -1,3 +1,4 @@
+"""Classe de base pour toutes les entités de HA Monitoring."""
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.network import NoURLAvailableError, get_url
@@ -12,15 +13,14 @@ class HAMonitoringBaseEntity(CoordinatorEntity):
     def __init__(self, coordinator) -> None:
         """Initialise l'entité de base."""
         super().__init__(coordinator)
-        # Permet à HA de préfixer le nom de l'entité avec le nom du Device ("Home Assistant ...")
         self._attr_has_entity_name = True
 
     @property
     def device_info(self) -> DeviceInfo:
         """Retourne les informations du Device unique."""
-        # Récupération sécurisée de l'URL de l'instance Home Assistant
+        # Tente de récupérer l'URL externe en priorité, sinon bascule sur l'interne
         try:
-            config_url = get_url(self.hass)
+            config_url = get_url(self.hass, prefer_external=True)
         except NoURLAvailableError:
             config_url = None
 
