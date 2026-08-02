@@ -2,7 +2,6 @@
 import logging
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
     ATTR_ADDONS_EN_ERREUR,
@@ -27,6 +26,7 @@ from .const import (
     ICON_UNAVAILABLE,
     ICON_UPDATES,
 )
+from .entity import HAMonitoringBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -114,10 +114,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
     async_add_entities(sensors)
 
 
-class HAMonitoringGenericSensor(CoordinatorEntity, SensorEntity):
+class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
     """Capteur générique lié au DataUpdateCoordinator de HA Monitoring."""
-
-    _attr_has_entity_name = True
 
     def __init__(
         self,
