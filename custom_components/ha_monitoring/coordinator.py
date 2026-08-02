@@ -183,7 +183,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "monitoring_backup": self._cached_backup_info,
         }
 
-    def _scan_all_states(
+def _scan_all_states(
         self,
         excluded_updates: list,
         excluded_unavailable: list,
@@ -207,19 +207,32 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             friendly_name = state_obj.attributes.get("friendly_name") or entity_id
 
             # A. Entités Indisponibles
-            if state_obj.state == STATE_UNAVAILABLE:
-                if entity_id not in excluded_unavailable and friendly_name not in unavailable:
-                    unavailable.append(friendly_name)
+            if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
+                if entity_id not in excluded_unavailable:
+                    unavailable.append(
+                        {
+                            "entity_id": entity_id,
+                            "name": friendly_name,
+                            "domain": state_obj.domain,
+                            "state": state_obj.state,
+                        }
+                    )
                 continue
 
             # B. Mises à jour en attente (Domaine update)
-            if entity_id.startswith("update."):
-                if (
-                    entity_id not in excluded_updates
-                    and state_obj.state == "on"
-                    and friendly_name not in updates
-                ):
-                    updates.append(friendly_name)
+            if state_obj.domain == "update" and state_obj.state == "on":
+                if entity_id not in excluded_updates:
+                    installed_version = state_obj.attributes.get("installed_version") or "Inconnue"
+                    latest_version = state_obj.attributes.get("latest_version") or "Inconnue"
+
+                    updates.append(
+                        {
+                            "entity_id": entity_id,
+                            "name": friendly_name,
+                            "installed_version": installed_version,
+                            "latest_version": latest_version,
+                        }
+                    )
                 continue
 
             # C. Appareils hors ligne (Filtrage sur la terminaison du nom d'entité)
@@ -258,8 +271,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 # Normalisation tz-aware
                 if last_seen_dt:
                     if last_seen_dt.tzinfo is None:
-                        # Si la chaîne/timestamp est naïve, on lui attribue le fuseau UTC par défaut
-                        last_seen_dt = dt_util.utc_from_timestamp(last_seen_dt.timestamp()) if hasattr(last_seen_dt, "timestamp") else dt_util.as_utc(last_seen_dt)
+                        last_seen_dt = (
+                            dt_util.utc_from_timestamp(last_seen_dt.timestamp())
+                            if hasattr(last_seen_dt, "timestamp")
+                            else dt_util.as_utc(last_seen_dt)
+                        )
                     else:
                         last_seen_dt = dt_util.as_utc(last_seen_dt)
 
@@ -282,11 +298,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     if display_name not in excluded_offline and entity_id not in excluded_offline:
                         # Évite les doublons si plusieurs entités last_seen pointent vers le même appareil
                         if not any(item["device"] == display_name for item in offline):
-                            offline.append({
-                                "device": display_name,
-                                "date": dt_util.as_local(last_seen_dt).isoformat(),  # <--- Conversion en heure locale HA
-                                "platform": platform,
-                            })
+                            offline.append(
+                                {
+                                    "device": display_name,
+                                    "date": dt_util.as_local(last_seen_dt).isoformat(),
+                                    "platform": platform,
+                                }
+                            )
 
         return updates, unavailable, offline
 
