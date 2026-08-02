@@ -47,8 +47,9 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
     # Génération dynamique des choix (Domaines + Entités) si hass est disponible
     unavailable_options = []
     if hass is not None:
-        domains = sorted(list(hass.states.async_entity_ids_count().keys()))
-        all_entities = sorted([s.entity_id for s in hass.states.async_all()])
+        entity_ids = hass.states.async_entity_ids()
+        domains = sorted({entity_id.split(".", 1)[0] for entity_id in entity_ids})
+        all_entities = sorted(entity_ids)
 
         unavailable_options = [
             selector.SelectOptionDict(value=d, label=f"📁 Domaine: {d}")
