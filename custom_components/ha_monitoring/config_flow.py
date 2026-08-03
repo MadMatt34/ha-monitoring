@@ -4,6 +4,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers import selector
 
 from .const import (
@@ -58,141 +59,155 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
     return vol.Schema(
         {
             # --- SECTION 1 : Fréquences & Temporisations (Dépliée par défaut) ---
-            vol.Required("section_timings"): selector.section(
-                selector.SectionSelectorConfig(collapsed=False)
-            ),
-            vol.Required(
-                CONF_SCAN_INTERVAL,
-                default=current_interval,
-            ): selector.NumberSelector(
-                selector.NumberSelectorConfig(
-                    min=5,
-                    max=3600,
-                    step=5,
-                    mode=selector.NumberSelectorMode.BOX,
-                    unit_of_measurement="s",
-                )
-            ),
-            vol.Required(
-                CONF_TRACES_SCAN_INTERVAL,
-                default=current_traces_interval,
-            ): selector.NumberSelector(
-                selector.NumberSelectorConfig(
-                    min=1,
-                    max=1440,
-                    step=1,
-                    mode=selector.NumberSelectorMode.BOX,
-                    unit_of_measurement="m",
-                )
-            ),
-            vol.Required(
-                CONF_OFFLINE_TIMEOUT,
-                default=current_timeout,
-            ): selector.NumberSelector(
-                selector.NumberSelectorConfig(
-                    min=1,
-                    max=720,
-                    step=1,
-                    mode=selector.NumberSelectorMode.BOX,
-                    unit_of_measurement="h",
-                )
-            ),
-            vol.Required(
-                CONF_STARTUP_DELAY,
-                default=current_startup_delay,
-            ): selector.NumberSelector(
-                selector.NumberSelectorConfig(
-                    min=0,
-                    max=1800,
-                    step=30,
-                    mode=selector.NumberSelectorMode.BOX,
-                    unit_of_measurement="s",
+            vol.Required("section_timings"): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_SCAN_INTERVAL,
+                            default=current_interval,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=5, max=3600, step=5, mode=selector.NumberSelectorMode.BOX, unit_of_measurement="s"
+                            )
+                        ),
+                        vol.Required(
+                            CONF_TRACES_SCAN_INTERVAL,
+                            default=current_traces_interval,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=1,
+                                max=1440,
+                                step=1,
+                                mode=selector.NumberSelectorMode.BOX,
+                                unit_of_measurement="m",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_OFFLINE_TIMEOUT,
+                            default=current_timeout,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=1,
+                                max=720,
+                                step=1,
+                                mode=selector.NumberSelectorMode.BOX,
+                                unit_of_measurement="h",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_STARTUP_DELAY,
+                            default=current_startup_delay,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=0,
+                                max=1800,
+                                step=30,
+                                mode=selector.NumberSelectorMode.BOX,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                    }
                 )
             ),
             # --- SECTION 2 : Exclusions système (Repliée) ---
-            vol.Required("section_exclusions_system"): selector.section(
-                selector.SectionSelectorConfig(collapsed=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_ADDONS,
-                default=options.get(CONF_EXCLUDED_ADDONS) or [],
-            ): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=[], custom_value=True, multiple=True
-                )
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_INTEGRATIONS,
-                default=options.get(CONF_EXCLUDED_INTEGRATIONS) or [],
-            ): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=[], custom_value=True, multiple=True
-                )
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_REPAIRS,
-                default=options.get(CONF_EXCLUDED_REPAIRS) or [],
-            ): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=[], custom_value=True, multiple=True
+            vol.Required("section_exclusions_system"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_ADDONS,
+                            default=options.get(CONF_EXCLUDED_ADDONS) or [],
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[], custom_value=True, multiple=True
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_INTEGRATIONS,
+                            default=options.get(CONF_EXCLUDED_INTEGRATIONS) or [],
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[], custom_value=True, multiple=True
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_REPAIRS,
+                            default=options.get(CONF_EXCLUDED_REPAIRS) or [],
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[], custom_value=True, multiple=True
+                            )
+                        ),
+                    }
                 )
             ),
             # --- SECTION 3 : Exclusions d'Automatisations et Scripts (Repliée) ---
-            vol.Required("section_exclusions_scripts"): selector.section(
-                selector.SectionSelectorConfig(collapsed=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_AUTOMATIONS,
-                default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="automation", multiple=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_SCRIPTS,
-                default=options.get(CONF_EXCLUDED_SCRIPTS) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="script", multiple=True)
+            vol.Required("section_exclusions_scripts"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_AUTOMATIONS,
+                            default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(domain="automation", multiple=True)
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_SCRIPTS,
+                            default=options.get(CONF_EXCLUDED_SCRIPTS) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(domain="script", multiple=True)
+                        ),
+                    }
+                )
             ),
             # --- SECTION 4 : Exclusions de Mises à Jour (Repliée) ---
-            vol.Required("section_exclusions_updates"): selector.section(
-                selector.SectionSelectorConfig(collapsed=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_UPDATES,
-                default=options.get(CONF_EXCLUDED_UPDATES) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(domain="update", multiple=True)
+            vol.Required("section_exclusions_updates"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_UPDATES,
+                            default=options.get(CONF_EXCLUDED_UPDATES) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(domain="update", multiple=True)
+                        ),
+                    }
+                )
             ),
             # --- SECTION 5 : Exclusions d'Entités Indisponibles (Repliée) ---
-            vol.Required("section_exclusions_unavailable"): selector.section(
-                selector.SectionSelectorConfig(collapsed=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(multiple=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
-                default=current_excluded_domains,
-            ): selector.SelectSelector(
-                selector.SelectSelectorConfig(
-                    options=domain_options,
-                    custom_value=True,
-                    multiple=True,
-                    mode=selector.SelectSelectorMode.DROPDOWN,
+            vol.Required("section_exclusions_unavailable"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(multiple=True)
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
+                            default=current_excluded_domains,
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=domain_options,
+                                custom_value=True,
+                                multiple=True,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                    }
                 )
             ),
             # --- SECTION 6 : Exclusions d'Appareils Offline (Repliée) ---
-            vol.Required("section_exclusions_offline"): selector.section(
-                selector.SectionSelectorConfig(collapsed=True)
-            ),
-            vol.Optional(
-                CONF_EXCLUDED_OFFLINE,
-                default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(multiple=True)
+            vol.Required("section_exclusions_offline"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_OFFLINE,
+                            default=options.get(CONF_EXCLUDED_OFFLINE) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(multiple=True)
+                        ),
+                    }
+                )
             ),
         }
     )
@@ -227,15 +242,16 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return HAMonitoringOptionsFlowHandler(config_entry)
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
-    """Gère les options avec filtre de nettoyage des sections."""
+    """Gère les options avec écrasement plat."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
+        """Initialise le flux d'options."""
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
+        """Gère l'étape initiale du menu d'options."""
         if user_input is not None:
-            # On retire les clés "section_*" pour ne pas polluer config_entry.options
-            cleaned_options = {k: v for k, v in user_input.items() if not k.startswith("section_")}
+            cleaned_options = _flatten_options(user_input)
             return self.async_create_entry(title="", data=cleaned_options)
 
         return self.async_show_form(
