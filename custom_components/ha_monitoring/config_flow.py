@@ -58,7 +58,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
     return vol.Schema(
         {
             # --- SECTION 1 : Fréquences & Temporisations (Dépliée par défaut) ---
-            vol.Required("section_timings"): selector.SectionSelector(
+            vol.Required("section_timings"): selector.section(
                 selector.SectionSelectorConfig(collapsed=False)
             ),
             vol.Required(
@@ -110,7 +110,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                 )
             ),
             # --- SECTION 2 : Exclusions système (Repliée) ---
-            vol.Required("section_exclusions_system"): selector.SectionSelector(
+            vol.Required("section_exclusions_system"): selector.section(
                 selector.SectionSelectorConfig(collapsed=True)
             ),
             vol.Optional(
@@ -138,7 +138,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                 )
             ),
             # --- SECTION 3 : Exclusions d'Automatisations et Scripts (Repliée) ---
-            vol.Required("section_exclusions_scripts"): selector.SectionSelector(
+            vol.Required("section_exclusions_scripts"): selector.section(
                 selector.SectionSelectorConfig(collapsed=True)
             ),
             vol.Optional(
@@ -154,7 +154,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                 selector.EntitySelectorConfig(domain="script", multiple=True)
             ),
             # --- SECTION 4 : Exclusions de Mises à Jour (Repliée) ---
-            vol.Required("section_exclusions_updates"): selector.SectionSelector(
+            vol.Required("section_exclusions_updates"): selector.section(
                 selector.SectionSelectorConfig(collapsed=True)
             ),
             vol.Optional(
@@ -164,7 +164,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                 selector.EntitySelectorConfig(domain="update", multiple=True)
             ),
             # --- SECTION 5 : Exclusions d'Entités Indisponibles (Repliée) ---
-            vol.Required("section_exclusions_unavailable"): selector.SectionSelector(
+            vol.Required("section_exclusions_unavailable"): selector.section(
                 selector.SectionSelectorConfig(collapsed=True)
             ),
             vol.Optional(
@@ -185,7 +185,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                 )
             ),
             # --- SECTION 6 : Exclusions d'Appareils Offline (Repliée) ---
-            vol.Required("section_exclusions_offline"): selector.SectionSelector(
+            vol.Required("section_exclusions_offline"): selector.section(
                 selector.SectionSelectorConfig(collapsed=True)
             ),
             vol.Optional(
