@@ -36,7 +36,6 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-# Attributs de secours au cas où l'état ne soit pas directement parsable
 LAST_SEEN_ATTRS = ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp")
 
 
@@ -46,7 +45,7 @@ def is_hassio_running(hass: HomeAssistant) -> bool:
 
 
 def _format_date_local(val) -> str | None:
-    """Convertit un datetime ou une chaîne de date au format ISO avec le fuseau horaire local."""
+    """Convertit un datetime ou un timestamp au format ISO local."""
     if val is None or val == "":
         return None
 
@@ -61,7 +60,7 @@ def _format_date_local(val) -> str | None:
     elif isinstance(val, str):
         dt_obj = dt_util.parse_datetime(val)
         if not dt_obj:
-            return val  
+            return val
 
     if dt_obj:
         if dt_obj.tzinfo is None:
@@ -77,8 +76,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
     def __init__(self, hass: HomeAssistant, entry) -> None:
         self.entry = entry
 
-        # Stockage dans hass.data pour conserver la date du VRAI démarrage de HA
-        # (ne sera pas réinitialisé lors d'un rechargement de l'intégration)
         if DOMAIN not in hass.data:
             hass.data[DOMAIN] = {}
         if "ha_start_time" not in hass.data[DOMAIN]:
@@ -89,6 +86,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         self._cached_backup_info = None
         self._last_backup_failure_reason = None
         self._startup_timer_unsub = None
+        self._bus_listeners_unsub = []
 
         self._last_trace_check_time = None
         self._cached_automations = []
@@ -129,13 +127,19 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "backup_failed",
             "hassio_backup_completed",
         ):
-            self.hass.bus.async_listen(event_type, _async_on_backup_event)
+            unsub = self.hass.bus.async_listen(event_type, _async_on_backup_event)
+            self._bus_listeners_unsub.append(unsub)
 
     async def async_shutdown(self) -> None:
-        """Libère les ressources."""
+        """Libère les ressources et détruit les écouteurs."""
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
+
+        for unsub in self._bus_listeners_unsub:
+            unsub()
+        self._bus_listeners_unsub.clear()
+
         await super().async_shutdown()
 
     async def async_force_refresh(self) -> None:
@@ -156,7 +160,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._ha_start_time).total_seconds()
 
-        # Phase de démarrage uniquement si HA démarre ET que le temps écoulé depuis le boot est < délai
         in_startup_phase = (
             not self._skip_startup_delay
             and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
@@ -167,7 +170,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         if in_startup_phase:
             remaining = max(0.0, startup_delay - elapsed_seconds)
-            
+
             if not self._startup_timer_unsub and remaining > 0:
                 def _force_refresh_after_delay(_):
                     self._startup_timer_unsub = None
@@ -269,8 +272,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             domain = state_obj.domain
             friendly_name = state_obj.attributes.get("friendly_name") or entity_id
 
-            # Verification : exclusion par ID d'entité OU par Domaine
-            if state_obj.state in (STATE_UNAVAILABLE):
+            if state_obj.state == STATE_UNAVAILABLE:
                 if entity_id not in excluded_unavailable_entities and domain not in excluded_unavailable_domains:
                     unavailable.append(
                         {
@@ -298,9 +300,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 continue
 
             if entity_id.endswith(("last_seen", "derniere_connexion")):
-                if entity_id in excluded_offline or state_obj.state in (
-                    STATE_UNAVAILABLE
-                ):
+                if entity_id in excluded_offline or state_obj.state == STATE_UNAVAILABLE:
                     continue
 
                 last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
@@ -325,14 +325,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                 break
 
                 if last_seen_dt:
-                    if last_seen_dt.tzinfo is None:
-                        last_seen_dt = (
-                            dt_util.utc_from_timestamp(last_seen_dt.timestamp())
-                            if hasattr(last_seen_dt, "timestamp")
-                            else dt_util.as_utc(last_seen_dt)
-                        )
-                    else:
-                        last_seen_dt = dt_util.as_utc(last_seen_dt)
+                    last_seen_dt = dt_util.as_utc(last_seen_dt)
 
                 if last_seen_dt and last_seen_dt < cutoff:
                     device_name = None
@@ -398,14 +391,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         return str(size_val)
 
     def _calculate_next_backup(self, schedule_state, schedule_time_obj) -> datetime | None:
-        """Calcule la date de la prochaine sauvegarde en fonction de la configuration HA Core."""
+        """Calcule la date de la prochaine sauvegarde."""
         try:
             state_str = str(schedule_state).split('.')[-1].lower()
             if not state_str or state_str == "never":
                 return None
-                
+
             now = dt_util.now()
-            
+
             if isinstance(schedule_time_obj, time):
                 h, m = schedule_time_obj.hour, schedule_time_obj.minute
             elif hasattr(schedule_time_obj, "hour") and hasattr(schedule_time_obj, "minute"):
@@ -413,41 +406,40 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             else:
                 parts = str(schedule_time_obj).split(":")
                 h, m = int(parts[0]), int(parts[1])
-                
+
             target_time = time(hour=h, minute=m)
             target_dt = datetime.combine(now.date(), target_time, tzinfo=now.tzinfo)
-            
+
             if state_str == "daily":
                 if now >= target_dt:
                     target_dt += timedelta(days=1)
                 return target_dt
-                
+
             days = {
-                "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3, 
+                "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
                 "friday": 4, "saturday": 5, "sunday": 6
             }
             if state_str in days:
                 target_day = days[state_str]
                 current_day = now.weekday()
-                
+
                 days_ahead = target_day - current_day
                 if days_ahead < 0 or (days_ahead == 0 and now >= target_dt):
                     days_ahead += 7
-                    
+
                 target_dt += timedelta(days=days_ahead)
                 return target_dt
-                
+
         except Exception as err:
             _LOGGER.debug("Erreur calcul prochaine sauvegarde : %s", err)
-            
+
         return None
 
     async def _async_get_backup_info(self) -> dict:
-        """Interroge exclusivement le gestionnaire officiel (Backup Core / Supervisor)."""
+        """Interroge le gestionnaire officiel (Backup Core / Supervisor)."""
         backups_list = []
         next_scheduled = None
 
-        # 1. Tentative avec Supervisor / Hassio (Nativement géré par l'intégration Backup)
         if is_hassio_running(self.hass):
             try:
                 client = self.hass.data.get("hassio")
@@ -466,7 +458,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
 
-        # 2. Tentative avec l'API Core Backup Manager
         if "backup" in self.hass.data:
             try:
                 backup_manager = self.hass.data["backup"]
@@ -492,7 +483,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                     "reason": getattr(b, "reason", None) or getattr(b, "error", None),
                                 })
 
-                # Recherche approfondie du planning via l'API HA Core Native
                 if hasattr(backup_manager, "async_get_config") or hasattr(backup_manager, "config"):
                     try:
                         cfg = None
@@ -500,10 +490,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                             cfg = await backup_manager.async_get_config()
                         else:
                             cfg = backup_manager.config
-                            
+
                         state = None
                         time_val = None
-                        
+
                         if isinstance(cfg, dict):
                             cb = cfg.get("create_backup", {})
                             if isinstance(cb, dict):
@@ -516,7 +506,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                 time_val = getattr(cb, "time", None)
                                 if hasattr(state, "value"):
                                     state = state.value
-                                
+
                         if state and time_val:
                             next_scheduled = self._calculate_next_backup(state, time_val)
                     except Exception as err:
@@ -525,7 +515,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             except Exception as err:
                 _LOGGER.debug("Erreur récupération sauvegardes via Backup Core : %s", err)
 
-        # 3. Recherche de la date via le capteur exposé PAR l'intégration officielle (platform = "backup")
         if not next_scheduled:
             ent_reg = er.async_get(self.hass)
             for entity_id, entity_entry in ent_reg.entities.items():
@@ -671,7 +660,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 if hasattr(latest_trace, "as_dict")
                 else latest_trace.get("error")
                 if isinstance(latest_trace, dict)
-                else None
+                else getattr(latest_trace, "error", None)
             )
 
             if error:
