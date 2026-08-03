@@ -32,6 +32,17 @@ from .const import (
 _LOGGER = logging.getLogger(__name__)
 
 
+def _flatten_options(user_input: dict) -> dict:
+    """Aplatit les données des sections pour les extraire au niveau racine."""
+    flat = {}
+    for key, value in user_input.items():
+        if isinstance(value, dict):
+            flat.update(value)
+        else:
+            flat[key] = value
+    return flat
+
+
 def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -> vol.Schema:
     """Construit le schéma du formulaire avec sélecteurs et exclusions."""
     options = options or {}
@@ -41,12 +52,10 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
-    # Récupération des domaines exclus actuels ou valeurs par défaut
     current_excluded_domains = options.get(
         CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
     )
 
-    # Génération dynamique des choix de domaines si hass est disponible
     domain_options = []
     if hass is not None:
         entity_ids = hass.states.async_entity_ids()
@@ -58,7 +67,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
 
     return vol.Schema(
         {
-            # --- SECTION 1 : Fréquences & Temporisations (Dépliée par défaut) ---
+            # --- SECTION 1 : Fréquences & Temporisations ---
             vol.Required("section_timings"): section(
                 vol.Schema(
                     {
@@ -109,7 +118,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     }
                 )
             ),
-            # --- SECTION 2 : Exclusions système (Repliée) ---
+            # --- SECTION 2 : Exclusions système ---
             vol.Required("section_exclusions_system"): section(
                 vol.Schema(
                     {
@@ -140,7 +149,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     }
                 )
             ),
-            # --- SECTION 3 : Exclusions d'Automatisations et Scripts (Repliée) ---
+            # --- SECTION 3 : Exclusions Automatisations & Scripts ---
             vol.Required("section_exclusions_scripts"): section(
                 vol.Schema(
                     {
@@ -159,7 +168,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     }
                 )
             ),
-            # --- SECTION 4 : Exclusions de Mises à Jour (Repliée) ---
+            # --- SECTION 4 : Exclusions Mises à jour ---
             vol.Required("section_exclusions_updates"): section(
                 vol.Schema(
                     {
@@ -172,7 +181,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     }
                 )
             ),
-            # --- SECTION 5 : Exclusions d'Entités Indisponibles (Repliée) ---
+            # --- SECTION 5 : Exclusions Entités Indisponibles ---
             vol.Required("section_exclusions_unavailable"): section(
                 vol.Schema(
                     {
@@ -196,7 +205,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     }
                 )
             ),
-            # --- SECTION 6 : Exclusions d'Appareils Offline (Repliée) ---
+            # --- SECTION 6 : Exclusions Appareils Offline ---
             vol.Required("section_exclusions_offline"): section(
                 vol.Schema(
                     {
@@ -224,10 +233,11 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             return self.async_abort(reason="already_configured")
 
         if user_input is not None:
+            cleaned_input = _flatten_options(user_input)
             return self.async_create_entry(
                 title="HA Monitoring",
                 data={},
-                options=user_input,
+                options=cleaned_input,
             )
 
         return self.async_show_form(
@@ -240,6 +250,7 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
         """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
+
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options avec écrasement plat."""
