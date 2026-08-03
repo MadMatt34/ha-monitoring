@@ -9,7 +9,8 @@ TOTEST
 - backup en erreur
 - refresh manuel après une modif
 - reload après une modif
-- changement des options individuellement (update:ok)
+- changement des options individuellement
+  - update: ok
 
 TOCORRECT
 Nombre de zombies incorrect au démarrage/reload ???
