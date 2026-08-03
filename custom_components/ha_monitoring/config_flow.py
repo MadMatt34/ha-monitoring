@@ -116,8 +116,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             )
                         ),
                     }
-                ),
-                collapsed=False,
+                )
             ),
             # --- SECTION 2 : Exclusions système ---
             vol.Required("section_exclusions_system"): section(
@@ -148,8 +147,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             )
                         ),
                     }
-                ),
-                collapsed=True,
+                )
             ),
             # --- SECTION 3 : Exclusions Automatisations & Scripts ---
             vol.Required("section_exclusions_scripts"): section(
@@ -168,8 +166,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             selector.EntitySelectorConfig(domain="script", multiple=True)
                         ),
                     }
-                ),
-                collapsed=True,
+                )
             ),
             # --- SECTION 4 : Exclusions Mises à jour ---
             vol.Required("section_exclusions_updates"): section(
@@ -182,8 +179,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             selector.EntitySelectorConfig(domain="update", multiple=True)
                         ),
                     }
-                ),
-                collapsed=True,
+                )
             ),
             # --- SECTION 5 : Exclusions Entités Indisponibles ---
             vol.Required("section_exclusions_unavailable"): section(
@@ -207,8 +203,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             )
                         ),
                     }
-                ),
-                collapsed=True,
+                )
             ),
             # --- SECTION 6 : Exclusions Appareils Offline ---
             vol.Required("section_exclusions_offline"): section(
@@ -221,8 +216,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             selector.EntitySelectorConfig(multiple=True)
                         ),
                     }
-                ),
-                collapsed=True,
+                )
             ),
         }
     )
