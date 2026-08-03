@@ -9,6 +9,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
 from .const import (
@@ -36,7 +37,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
-LAST_SEEN_ATTRS = ("last_seen", "last_reported", "derniere_connexion", "last_seen_timestamp")
+DEFAULT_LAST_SEEN_ATTRS = ("last_seen", "last_reported", "last_seen_timestamp")
 
 
 def is_hassio_running(hass: HomeAssistant) -> bool:
@@ -102,6 +103,24 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         )
 
         self._setup_backup_listeners()
+
+    async def _async_get_last_seen_suffixes(self) -> tuple[str, ...]:
+        """Charge le suffixe localisé depuis les fichiers de traduction HA."""
+        suffixes = set(DEFAULT_LAST_SEEN_ATTRS)
+        try:
+            translations = await async_get_translations(
+                self.hass,
+                self.hass.config.language,
+                "config",
+                integrations=[DOMAIN],
+            )
+            key = f"component.{DOMAIN}.config.last_seen_suffix"
+            if key in translations and translations[key]:
+                suffixes.add(translations[key].lower())
+        except Exception as err:
+            _LOGGER.debug("Erreur lors du chargement de la traduction last_seen_suffix : %s", err)
+
+        return tuple(suffixes)
 
     def _setup_backup_listeners(self) -> None:
         """Écoute les événements déclenchés à la fin d'une sauvegarde."""
@@ -196,12 +215,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
         )
 
+        # Récupération dynamique des termes de connexion localisés
+        last_seen_suffixes = await self._async_get_last_seen_suffixes()
+
         updates, unavailable, offline = self._scan_all_states(
             excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
             excluded_unavailable_entities=excluded_unavailable_entities,
             excluded_unavailable_domains=excluded_unavailable_domains,
             excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
             timeout_hours=offline_timeout,
+            last_seen_suffixes=last_seen_suffixes,
         )
 
         traces_scan_interval_min = options.get(
@@ -255,6 +278,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         excluded_unavailable_domains: list,
         excluded_offline: list,
         timeout_hours: float,
+        last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_ATTRS,
     ) -> tuple[list, list, list]:
         """Parcourt TOUS les états HA en une seule passe."""
         now = dt_util.utcnow()
@@ -299,7 +323,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     )
                 continue
 
-            if entity_id.endswith(("last_seen", "derniere_connexion")):
+            if entity_id.endswith(last_seen_suffixes):
                 if entity_id in excluded_offline or state_obj.state == STATE_UNAVAILABLE:
                     continue
 
@@ -307,7 +331,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
                 if not last_seen_dt and state_obj.attributes:
                     attrs = state_obj.attributes
-                    for attr_key in LAST_SEEN_ATTRS:
+                    for attr_key in last_seen_suffixes:
                         val = attrs.get(attr_key)
                         if val is not None:
                             if isinstance(val, (int, float)):

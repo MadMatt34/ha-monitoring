@@ -1,5 +1,6 @@
 {
   "config": {
+    "last_seen_suffix": "derniere_connexion",
     "step": {
       "user": {
         "title": "HA Monitoring",
@@ -85,7 +86,7 @@
               "startup_delay": "Délai de grâce au démarrage (en secondes)"
             },
             "data_description": {
-              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 15 min)."
+              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min)."
             }
           },
           "section_exclusions_system": {
