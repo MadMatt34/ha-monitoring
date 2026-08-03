@@ -25,6 +25,22 @@ from .const import (
     ICON_SCRIPTS,
     ICON_UNAVAILABLE,
     ICON_UPDATES,
+    TRANSLATION_KEY_ADDONS,
+    TRANSLATION_KEY_AUTOMATIONS,
+    TRANSLATION_KEY_INTEGRATIONS,
+    TRANSLATION_KEY_OFFLINE,
+    TRANSLATION_KEY_REPAIRS,
+    TRANSLATION_KEY_SCRIPTS,
+    TRANSLATION_KEY_UNAVAILABLE,
+    TRANSLATION_KEY_UPDATES,
+    UNIQUE_ID_ADDONS,
+    UNIQUE_ID_AUTOMATIONS,
+    UNIQUE_ID_INTEGRATIONS,
+    UNIQUE_ID_OFFLINE,
+    UNIQUE_ID_REPAIRS,
+    UNIQUE_ID_SCRIPTS,
+    UNIQUE_ID_UNAVAILABLE,
+    UNIQUE_ID_UPDATES,
 )
 from .entity import HAMonitoringBaseEntity
 
@@ -39,8 +55,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_addons",
-            entity_key="monitoring_addons",
-            name="Monitoring Applications",
+            unique_key=UNIQUE_ID_ADDONS,
+            translation_key=TRANSLATION_KEY_ADDONS,
             icon=ICON_ADDONS,
             list_attr=ATTR_ADDONS_EN_ERREUR,
             total_attr=ATTR_TOTAL_EN_ERREUR,
@@ -48,8 +64,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_integrations",
-            entity_key="monitoring_integrations",
-            name="Monitoring Intégrations",
+            unique_key=UNIQUE_ID_INTEGRATIONS,
+            translation_key=TRANSLATION_KEY_INTEGRATIONS,
             icon=ICON_INTEGRATIONS,
             list_attr=ATTR_INTEGRATIONS_EN_ERREUR,
             total_attr=ATTR_TOTAL_EN_ERREUR,
@@ -57,8 +73,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_automations",
-            entity_key="monitoring_automations",
-            name="Monitoring Automatisations",
+            unique_key=UNIQUE_ID_AUTOMATIONS,
+            translation_key=TRANSLATION_KEY_AUTOMATIONS,
             icon=ICON_AUTOMATIONS,
             list_attr=ATTR_AUTOMATIONS_EN_ERREUR,
             total_attr=ATTR_TOTAL_EN_ERREUR,
@@ -66,8 +82,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_scripts",
-            entity_key="monitoring_scripts",
-            name="Monitoring Scripts",
+            unique_key=UNIQUE_ID_SCRIPTS,
+            translation_key=TRANSLATION_KEY_SCRIPTS,
             icon=ICON_SCRIPTS,
             list_attr=ATTR_SCRIPTS_EN_ERREUR,
             total_attr=ATTR_TOTAL_EN_ERREUR,
@@ -75,8 +91,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_updates",
-            entity_key="monitoring_updates",
-            name="Monitoring Mises à jour",
+            unique_key=UNIQUE_ID_UPDATES,
+            translation_key=TRANSLATION_KEY_UPDATES,
             icon=ICON_UPDATES,
             list_attr=ATTR_MISES_A_JOUR_EN_ATTENTE,
             total_attr=ATTR_TOTAL_EN_ATTENTE,
@@ -84,8 +100,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_repairs",
-            entity_key="monitoring_repairs",
-            name="Monitoring Réparations",
+            unique_key=UNIQUE_ID_REPAIRS,
+            translation_key=TRANSLATION_KEY_REPAIRS,
             icon=ICON_REPAIRS,
             list_attr=ATTR_CORRECTIONS_EN_ATTENTE,
             total_attr=ATTR_TOTAL_EN_ATTENTE,
@@ -93,8 +109,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_unavailable",
-            entity_key="monitoring_unavailable_entities",
-            name="Monitoring Entités indisponibles",
+            unique_key=UNIQUE_ID_UNAVAILABLE,
+            translation_key=TRANSLATION_KEY_UNAVAILABLE,
             icon=ICON_UNAVAILABLE,
             list_attr=ATTR_ENTITES_INDISPONIBLES,
             total_attr=ATTR_TOTAL_INDISPONIBLES,
@@ -102,8 +118,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
         HAMonitoringGenericSensor(
             coordinator, entry,
             data_key="monitoring_offline",
-            entity_key="monitoring_offline_devices",
-            name="Monitoring Appareils hors ligne",
+            unique_key=UNIQUE_ID_OFFLINE,
+            translation_key=TRANSLATION_KEY_OFFLINE,
             icon=ICON_OFFLINE,
             list_attr=ATTR_APPAREILS_HORS_LIGNE,
             total_attr=ATTR_TOTAL_HORS_LIGNE,
@@ -122,8 +138,8 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         coordinator,
         entry,
         data_key: str,
-        entity_key: str,
-        name: str,
+        unique_key: str,
+        translation_key: str,
         icon: str,
         list_attr: str,
         total_attr: str,
@@ -131,15 +147,13 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
     ):
         super().__init__(coordinator)
         self._data_key = data_key
-        self._attr_name = name
+        self._attr_translation_key = translation_key
         self._attr_icon = icon
         self._list_attr = list_attr
         self._total_attr = total_attr
         self._extra_keys = extra_keys or []
 
-        # Unique ID et Entity ID préfixés
-        self._attr_unique_id = f"{entry.entry_id}_{entity_key}"
-        self.entity_id = f"sensor.{entity_key}"
+        self._attr_unique_id = f"{entry.entry_id}_{unique_key}"
 
     @property
     def native_value(self) -> int:
@@ -165,7 +179,6 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
             "temporisation_demarrage_active": self.coordinator.data.get("in_startup_delay", False),
         }
 
-        # Clés supplémentaires (ex: seuil d'inactivité pour hors-ligne)
         for key in self._extra_keys:
             if key in data:
                 attrs[f"seuil_{key}"] = data[key]
