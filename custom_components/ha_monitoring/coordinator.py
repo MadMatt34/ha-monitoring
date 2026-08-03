@@ -18,9 +18,10 @@ from .const import (
     CONF_EXCLUDED_OFFLINE,
     CONF_EXCLUDED_REPAIRS,
     CONF_EXCLUDED_SCRIPTS,
-    CONF_EXCLUDED_UNAVAILABLE,
     CONF_EXCLUDED_UPDATES,
-    DEFAULT_EXCLUDED_UNAVAILABLE,
+    CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+    CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
+    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
     CONF_STARTUP_DELAY,
@@ -186,11 +187,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-        excluded_unavailable = options.get(CONF_EXCLUDED_UNAVAILABLE, DEFAULT_EXCLUDED_UNAVAILABLE)
+
+        excluded_unavailable_entities = options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES, [])
+        excluded_unavailable_domains = options.get(
+            CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
+        )
 
         updates, unavailable, offline = self._scan_all_states(
             excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
-            excluded_unavailable=excluded_unavailable,
+            excluded_unavailable_entities=excluded_unavailable_entities,
+            excluded_unavailable_domains=excluded_unavailable_domains,
             excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
             timeout_hours=offline_timeout,
         )
@@ -242,7 +248,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
     def _scan_all_states(
         self,
         excluded_updates: list,
-        excluded_unavailable: list,
+        excluded_unavailable_entities: list,
+        excluded_unavailable_domains: list,
         excluded_offline: list,
         timeout_hours: float,
     ) -> tuple[list, list, list]:
@@ -264,7 +271,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
             # Verification : exclusion par ID d'entité OU par Domaine
             if state_obj.state in (STATE_UNAVAILABLE):
-                if entity_id not in excluded_unavailable and domain not in excluded_unavailable:
+                if entity_id not in excluded_unavailable_entities and domain not in excluded_unavailable_domains:
                     unavailable.append(
                         {
                             "entity_id": entity_id,
