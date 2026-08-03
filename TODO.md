@@ -1,20 +1,20 @@
 
 TODO
-- Standardiser les noms d'attributs
 - tout texte dans translations
 - readme à faire
 - version EN (strings, translations, readme)
+- faire icons.json à la place des CONST
 
 TOTEST
 - backup en erreur
 - refresh manuel après une modif
 - reload après une modif
+- last_seen localisé en offline
 - changement des options individuellement
   - update: ok
 
 TOCORRECT
 - Nombre de zombies incorrect au démarrage/reload ???
-- last_seen + localized
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
@@ -36,3 +36,4 @@ DONE
 - reload de l'intég, ne pas remettre tout à zéro et ne pas tenir compte de la tempo de démarrage
 - Organiser la page options
 - Exceptions pour entités indispos > revenir à un sélecteur classique entités et ajouter un sélecteur domaine
+- Standardiser les noms d'attributs
