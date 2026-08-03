@@ -23,7 +23,8 @@ from .const import (
     CONF_EXCLUDED_UPDATES,
     CONF_EXCLUDED_REPAIRS,
     CONF_EXCLUDED_UNAVAILABLE,
-    DEFAULT_EXCLUDED_UNAVAILABLE,
+    CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
+    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     CONF_EXCLUDED_OFFLINE,
 )
 
@@ -39,24 +40,19 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
-    # Récupération des valeurs actuelles ou par défaut pour indisponibles
-    current_excluded_unavailable = options.get(
-        CONF_EXCLUDED_UNAVAILABLE, DEFAULT_EXCLUDED_UNAVAILABLE
+    # Récupération des domaines exclus actuels ou valeurs par défaut
+    current_excluded_domains = options.get(
+        CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
     )
 
-    # Génération dynamique des choix (Domaines + Entités) si hass est disponible
-    unavailable_options = []
+    # Génération dynamique des choix de domaines si hass est disponible
+    domain_options = []
     if hass is not None:
         entity_ids = hass.states.async_entity_ids()
         domains = sorted({entity_id.split(".", 1)[0] for entity_id in entity_ids})
-        all_entities = sorted(entity_ids)
-
-        unavailable_options = [
-            selector.SelectOptionDict(value=d, label=f"📁 Domaine: {d}")
+        domain_options = [
+            selector.SelectOptionDict(value=d, label=d)
             for d in domains
-        ] + [
-            selector.SelectOptionDict(value=e, label=f"🔹 Entité: {e}")
-            for e in all_entities
         ]
 
     return vol.Schema(
@@ -153,17 +149,24 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="update", multiple=True)
             ),
-            # Exclusions Hybrides - Entités Indisponibles (Domaines + Entités)
+            # Exclusions des entités indisponibles : 1. Domaines
             vol.Optional(
-                CONF_EXCLUDED_UNAVAILABLE,
-                default=current_excluded_unavailable,
+                CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
+                default=current_excluded_domains,
             ): selector.SelectSelector(
                 selector.SelectSelectorConfig(
-                    options=unavailable_options,
+                    options=domain_options,
                     custom_value=True,
                     multiple=True,
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
+            ),
+            # Exclusions des entités indisponibles : 2. Entités spécifiques
+            vol.Optional(
+                CONF_EXCLUDED_UNAVAILABLE,
+                default=options.get(CONF_EXCLUDED_UNAVAILABLE) or [],
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(multiple=True)
             ),
             vol.Optional(
                 CONF_EXCLUDED_OFFLINE,
