@@ -6,16 +6,16 @@ DOMAIN = "ha_monitoring"
 
 # Paramètres de configuration
 CONF_SCAN_INTERVAL = "scan_interval"
-DEFAULT_SCAN_INTERVAL = 60  # Secondes
+DEFAULT_SCAN_INTERVAL = 120  # en secondes
 
 CONF_TRACES_SCAN_INTERVAL = "traces_scan_interval"
-DEFAULT_TRACES_SCAN_INTERVAL = 15  # en minutes
+DEFAULT_TRACES_SCAN_INTERVAL = 30  # en minutes
 
 CONF_OFFLINE_TIMEOUT = "offline_timeout"
-DEFAULT_OFFLINE_TIMEOUT = 24  # Heures
+DEFAULT_OFFLINE_TIMEOUT = 24  # en heures
 
 CONF_STARTUP_DELAY = "startup_delay"
-DEFAULT_STARTUP_DELAY = 180  # 180 secondes (3 minutes)
+DEFAULT_STARTUP_DELAY = 120  # en secondes
 
 # Clés d'exclusions
 CONF_EXCLUDED_ADDONS = "excluded_addons"
@@ -24,9 +24,9 @@ CONF_EXCLUDED_AUTOMATIONS = "excluded_automations"
 CONF_EXCLUDED_SCRIPTS = "excluded_scripts"
 CONF_EXCLUDED_UPDATES = "excluded_updates"
 CONF_EXCLUDED_REPAIRS = "excluded_repairs"
-CONF_EXCLUDED_UNAVAILABLE = "excluded_unavailable"
-CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 CONF_EXCLUDED_OFFLINE = "excluded_offline"
+CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
+CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 # Domaines indésirables masqués par défaut
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "button",
