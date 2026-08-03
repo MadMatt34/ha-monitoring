@@ -69,7 +69,6 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
         {
             # --- SECTION 1 : Fréquences & Temporisations ---
             vol.Required("section_timings"): section(
-                collapsed=False,
                 vol.Schema(
                     {
                         vol.Required(
@@ -117,11 +116,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             )
                         ),
                     }
-                )
+                ),
+                collapsed=False,
             ),
             # --- SECTION 2 : Exclusions système ---
             vol.Required("section_exclusions_system"): section(
-                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -149,11 +148,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             )
                         ),
                     }
-                )
+                ),
+                collapsed=True,
             ),
             # --- SECTION 3 : Exclusions Automatisations & Scripts ---
             vol.Required("section_exclusions_scripts"): section(
-                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -169,11 +168,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             selector.EntitySelectorConfig(domain="script", multiple=True)
                         ),
                     }
-                )
+                ),
+                collapsed=True,
             ),
             # --- SECTION 4 : Exclusions Mises à jour ---
             vol.Required("section_exclusions_updates"): section(
-                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -183,11 +182,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             selector.EntitySelectorConfig(domain="update", multiple=True)
                         ),
                     }
-                )
+                ),
+                collapsed=True,
             ),
             # --- SECTION 5 : Exclusions Entités Indisponibles ---
             vol.Required("section_exclusions_unavailable"): section(
-                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -208,11 +207,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             )
                         ),
                     }
-                )
+                ),
+                collapsed=True,
             ),
             # --- SECTION 6 : Exclusions Appareils Offline ---
             vol.Required("section_exclusions_offline"): section(
-                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -222,11 +221,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             selector.EntitySelectorConfig(multiple=True)
                         ),
                     }
-                )
+                ),
+                collapsed=True,
             ),
         }
     )
-
 
 class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Flux d'installation initiale."""
