@@ -92,7 +92,7 @@
         },
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
-          "traces_scan_interval": "Intervalle de scan des traces (minutes)",
+          "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
           "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
           "startup_delay": "Délai de grâce au démarrage (en secondes)",
           "excluded_addons": "Add-ons à exclure (noms ou slugs)",
@@ -101,7 +101,7 @@
           "excluded_automations": "Automations à exclure",
           "excluded_scripts": "Scripts à exclure",
           "excluded_updates": "Mises à jour à exclure",
-          "excluded_offline": "Appareils hors ligne à exclure",
+          "excluded_offline": "Appareils/Capteurs hors ligne à exclure",
           "excluded_unavailable_entities": "Entités indisponibles à exclure",
           "excluded_unavailable_domains": "Domaines indisponibles à exclure"
         },
@@ -129,7 +129,7 @@
     },
     "binary_sensor": {
       "global_status": { "name": "Monitoring Statut Global" },
-      "backup_status": { "name": "Monitoring Etat de la sauvegarde" }
+      "backup_status": { "name": "Monitoring État de la sauvegarde" }
     },
     "button": {
       "force_scan": { "name": "Monitoring Forcer le rafraîchissement" }
