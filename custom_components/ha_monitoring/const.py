@@ -3,6 +3,8 @@ from datetime import timedelta
 from homeassistant.config_entries import ConfigEntryState
 
 DOMAIN = "ha_monitoring"
+DEVICE_NAME = "Home Assistant"
+DEVICE_MANUFACTURER = "Home Assistant Community"
 
 # Paramètres de configuration
 CONF_SCAN_INTERVAL = "scan_interval"
@@ -31,7 +33,9 @@ CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "button",
     "conversation",
-    "scene",
+    "device_tracker",
+    "person",
+    "remote",
     "stt",
     "tts",
 ]
@@ -47,6 +51,7 @@ ICON_REPAIRS = "mdi:screwdriver"
 ICON_UNAVAILABLE = "mdi:ghost-outline"
 ICON_OFFLINE = "mdi:wifi-off"
 ICON_BACKUP = "mdi:backup-restore"
+ICON_REFRESH = "mdi:refresh"
 
 # Identifiants uniques
 UNIQUE_ID_ADDONS = "monitoring_applications_in_error"
@@ -59,6 +64,7 @@ UNIQUE_ID_REPAIRS = "monitoring_repairs_pending"
 UNIQUE_ID_UNAVAILABLE = "monitoring_unavailable_entities"
 UNIQUE_ID_OFFLINE = "monitoring_offline_devices"
 UNIQUE_ID_BACKUP = "monitoring_backup_status"
+UNIQUE_ID_REFRESH = "monitoring_force_scan"
 
 # Clés de traduction
 TRANSLATION_KEY_ADDONS = "addons_in_error"
@@ -71,26 +77,17 @@ TRANSLATION_KEY_REPAIRS = "repairs_pending"
 TRANSLATION_KEY_UNAVAILABLE = "unavailable_entities"
 TRANSLATION_KEY_OFFLINE = "offline_devices"
 TRANSLATION_KEY_BACKUP = "backup_status"
+TRANSLATION_KEY_REFRESH = "force_scan"
 
 # Attributs
-ATTR_ADDONS_EN_ERREUR = "addons_en_erreur"
-ATTR_INTEGRATIONS_EN_ERREUR = "integrations_en_erreur"
-ATTR_AUTOMATIONS_EN_ERREUR = "automations_en_erreur"
-ATTR_SCRIPTS_EN_ERREUR = "scripts_en_erreur"
-ATTR_MISES_A_JOUR_EN_ATTENTE = "mises_a_jour_en_attente"
-ATTR_CORRECTIONS_EN_ATTENTE = "corrections_en_attente"
-ATTR_ENTITES_INDISPONIBLES = "entites_indisponibles"
-ATTR_APPAREILS_HORS_LIGNE = "appareils_hors_ligne"
-ATTR_TOTAL_EN_ERREUR = "total_en_erreur"
-ATTR_TOTAL_EN_ATTENTE = "total_en_attente"
-ATTR_TOTAL_INDISPONIBLES = "total_indisponibles"
-ATTR_TOTAL_HORS_LIGNE = "total_hors_ligne"
-
-# Attributs Sauvegarde
-ATTR_DATE_SAUVEGARDE = "date_sauvegarde"
-ATTR_DATE_DERNIERE_REUSSIE = "date_derniere_reussie"
-ATTR_DATE_PROCHAINE_PLANIFIEE = "date_prochaine_planifiee"
-ATTR_TAILLE_SAUVEGARDE = "taille_sauvegarde"
+ATTR_STARTUP_DELAY = "startup_delay"
+ATTR_DATE_LAST_RUN = "date_last_run"
+ATTR_DATE_LAST_SUCCESS = "date_last_success"
+ATTR_DATE_NEXT_SCHEDULE = "date_next_schedule"
+ATTR_SIZE = "size"
+ATTR_FAILURE = "failure"
+ATTR_TOTAL = "total"
+ATTR_LIST = "list"
 
 # États d'erreur d'une ConfigEntry (Intégrations)
 INTEGRATION_ERROR_STATES = {

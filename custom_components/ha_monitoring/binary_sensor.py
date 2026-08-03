@@ -7,10 +7,11 @@ from homeassistant.components.binary_sensor import (
 )
 
 from .const import (
-    ATTR_DATE_DERNIERE_REUSSIE,
-    ATTR_DATE_PROCHAINE_PLANIFIEE,
-    ATTR_DATE_SAUVEGARDE,
-    ATTR_TAILLE_SAUVEGARDE,
+    ATTR_DATE_LAST_RUN,
+    ATTR_DATE_LAST_SUCCESS,
+    ATTR_DATE_NEXT_SCHEDULE,
+    ATTR_SIZE,
+    ATTR_FAILURE,
     DOMAIN,
     ICON_BACKUP,
     ICON_STATUS,
@@ -93,8 +94,9 @@ class BackupStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
 
         backup_info = self.coordinator.data.get("monitoring_backup", {})
         return {
-            ATTR_DATE_SAUVEGARDE: backup_info.get("date_sauvegarde"),
-            ATTR_DATE_DERNIERE_REUSSIE: backup_info.get("date_derniere_reussie"),
-            ATTR_DATE_PROCHAINE_PLANIFIEE: backup_info.get("date_prochaine_planifiee"),
-            ATTR_TAILLE_SAUVEGARDE: backup_info.get("taille_sauvegarde"),
+            ATTR_DATE_LAST_RUN: backup_info.get("date_last_run"),
+            ATTR_DATE_LAST_SUCCESS: backup_info.get("date_last_success"),
+            ATTR_DATE_NEXT_SCHEDULE: backup_info.get("date_next_schedule"),
+            ATTR_SIZE: backup_info.get("size"),
+            ATTR_FAILURE: backup_info.get("failure"),
         }

@@ -391,11 +391,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             "monitoring_offline": {"items": [], "total": 0, "timeout": timeout},
             "monitoring_backup": {
                 "is_ok": True,
-                "date_sauvegarde": None,
-                "date_derniere_reussie": None,
-                "date_prochaine_planifiee": "Démarrage...",
-                "taille_sauvegarde": None,
-                "reason_failed": None,
+                "date_last_run": None,
+                "date_last_success": None,
+                "date_next_schedule": "Démarrage...",
+                "size": None,
+                "failure": None,
             },
         }
 
@@ -553,11 +553,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         if not backups_list:
             return {
                 "is_ok": False,
-                "date_sauvegarde": None,
-                "date_derniere_reussie": None,
-                "date_prochaine_planifiee": _format_date_local(next_scheduled) if next_scheduled else "Non configurée",
-                "taille_sauvegarde": None,
-                "reason_failed": self._last_backup_failure_reason or "Aucune sauvegarde disponible",
+                "date_last_run": None,
+                "date_last_success": None,
+                "date_next_schedule": _format_date_local(next_scheduled) if next_scheduled else "Not planned",
+                "size": None,
+                "failure": self._last_backup_failure_reason or "No backup available",
             }
 
         def get_date(b):
@@ -576,19 +576,19 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         is_failed = latest_backup.get("failed", False) or latest_backup.get("status") == "failed"
         is_ok = not is_failed
 
-        reason_failed = self._last_backup_failure_reason
+        failure = self._last_backup_failure_reason
         if is_failed:
-            reason_failed = (
+            failure = (
                 latest_backup.get("reason")
                 or latest_backup.get("error")
                 or latest_backup.get("failure_reason")
                 or self._last_backup_failure_reason
-                or "Raison d'échec inconnue"
+                or "Unknown failure reason"
             )
-            self._last_backup_failure_reason = reason_failed
+            self._last_backup_failure_reason = failure
 
         last_dt = get_date(latest_backup)
-        date_sauvegarde = _format_date_local(last_dt) if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else _format_date_local(latest_backup.get("date"))
+        date_last_run = _format_date_local(last_dt) if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else _format_date_local(latest_backup.get("date"))
 
         last_successful_dt = None
         for b in sorted_backups:
@@ -597,20 +597,20 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 break
 
         if last_successful_dt and last_successful_dt != datetime.min.replace(tzinfo=dt_util.UTC):
-            date_derniere_reussie = _format_date_local(last_successful_dt)
+            date_last_success = _format_date_local(last_successful_dt)
         else:
-            date_derniere_reussie = date_sauvegarde if is_ok else "Aucune"
+            date_last_success = date_last_run if is_ok else "Aucune"
 
-        date_prochaine_planifiee = _format_date_local(next_scheduled) if next_scheduled else "Non planifiée"
-        taille_sauvegarde = self._format_size(latest_backup.get("size"))
+        date_next_schedule = _format_date_local(next_scheduled) if next_scheduled else "Non planifiée"
+        size = self._format_size(latest_backup.get("size"))
 
         return {
             "is_ok": is_ok,
-            "date_sauvegarde": date_sauvegarde,
-            "date_derniere_reussie": date_derniere_reussie,
-            "date_prochaine_planifiee": date_prochaine_planifiee,
-            "taille_sauvegarde": taille_sauvegarde,
-            "reason_failed": reason_failed,
+            "date_last_run": date_last_run,
+            "date_last_success": date_last_success,
+            "date_next_schedule": date_next_schedule,
+            "size": size,
+            "failure": failure,
         }
 
     async def _async_get_addons(self, excluded: list) -> list:

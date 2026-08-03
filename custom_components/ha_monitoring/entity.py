@@ -4,7 +4,11 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import DOMAIN
+from .const import (
+    DOMAIN,
+    DEVICE_NAME,
+    DEVICE_MANUFACTURER,
+)
 
 
 class HAMonitoringBaseEntity(CoordinatorEntity):
@@ -26,8 +30,8 @@ class HAMonitoringBaseEntity(CoordinatorEntity):
 
         return DeviceInfo(
             identifiers={(DOMAIN, self.coordinator.entry.entry_id)},
-            name="Home Assistant",
-            manufacturer="Home Assistant Community",
+            name=DEVICE_NAME,
+            manufacturer=DEVICE_MANUFACTURER,
             model=f"Core {HA_VERSION}",
             configuration_url=config_url,
         )

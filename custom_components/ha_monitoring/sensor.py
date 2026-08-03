@@ -4,18 +4,9 @@ import logging
 from homeassistant.components.sensor import SensorEntity
 
 from .const import (
-    ATTR_ADDONS_EN_ERREUR,
-    ATTR_APPAREILS_HORS_LIGNE,
-    ATTR_AUTOMATIONS_EN_ERREUR,
-    ATTR_CORRECTIONS_EN_ATTENTE,
-    ATTR_ENTITES_INDISPONIBLES,
-    ATTR_INTEGRATIONS_EN_ERREUR,
-    ATTR_MISES_A_JOUR_EN_ATTENTE,
-    ATTR_SCRIPTS_EN_ERREUR,
-    ATTR_TOTAL_EN_ATTENTE,
-    ATTR_TOTAL_EN_ERREUR,
-    ATTR_TOTAL_HORS_LIGNE,
-    ATTR_TOTAL_INDISPONIBLES,
+    ATTR_TOTAL,
+    ATTR_LIST,
+    ATTR_STARTUP_DELAY,
     DOMAIN,
     ICON_ADDONS,
     ICON_AUTOMATIONS,
@@ -58,8 +49,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_ADDONS,
             translation_key=TRANSLATION_KEY_ADDONS,
             icon=ICON_ADDONS,
-            list_attr=ATTR_ADDONS_EN_ERREUR,
-            total_attr=ATTR_TOTAL_EN_ERREUR,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -67,8 +58,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_INTEGRATIONS,
             translation_key=TRANSLATION_KEY_INTEGRATIONS,
             icon=ICON_INTEGRATIONS,
-            list_attr=ATTR_INTEGRATIONS_EN_ERREUR,
-            total_attr=ATTR_TOTAL_EN_ERREUR,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -76,8 +67,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_AUTOMATIONS,
             translation_key=TRANSLATION_KEY_AUTOMATIONS,
             icon=ICON_AUTOMATIONS,
-            list_attr=ATTR_AUTOMATIONS_EN_ERREUR,
-            total_attr=ATTR_TOTAL_EN_ERREUR,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -85,8 +76,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_SCRIPTS,
             translation_key=TRANSLATION_KEY_SCRIPTS,
             icon=ICON_SCRIPTS,
-            list_attr=ATTR_SCRIPTS_EN_ERREUR,
-            total_attr=ATTR_TOTAL_EN_ERREUR,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -94,8 +85,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_UPDATES,
             translation_key=TRANSLATION_KEY_UPDATES,
             icon=ICON_UPDATES,
-            list_attr=ATTR_MISES_A_JOUR_EN_ATTENTE,
-            total_attr=ATTR_TOTAL_EN_ATTENTE,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -103,8 +94,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_REPAIRS,
             translation_key=TRANSLATION_KEY_REPAIRS,
             icon=ICON_REPAIRS,
-            list_attr=ATTR_CORRECTIONS_EN_ATTENTE,
-            total_attr=ATTR_TOTAL_EN_ATTENTE,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -112,8 +103,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_UNAVAILABLE,
             translation_key=TRANSLATION_KEY_UNAVAILABLE,
             icon=ICON_UNAVAILABLE,
-            list_attr=ATTR_ENTITES_INDISPONIBLES,
-            total_attr=ATTR_TOTAL_INDISPONIBLES,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator, entry,
@@ -121,8 +112,8 @@ async def async_setup_entry(hass, entry, async_add_entities):
             unique_key=UNIQUE_ID_OFFLINE,
             translation_key=TRANSLATION_KEY_OFFLINE,
             icon=ICON_OFFLINE,
-            list_attr=ATTR_APPAREILS_HORS_LIGNE,
-            total_attr=ATTR_TOTAL_HORS_LIGNE,
+            list_attr=ATTR_LIST,
+            total_attr=ATTR_TOTAL,
             extra_keys=["timeout"],
         ),
     ]
@@ -154,6 +145,7 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         self._extra_keys = extra_keys or []
 
         self._attr_unique_id = f"{entry.entry_id}_{unique_key}"
+        self.entity_id = f"sensor.{unique_key}"
 
     @property
     def native_value(self) -> int:
@@ -176,7 +168,7 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         attrs = {
             self._list_attr: items,
             self._total_attr: total,
-            "temporisation_demarrage_active": self.coordinator.data.get("in_startup_delay", False),
+            ATTR_STARTUP_DELAY: self.coordinator.data.get("in_startup_delay", False),
         }
 
         for key in self._extra_keys:

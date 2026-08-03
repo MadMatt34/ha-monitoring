@@ -6,9 +6,14 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
 from .coordinator import HAMonitoringCoordinator
 from .entity import HAMonitoringBaseEntity
+from .const import (
+    DOMAIN,
+    ICON_REFRESH,
+    UNIQUE_ID_REFRESH,
+    TRANSLATION_KEY_REFRESH,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -26,14 +31,15 @@ async def async_setup_entry(
 class HAMonitoringForceScanButton(HAMonitoringBaseEntity, ButtonEntity):
     """Bouton permettant de forcer le rafraîchissement de HA Monitoring."""
 
-    _attr_translation_key = "force_scan"
-    _attr_icon = "mdi:refresh"
+    _attr_translation_key = TRANSLATION_KEY_REFRESH
+    _attr_icon = ICON_REFRESH
 
     def __init__(self, coordinator: HAMonitoringCoordinator, entry: ConfigEntry) -> None:
         """Initialisation du bouton."""
         super().__init__(coordinator)
         self._entry = entry
-        self._attr_unique_id = f"{entry.entry_id}_force_scan"
+        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_REFRESH}"
+        self.entity_id = f"binary_sensor.{UNIQUE_ID_REFRESH}"
 
     async def async_press(self) -> None:
         """Gère l'appui sur le bouton."""
