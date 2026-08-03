@@ -4,6 +4,32 @@
       "user": {
         "title": "HA Monitoring",
         "description": "Configurez les délais d'actualisation et les listes d'exclusions par type de surveillance.",
+        "sections": {
+          "section_timings": {
+            "name": "⏱️ Fréquences & Temporisations",
+            "description": "Ajustez les intervalles de rafraîchissement et le délai de démarrage."
+          },
+          "section_exclusions_system": {
+            "name": "⚙️ Exclusions Système",
+            "description": "Masquez certains Add-ons, Intégrations ou Réparations des analyses."
+          },
+          "section_exclusions_scripts": {
+            "name": "🏷️ Exclusions d'Automatisations & Scripts",
+            "description": "Excluez des automatisations ou des scripts spécifiques."
+          },
+          "section_exclusions_updates": {
+            "name": "🏷️ Exclusions de Mises à Jour",
+            "description": "Excluez des mises à jour spécifiques."
+          },
+          "section_exclusions_unavailable": {
+            "name": "🏷️ Exclusions d'Entités ou Domaines Indisponibles",
+            "description": "Excluez des entités spécifiques ou des domaines complets."
+          },
+          "section_exclusions_offline": {
+            "name": "🏷️ Exclusions d'Appareils hors-ligne",
+            "description": "Excluez des appareils spécifiques."
+          }
+        },
         "data": {
           "scan_interval": "Intervalle de rafraîchissement (en secondes)",
           "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
@@ -15,8 +41,9 @@
           "excluded_automations": "Automations à exclure",
           "excluded_scripts": "Scripts à exclure",
           "excluded_updates": "Mises à jour à exclure",
-          "excluded_unavailable": "Entités indisponibles à exclure",
-          "excluded_offline": "Appareils/Capteurs hors ligne à exclure"
+          "excluded_offline": "Appareils/Capteurs hors ligne à exclure",
+          "excluded_unavailable_entities": "Entités indisponibles à exclure",
+          "excluded_unavailable_domains": "Domaines indisponibles à exclure"
         },
         "data_description": {
           "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 15 min)."
