@@ -1,9 +1,9 @@
 
 TODO
-Standardiser les noms d'attributs
-tout texte dans translations
-readme à faire
-version EN (strings, translations, readme)
+- Standardiser les noms d'attributs
+- tout texte dans translations
+- readme à faire
+- version EN (strings, translations, readme)
 
 TOTEST
 - backup en erreur
@@ -13,8 +13,8 @@ TOTEST
   - update: ok
 
 TOCORRECT
-Nombre de zombies incorrect au démarrage/reload ???
-last_seen + localized
+- Nombre de zombies incorrect au démarrage/reload ???
+- last_seen + localized
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
