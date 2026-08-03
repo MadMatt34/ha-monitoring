@@ -57,13 +57,19 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
     )
 
     domain_options = []
+    allowed_domains = None
+
     if hass is not None:
         entity_ids = hass.states.async_entity_ids()
-        domains = sorted({entity_id.split(".", 1)[0] for entity_id in entity_ids})
+        all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
+        
         domain_options = [
             selector.SelectOptionDict(value=d, label=d)
-            for d in domains
+            for d in sorted(all_domains)
         ]
+        
+        # Filtre les domaines autorisés pour le sélecteur d'entités (Domaines totaux - Domaines exclus)
+        allowed_domains = sorted(list(all_domains - set(current_excluded_domains)))
 
     return vol.Schema(
         {
@@ -186,12 +192,6 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                 vol.Schema(
                     {
                         vol.Optional(
-                            CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
-                        ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(multiple=True)
-                        ),
-                        vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
                             default=current_excluded_domains,
                         ): selector.SelectSelector(
@@ -200,6 +200,17 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                                 custom_value=True,
                                 multiple=True,
                                 mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                multiple=True,
+                                filter=selector.EntityFilterSelectorConfig(domain=allowed_domains)
+                                if allowed_domains
+                                else None,
                             )
                         ),
                     }
@@ -220,6 +231,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ),
         }
     )
+
 
 class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Flux d'installation initiale."""
@@ -249,6 +261,7 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
         """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
+
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options avec écrasement plat."""
