@@ -25,9 +25,10 @@ CONF_EXCLUDED_SCRIPTS = "excluded_scripts"
 CONF_EXCLUDED_UPDATES = "excluded_updates"
 CONF_EXCLUDED_REPAIRS = "excluded_repairs"
 CONF_EXCLUDED_UNAVAILABLE = "excluded_unavailable"
+CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 CONF_EXCLUDED_OFFLINE = "excluded_offline"
-# Domaines ou entités indésirables masqués par défaut
-DEFAULT_EXCLUDED_UNAVAILABLE = [
+# Domaines indésirables masqués par défaut
+DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "button",
     "conversation",
     "scene",
