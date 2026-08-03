@@ -12,6 +12,7 @@ TOTEST
 - last_seen localisé en offline
 - changement des options individuellement
   - update: ok
+  - integration: ok
 
 TOCORRECT
 - Nombre de zombies incorrect au démarrage/reload ???

@@ -212,8 +212,8 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
                             default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-                        ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(multiple=True)
+                        ): selector.DeviceSelector(
+                            selector.DeviceSelectorConfig(multiple=True)
                         ),
                     }
                 )

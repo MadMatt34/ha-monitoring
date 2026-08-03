@@ -323,10 +323,36 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     )
                 continue
 
+            # --- DÉTECTION HORS-LIGNE (LAST_SEEN) ---
             if entity_id.endswith(last_seen_suffixes):
-                if entity_id in excluded_offline or state_obj.state == STATE_UNAVAILABLE:
+                if state_obj.state == STATE_UNAVAILABLE:
                     continue
 
+                entity_entry = ent_reg.async_get(entity_id)
+                device_id = entity_entry.device_id if entity_entry else None
+
+                # Exclusions : On ignore l'entité si son Appareil (device_id) 
+                # ou son Entity ID / Nom figure dans la liste d'exclusions.
+                if (device_id and device_id in excluded_offline) or entity_id in excluded_offline:
+                    continue
+
+                device_name = None
+                platform = "inconnu"
+
+                if entity_entry:
+                    platform = entity_entry.platform or "inconnu"
+                    if device_id:
+                        device_entry = dev_reg.async_get(device_id)
+                        if device_entry:
+                            device_name = device_entry.name_by_user or device_entry.name
+
+                display_name = device_name or friendly_name
+
+                # Vérification complémentaire sur le nom d'affichage de l'appareil
+                if display_name in excluded_offline:
+                    continue
+
+                # Récupération et parsing du timestamp last_seen
                 last_seen_dt = dt_util.parse_datetime(str(state_obj.state))
 
                 if not last_seen_dt and state_obj.attributes:
@@ -351,29 +377,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 if last_seen_dt:
                     last_seen_dt = dt_util.as_utc(last_seen_dt)
 
+                # Si le délai dépasse le timeout configuré
                 if last_seen_dt and last_seen_dt < cutoff:
-                    device_name = None
-                    platform = "inconnu"
-
-                    entity_entry = ent_reg.async_get(entity_id)
-                    if entity_entry:
-                        platform = entity_entry.platform or "inconnu"
-                        if entity_entry.device_id:
-                            device_entry = dev_reg.async_get(entity_entry.device_id)
-                            if device_entry:
-                                device_name = device_entry.name_by_user or device_entry.name
-
-                    display_name = device_name or friendly_name
-
-                    if display_name not in excluded_offline and entity_id not in excluded_offline:
-                        if not any(item["device"] == display_name for item in offline):
-                            offline.append(
-                                {
-                                    "device": display_name,
-                                    "date": _format_date_local(last_seen_dt),
-                                    "platform": platform,
-                                }
-                            )
+                    if not any(item["device"] == display_name for item in offline):
+                        offline.append(
+                            {
+                                "device": display_name,
+                                "date": _format_date_local(last_seen_dt),
+                                "platform": platform,
+                            }
+                        )
 
         return updates, unavailable, offline
 

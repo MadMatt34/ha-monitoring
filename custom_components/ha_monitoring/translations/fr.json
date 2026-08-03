@@ -12,50 +12,50 @@
             "data": {
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
               "startup_delay": "Délai de grâce au démarrage (en secondes)"
             },
             "data_description": {
-              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 15 min)."
+              "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 2 min).",
+              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
+              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
+              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes)."
             }
           },
           "section_exclusions_system": {
-            "name": "⚙️ Exclusions Système",
-            "description": "Masquez certains Add-ons, Intégrations ou Réparations des analyses.",
+            "name": "⚙️ Exclusions de composants Système",
+            "description": "Ignorer certains Add-ons, Intégrations ou Réparations des analyses.",
             "data": {
               "excluded_addons": "Add-ons à exclure (noms ou slugs)",
-              "excluded_integrations": "Intégrations à exclure (titres ou domaines)",
-              "excluded_repairs": "Réparations à exclure (mots-clés / identifiants)"
+              "excluded_integrations": "Intégrations à exclure (noms ou domaines)",
+              "excluded_repairs": "Réparations à exclure (mots-clés ou identifiants)"
             }
           },
           "section_exclusions_scripts": {
             "name": "🏷️ Exclusions d'Automatisations & Scripts",
-            "description": "Excluez des automatisations ou des scripts spécifiques.",
             "data": {
-              "excluded_automations": "Automations à exclure",
+              "excluded_automations": "Automatisations à exclure",
               "excluded_scripts": "Scripts à exclure"
             }
           },
           "section_exclusions_updates": {
             "name": "🏷️ Exclusions de Mises à Jour",
-            "description": "Excluez des mises à jour spécifiques.",
             "data": {
               "excluded_updates": "Mises à jour à exclure"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Exclusions d'Entités ou Domaines Indisponibles",
-            "description": "Excluez des entités spécifiques ou des domaines complets.",
+            "name": "🏷️ Exclusions d'Entités Indisponibles",
+            "description": "Ignorer des entités spécifiques ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités indisponibles à exclure",
               "excluded_unavailable_domains": "Domaines indisponibles à exclure"
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Exclusions d'Appareils hors-ligne",
-            "description": "Excluez des appareils spécifiques.",
+            "name": "🏷️ Exclusions d'Appareils Hors-ligne",
             "data": {
-              "excluded_offline": "Appareils/Capteurs hors ligne à exclure"
+              "excluded_offline": "Appareils hors-ligne à exclure"
             }
           }
         }
@@ -82,50 +82,50 @@
             "data": {
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité pour appareils hors ligne (en heures)",
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
               "startup_delay": "Délai de grâce au démarrage (en secondes)"
             },
             "data_description": {
-              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min)."
+              "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 2 min).",
+              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
+              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
+              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes)."
             }
           },
           "section_exclusions_system": {
-            "name": "⚙️ Exclusions Système",
-            "description": "Masquez certains Add-ons, Intégrations ou Réparations des analyses.",
+            "name": "⚙️ Exclusions de composants Système",
+            "description": "Ignorer certains Add-ons, Intégrations ou Réparations des analyses.",
             "data": {
               "excluded_addons": "Add-ons à exclure (noms ou slugs)",
-              "excluded_integrations": "Intégrations à exclure (titres ou domaines)",
-              "excluded_repairs": "Réparations à exclure (mots-clés / identifiants)"
+              "excluded_integrations": "Intégrations à exclure (noms ou domaines)",
+              "excluded_repairs": "Réparations à exclure (mots-clés ou identifiants)"
             }
           },
           "section_exclusions_scripts": {
             "name": "🏷️ Exclusions d'Automatisations & Scripts",
-            "description": "Excluez des automatisations ou des scripts spécifiques.",
             "data": {
-              "excluded_automations": "Automations à exclure",
+              "excluded_automations": "Automatisations à exclure",
               "excluded_scripts": "Scripts à exclure"
             }
           },
           "section_exclusions_updates": {
             "name": "🏷️ Exclusions de Mises à Jour",
-            "description": "Excluez des mises à jour spécifiques.",
             "data": {
               "excluded_updates": "Mises à jour à exclure"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Exclusions d'Entités ou Domaines Indisponibles",
-            "description": "Excluez des entités spécifiques ou des domaines complets.",
+            "name": "🏷️ Exclusions d'Entités Indisponibles",
+            "description": "Ignorer des entités spécifiques ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités indisponibles à exclure",
               "excluded_unavailable_domains": "Domaines indisponibles à exclure"
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Exclusions d'Appareils hors-ligne",
-            "description": "Excluez des appareils spécifiques.",
+            "name": "🏷️ Exclusions d'Appareils Hors-ligne",
             "data": {
-              "excluded_offline": "Appareils/Capteurs hors ligne à exclure"
+              "excluded_offline": "Appareils hors-ligne à exclure"
             }
           }
         }
