@@ -5,16 +5,16 @@ tout texte dans translations
 readme à faire
 version EN (strings, translations, readme)
 
-TEST
+TOTEST
 - backup en erreur
 - refresh manuel après une modif
 - reload après une modif
 - changement des options individuellement (update:ok)
 
-CORRECT
+TOCORRECT
 Nombre de zombies incorrect au démarrage/reload ???
 last_seen + localized
-Exceptions pour entités indispos > revenir à un sélecteur classique entités et ajouter un sélecteur domaine
+- Exceptions pour entités indispos > revenir à un sélecteur classique entités et ajouter un sélecteur domaine
 Organiser la page options
 
 DONE
