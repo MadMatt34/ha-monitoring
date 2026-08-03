@@ -13,6 +13,9 @@ TEST
 
 CORRECT
 Nombre de zombies incorrect au démarrage/reload ???
+last_seen + localized
+Exceptions pour entités indispos > revenir à un sélecteur classique entités et ajouter un sélecteur domaine
+Organiser la page options
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
