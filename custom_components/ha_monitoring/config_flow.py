@@ -69,6 +69,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
         {
             # --- SECTION 1 : Fréquences & Temporisations ---
             vol.Required("section_timings"): section(
+                collapsed=False,
                 vol.Schema(
                     {
                         vol.Required(
@@ -120,6 +121,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ),
             # --- SECTION 2 : Exclusions système ---
             vol.Required("section_exclusions_system"): section(
+                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -151,6 +153,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ),
             # --- SECTION 3 : Exclusions Automatisations & Scripts ---
             vol.Required("section_exclusions_scripts"): section(
+                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -170,6 +173,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ),
             # --- SECTION 4 : Exclusions Mises à jour ---
             vol.Required("section_exclusions_updates"): section(
+                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -183,6 +187,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ),
             # --- SECTION 5 : Exclusions Entités Indisponibles ---
             vol.Required("section_exclusions_unavailable"): section(
+                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -207,6 +212,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ),
             # --- SECTION 6 : Exclusions Appareils Offline ---
             vol.Required("section_exclusions_offline"): section(
+                collapsed=True,
                 vol.Schema(
                     {
                         vol.Optional(
@@ -251,13 +257,12 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
-
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options avec écrasement plat."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialise le flux d'options."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Gère l'étape initiale du menu d'options."""
