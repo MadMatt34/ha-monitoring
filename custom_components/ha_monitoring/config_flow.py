@@ -57,6 +57,10 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
 
     return vol.Schema(
         {
+            # --- SECTION 1 : Fréquences & Temporisations (Dépliée par défaut) ---
+            vol.Required("section_timings"): selector.SectionSelector(
+                selector.SectionSelectorConfig(collapsed=False)
+            ),
             vol.Required(
                 CONF_SCAN_INTERVAL,
                 default=current_interval,
@@ -105,7 +109,10 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     unit_of_measurement="s",
                 )
             ),
-            # Exclusions - Textes / Tags
+            # --- SECTION 2 : Exclusions système (Repliée) ---
+            vol.Required("section_exclusions_system"): selector.SectionSelector(
+                selector.SectionSelectorConfig(collapsed=True)
+            ),
             vol.Optional(
                 CONF_EXCLUDED_ADDONS,
                 default=options.get(CONF_EXCLUDED_ADDONS) or [],
@@ -130,7 +137,10 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     options=[], custom_value=True, multiple=True
                 )
             ),
-            # Exclusions - Entités Home Assistant
+            # --- SECTION 3 : Exclusions d'Automatisations et Scripts (Repliée) ---
+            vol.Required("section_exclusions_scripts"): selector.SectionSelector(
+                selector.SectionSelectorConfig(collapsed=True)
+            ),
             vol.Optional(
                 CONF_EXCLUDED_AUTOMATIONS,
                 default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
@@ -143,13 +153,26 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="script", multiple=True)
             ),
+            # --- SECTION 4 : Exclusions de Mises à Jour (Repliée) ---
+            vol.Required("section_exclusions_updates"): selector.SectionSelector(
+                selector.SectionSelectorConfig(collapsed=True)
+            ),
             vol.Optional(
                 CONF_EXCLUDED_UPDATES,
                 default=options.get(CONF_EXCLUDED_UPDATES) or [],
             ): selector.EntitySelector(
                 selector.EntitySelectorConfig(domain="update", multiple=True)
             ),
-            # Exclusions des entités indisponibles : 1. Domaines
+            # --- SECTION 5 : Exclusions d'Entités Indisponibles (Repliée) ---
+            vol.Required("section_exclusions_unavailable"): selector.SectionSelector(
+                selector.SectionSelectorConfig(collapsed=True)
+            ),
+            vol.Optional(
+                CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+                default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
+            ): selector.EntitySelector(
+                selector.EntitySelectorConfig(multiple=True)
+            ),
             vol.Optional(
                 CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
                 default=current_excluded_domains,
@@ -161,12 +184,9 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                     mode=selector.SelectSelectorMode.DROPDOWN,
                 )
             ),
-            # Exclusions des entités indisponibles : 2. Entités spécifiques
-            vol.Optional(
-                CONF_EXCLUDED_UNAVAILABLE,
-                default=options.get(CONF_EXCLUDED_UNAVAILABLE) or [],
-            ): selector.EntitySelector(
-                selector.EntitySelectorConfig(multiple=True)
+            # --- SECTION 6 : Exclusions d'Appareils Offline (Repliée) ---
+            vol.Required("section_exclusions_offline"): selector.SectionSelector(
+                selector.SectionSelectorConfig(collapsed=True)
             ),
             vol.Optional(
                 CONF_EXCLUDED_OFFLINE,
@@ -206,18 +226,17 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
-
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
-    """Gère les options de configuration de HA Monitoring."""
+    """Gère les options avec filtre de nettoyage des sections."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialise le flux d'options."""
         self.config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
-        """Gère l'étape initiale du menu d'options."""
         if user_input is not None:
-            return self.async_create_entry(title="", data=user_input)
+            # On retire les clés "section_*" pour ne pas polluer config_entry.options
+            cleaned_options = {k: v for k, v in user_input.items() if not k.startswith("section_")}
+            return self.async_create_entry(title="", data=cleaned_options)
 
         return self.async_show_form(
             step_id="init",
