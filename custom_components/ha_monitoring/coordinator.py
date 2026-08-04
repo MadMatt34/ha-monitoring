@@ -2,7 +2,7 @@
 import logging
 from datetime import datetime, timedelta, time
 
-from homeassistant.const import STATE_UNAVAILABLE
+from homeassistant.const import (STATE_UNAVAILABLE, STATE_UNKNOWN)
 from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.loader import async_get_integration
 from homeassistant.helpers import issue_registry as ir
@@ -302,7 +302,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             if entity_entry and entity_entry.platform == DOMAIN:
                 continue
 
-            if state_obj.state == STATE_UNAVAILABLE:
+            if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
                 if entity_id not in excluded_unavailable_entities and domain not in excluded_unavailable_domains:
                     unavailable.append(
                         {
@@ -680,7 +680,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     failed.append(integration_name)
         return failed
 
-    def _get_trace_errors(self, domain: str, excluded: list) -> list:
+def _get_trace_errors(self, domain: str, excluded: list) -> list:
+        """Récupère les erreurs dans les traces d'automatisations ou de scripts avec horodatage."""
         trace_data = self.hass.data.get("trace", {})
         failed = []
 
@@ -725,29 +726,95 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                                 friendly_name = "EXCLUDED"
                                 break
                             friendly_name = state.attributes.get("friendly_name") or state.entity_id
+                            entity_id = state.entity_id
                             break
 
                 if friendly_name == "EXCLUDED":
                     continue
 
                 friendly_name = friendly_name or key
-                if friendly_name not in excluded and friendly_name not in failed:
-                    failed.append(friendly_name)
+                if friendly_name in excluded:
+                    continue
+
+                # 1. Extraire la date/heure d'exécution depuis la trace
+                error_time = None
+                if hasattr(latest_trace, "start_time"):
+                    error_time = getattr(latest_trace, "start_time")
+
+                if not error_time and hasattr(latest_trace, "as_dict"):
+                    try:
+                        trace_dict = latest_trace.as_dict()
+                        ts_info = trace_dict.get("timestamp")
+                        if isinstance(ts_info, dict):
+                            error_time = ts_info.get("start") or ts_info.get("finish")
+                        else:
+                            error_time = trace_dict.get("start_time")
+                    except Exception:
+                        pass
+
+                if not error_time and isinstance(latest_trace, dict):
+                    ts_info = latest_trace.get("timestamp")
+                    if isinstance(ts_info, dict):
+                        error_time = ts_info.get("start") or ts_info.get("finish")
+                    else:
+                        error_time = latest_trace.get("start_time")
+
+                # 2. Formater la date en heure locale
+                formatted_date = _format_date_local(error_time)
+
+                item = {
+                    "name": friendly_name,
+                    "entity_id": entity_id,
+                    "date": formatted_date,
+                }
+
+                # Évite les doublons
+                if not any(f["name"] == friendly_name for f in failed):
+                    failed.append(item)
 
         return failed
 
     def _get_pending_repairs(self, excluded: list) -> list:
+        """Récupère les problèmes de réparation en attente avec détails enrichis."""
         issue_registry = ir.async_get(self.hass)
         pending = []
+
         for issue in issue_registry.issues.values():
+            # Filtre les problèmes inactifs ou ignorés
             if hasattr(issue, "active") and not issue.active:
                 continue
             if getattr(issue, "dismissed_version", None) is not None:
                 continue
 
-            issue_name = f"{issue.domain}: {issue.issue_id}"
-            if issue_name in excluded or issue.domain in excluded or issue.issue_id in excluded:
+            issue_identifier = f"{issue.domain}: {issue.issue_id}"
+            if (
+                issue_identifier in excluded
+                or issue.domain in excluded
+                or issue.issue_id in excluded
+            ):
                 continue
-            if issue_name not in pending:
-                pending.append(issue_name)
+
+            # 1. Date / heure de l'alerte (convertie en format local ISO)
+            created_at = getattr(issue, "created", None)
+            formatted_date = _format_date_local(created_at)
+
+            # 2. Plateforme / Domaine
+            platform = issue.domain
+
+            # 3. Dénomination conviviale
+            domain_friendly = issue.domain.replace("_", " ").title()
+            issue_friendly = issue.issue_id.replace("_", " ").capitalize()
+            friendly_name = f"{domain_friendly} — {issue_friendly}"
+
+            repair_item = {
+                "name": friendly_name,
+                "domain": platform,
+                "date": formatted_date,
+                "issue_id": issue.issue_id,
+            }
+
+            # Évite les doublons stricts
+            if repair_item not in pending:
+                pending.append(repair_item)
+
         return pending

@@ -1,7 +1,6 @@
 
 TODO
 - tout texte dans translations
-- readme à faire
 - version EN (strings, translations, readme)
 - batteries faibles
 - service pour ajouter des exclusions
@@ -12,13 +11,29 @@ TOTEST
 - reload après une modif
 - last_seen localisé en offline
 - changement des options individuellement
-  - update: ok
-  - integration: ok
-  - unavailable: ok
+  - updates : ok
+  - integrations : ok
+  - unavailable : ok
   - offline : ok
+  - repairs
+  - applications
+  - automations
+  - scripts
+- Qualité des attributs
+  - integrations : ok
+  - updates : ok
+  - offline : ok
+  - unavailable : ok
+  - backup : ok
+  - repairs
+  - applications
+  - automations
+  - scripts
 
 TOCORRECT
-- ...
+- pour unavailable entities, prendre aussi unknown
+- pour repairs_pending, la liste en attribut doit indiquer la date/heure de l'alerte, la plateforme, une dénomination plus conviviale
+- pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
