@@ -1,14 +1,13 @@
 
 TODO
 - tout texte dans translations
-- version EN (strings, translations, readme)
 - batteries faibles
 - service pour ajouter des exclusions
 
 TOTEST
+- tout suppr et réinstall
 - backup en erreur
 - refresh manuel après une modif
-- reload après une modif
 - last_seen localisé en offline
 - changement des options individuellement
   - updates : ok

@@ -1,0 +1,159 @@
+{
+  "config": {
+    "last_seen_suffix": "last_seen",
+    "step": {
+      "user": {
+        "title": "HA Monitoring",
+        "description": "Configure update intervals and exclusion lists by monitoring type.",
+        "sections": {
+          "section_timings": {
+            "name": "⏱️ Timings & Delays",
+            "description": "Adjust refresh intervals and startup delay.",
+            "data": {
+              "scan_interval": "Refresh interval (in seconds)",
+              "traces_scan_interval": "Traces scan interval (in minutes)",
+              "offline_timeout": "Offline device inactivity threshold (in hours)",
+              "startup_delay": "Startup grace period (in seconds)"
+            },
+            "data_description": {
+              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, add-ons, and checks for pending updates or repairs (default: 2 min).",
+              "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
+              "offline_timeout": "Duration after which a device is considered offline (default: 24 hours).",
+              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes)."
+            }
+          },
+          "section_exclusions_system": {
+            "name": "⚙️ System Component Exclusions",
+            "description": "Ignore specific Add-ons, Integrations, or Repairs from scans.",
+            "data": {
+              "excluded_addons": "Add-ons to exclude (names or slugs)",
+              "excluded_integrations": "Integrations to exclude (names or domains)",
+              "excluded_repairs": "Repairs to exclude (keywords or IDs)"
+            }
+          },
+          "section_exclusions_scripts": {
+            "name": "🏷️ Automation & Script Exclusions",
+            "data": {
+              "excluded_automations": "Automations to exclude",
+              "excluded_scripts": "Scripts to exclude"
+            }
+          },
+          "section_exclusions_updates": {
+            "name": "🏷️ Update Exclusions",
+            "data": {
+              "excluded_updates": "Updates to exclude"
+            }
+          },
+          "section_exclusions_unavailable": {
+            "name": "🏷️ Unavailable Entity Exclusions",
+            "description": "Ignore specific entities or entire domains.",
+            "data": {
+              "excluded_unavailable_entities": "Unavailable entities to exclude",
+              "excluded_unavailable_domains": "Unavailable domains to exclude"
+            }
+          },
+          "section_exclusions_offline": {
+            "name": "🏷️ Offline Device Exclusions",
+            "data": {
+              "excluded_offline": "Offline devices to exclude"
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "invalid_number": "Please enter a valid integer.",
+      "invalid_interval": "Interval must be at least 5 seconds.",
+      "invalid_timeout": "Inactivity threshold must be at least 1 hour."
+    },
+    "abort": {
+      "already_configured": "HA Monitoring integration is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "HA Monitoring Options",
+        "description": "Configure refresh intervals and exclusion rules.",
+        "sections": {
+          "section_timings": {
+            "name": "⏱️ Timings & Delays",
+            "description": "Adjust refresh intervals and startup delay.",
+            "data": {
+              "scan_interval": "Refresh interval (in seconds)",
+              "traces_scan_interval": "Traces scan interval (in minutes)",
+              "offline_timeout": "Offline device inactivity threshold (in hours)",
+              "startup_delay": "Startup grace period (in seconds)"
+            },
+            "data_description": {
+              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, add-ons, and checks for pending updates or repairs (default: 2 min).",
+              "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
+              "offline_timeout": "Duration after which a device is considered offline (default: 24 hours).",
+              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes)."
+            }
+          },
+          "section_exclusions_system": {
+            "name": "⚙️ System Component Exclusions",
+            "description": "Ignore specific Add-ons, Integrations, or Repairs from scans.",
+            "data": {
+              "excluded_addons": "Add-ons to exclude (names or slugs)",
+              "excluded_integrations": "Integrations to exclude (names or domains)",
+              "excluded_repairs": "Repairs to exclude (keywords or IDs)"
+            }
+          },
+          "section_exclusions_scripts": {
+            "name": "🏷️ Automation & Script Exclusions",
+            "data": {
+              "excluded_automations": "Automations to exclude",
+              "excluded_scripts": "Scripts to exclude"
+            }
+          },
+          "section_exclusions_updates": {
+            "name": "🏷️ Update Exclusions",
+            "data": {
+              "excluded_updates": "Updates to exclude"
+            }
+          },
+          "section_exclusions_unavailable": {
+            "name": "🏷️ Unavailable Entity Exclusions",
+            "description": "Ignore specific entities or entire domains.",
+            "data": {
+              "excluded_unavailable_entities": "Unavailable entities to exclude",
+              "excluded_unavailable_domains": "Unavailable domains to exclude"
+            }
+          },
+          "section_exclusions_offline": {
+            "name": "🏷️ Offline Device Exclusions",
+            "data": {
+              "excluded_offline": "Offline devices to exclude"
+            }
+          }
+        }
+      }
+    },
+    "error": {
+      "invalid_number": "Please enter a valid integer.",
+      "invalid_interval": "Interval must be at least 5 seconds.",
+      "invalid_timeout": "Inactivity threshold must be at least 1 hour."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "addons_in_error": { "name": "Monitoring Failed Add-ons" },
+      "integrations_in_error": { "name": "Monitoring Failed Integrations" },
+      "automations_in_error": { "name": "Monitoring Failed Automations" },
+      "scripts_in_error": { "name": "Monitoring Failed Scripts" },
+      "updates_pending": { "name": "Monitoring Pending Updates" },
+      "repairs_pending": { "name": "Monitoring Pending Repairs" },
+      "unavailable_entities": { "name": "Monitoring Unavailable Entities" },
+      "offline_devices": { "name": "Monitoring Offline Devices" }
+    },
+    "binary_sensor": {
+      "global_status": { "name": "Monitoring Global Status" },
+      "backup_status": { "name": "Monitoring Backup Status" }
+    },
+    "button": {
+      "force_scan": { "name": "Monitoring Force Refresh" }
+    }
+  }
+}
