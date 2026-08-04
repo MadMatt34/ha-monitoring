@@ -64,7 +64,8 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
         all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
         
         domain_options = [
-            selector.SelectOptionDict(value=d, label=d)
+            #selector.SelectOptionDict(value=d, label=d)
+            {"value": d, "label": d}
             for d in sorted(all_domains)
         ]
         
@@ -197,7 +198,7 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=domain_options,
-                                custom_value=True,
+                                custom_value=False,
                                 multiple=True,
                                 mode=selector.SelectSelectorMode.DROPDOWN,
                             )
@@ -268,7 +269,7 @@ class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialise le flux d'options."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(self, user_input=None):
         """Gère l'étape initiale du menu d'options."""

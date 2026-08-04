@@ -297,6 +297,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             domain = state_obj.domain
             friendly_name = state_obj.attributes.get("friendly_name") or entity_id
 
+            # Ignorer automatiquement les entités de l'intégration HA Monitoring
+            entity_entry = ent_reg.async_get(entity_id)
+            if entity_entry and entity_entry.platform == DOMAIN:
+                continue
+
             if state_obj.state == STATE_UNAVAILABLE:
                 if entity_id not in excluded_unavailable_entities and domain not in excluded_unavailable_domains:
                     unavailable.append(

@@ -31,11 +31,13 @@ CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 # Domaines indésirables masqués par défaut
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
+    "automation",
     "button",
     "conversation",
     "device_tracker",
     "person",
     "remote",
+    "script",
     "stt",
     "tts",
 ]
@@ -49,7 +51,7 @@ ICON_STATUS = "mdi:shield-alert"
 ICON_UPDATES = "mdi:package-up"
 ICON_REPAIRS = "mdi:screwdriver"
 ICON_UNAVAILABLE = "mdi:ghost-outline"
-ICON_OFFLINE = "mdi:wifi-off"
+ICON_OFFLINE = "mdi:link-variant-off"
 ICON_BACKUP = "mdi:backup-restore"
 ICON_REFRESH = "mdi:refresh"
 

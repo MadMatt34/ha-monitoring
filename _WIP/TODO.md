@@ -15,7 +15,7 @@ TOTEST
   - integration: ok
 
 TOCORRECT
-- Nombre de zombies incorrect au démarrage/reload ???
+- Nombre de zombies incorrect au démarrage/reload > compte ses propres capteurs tant qu'ils ne sont pas peuplés
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
