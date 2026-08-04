@@ -189,3 +189,10 @@ content: >
   ---
   💾 **Dernière sauvegarde :** {{ state_attr('binary_sensor.monitoring_backup_status', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup_status', 'size') }})
 ```
+
+---
+
+## 🛠️ Dépannage
+
+- Consultez les logs : **Paramètres → Système → Journaux**
+- Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
