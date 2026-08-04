@@ -4,6 +4,7 @@ TODO
 - readme à faire
 - version EN (strings, translations, readme)
 - batteries faibles
+- service pour ajouter des exclusions
 
 TOTEST
 - backup en erreur
@@ -13,9 +14,11 @@ TOTEST
 - changement des options individuellement
   - update: ok
   - integration: ok
+  - unavailable: ok
+  - offline : ok
 
 TOCORRECT
-- Nombre de zombies incorrect au démarrage/reload > compte ses propres capteurs tant qu'ils ne sont pas peuplés
+- ...
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
@@ -38,3 +41,4 @@ DONE
 - Organiser la page options
 - Exceptions pour entités indispos > revenir à un sélecteur classique entités et ajouter un sélecteur domaine
 - Standardiser les noms d'attributs
+- Nombre de zombies incorrect au démarrage/reload > compte ses propres capteurs tant qu'ils ne sont pas peuplés

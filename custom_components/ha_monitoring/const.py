@@ -31,15 +31,18 @@ CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 # Domaines indésirables masqués par défaut
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
+    "assist_satellite",
     "automation",
     "button",
     "conversation",
     "device_tracker",
+    "media_player",
     "person",
     "remote",
     "script",
     "stt",
     "tts",
+    "update",
 ]
 
 # Icônes MDI
