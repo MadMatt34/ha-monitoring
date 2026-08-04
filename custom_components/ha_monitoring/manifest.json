@@ -5,6 +5,7 @@
   "config_flow": true,
   "dependencies": [],
   "documentation": "https://github.com/MadMatt34/ha-monitoring/blob/main/README.md",
+  "homeassistant": "2024.1.0",
   "integration_type": "system",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MadMatt34/ha-monitoring/issues",
