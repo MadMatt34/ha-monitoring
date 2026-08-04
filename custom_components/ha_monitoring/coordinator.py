@@ -191,12 +191,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             remaining = max(0.0, startup_delay - elapsed_seconds)
 
             if not self._startup_timer_unsub and remaining > 0:
-                async def _force_refresh_after_delay(_):
+                async def _async_force_refresh_after_delay(_):
                     self._startup_timer_unsub = None
                     await self.async_refresh()
 
                 self._startup_timer_unsub = async_call_later(
-                    self.hass, remaining + 0.1, _force_refresh_after_delay
+                    self.hass, remaining + 0.1, _async_force_refresh_after_delay
                 )
 
             results = self._empty_results(in_startup_delay=True)

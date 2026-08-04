@@ -3,7 +3,7 @@ TODO
 - tout texte dans translations
 - readme à faire
 - version EN (strings, translations, readme)
-- faire icons.json à la place des CONST
+- batteries faibles
 
 TOTEST
 - backup en erreur

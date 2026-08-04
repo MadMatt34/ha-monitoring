@@ -39,7 +39,7 @@ class HAMonitoringForceScanButton(HAMonitoringBaseEntity, ButtonEntity):
         super().__init__(coordinator)
         self._entry = entry
         self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_REFRESH}"
-        self.entity_id = f"binary_sensor.{UNIQUE_ID_REFRESH}"
+        self.entity_id = f"button.{UNIQUE_ID_REFRESH}"
 
     async def async_press(self) -> None:
         """Gère l'appui sur le bouton."""
