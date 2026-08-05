@@ -4,6 +4,7 @@ TODO
 - capteur batteries faibles seuil 15% modifiable
 - capteur notifs persistantes
 - service pour ajouter/supprimer des exclusions (?)
+- event pour notifier d'une nouvelle erreur
 - README
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
 
@@ -26,14 +27,14 @@ TOTEST
   - offline : ok
   - unavailable : ok
   - backup : ok
-  - repairs : 
+  - repairs : ok
   - applications :
-  - automations :
-  - scripts :
+  - automations : ok
+  - scripts : ok
 
 TOCORRECT
 - pour repairs_pending, nom plus convivial (translation system)
-- pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
+- pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
 
 DONE
@@ -61,6 +62,7 @@ DONE
 - pour repairs_pending, la liste en attribut doit indiquer la date/heure de l'alerte, la plateforme, une dénomination plus conviviale
 - pour unavailable entities, prendre aussi unknown
 - pour integrations, ajouter la raison de l'échec
+- pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 
 
 INFO
