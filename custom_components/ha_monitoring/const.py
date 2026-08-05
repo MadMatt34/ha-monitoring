@@ -38,6 +38,7 @@ DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "device_tracker",
     "infrared",
     "media_player",
+    "notify",
     "person",
     "remote",
     "script",

@@ -39,6 +39,7 @@ TOCORRECT
 - pour repairs_pending, nom plus convivial (translation system)
 - rien remonté sur script/automation
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
+- pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
