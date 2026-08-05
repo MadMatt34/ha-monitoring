@@ -1,34 +1,43 @@
 """Intégration HA Monitoring pour la surveillance système."""
+
 import logging
+from typing import Any
+
 from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
 from .coordinator import HAMonitoringCoordinator
 
-_LOGGER = logging.getLogger(__name__)
-PLATFORMS = ["sensor", "binary_sensor", "button"]
+_LOGGER = logging.getLogger("custom_components.ha_monitoring")
+
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+]
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Configuration initiale (legacy yaml)."""
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    """Configuration initiale via YAML (non supportée / legacy)."""
     return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Initialisation de l'intégration depuis l'UI."""
+    """Initialisation de l'intégration depuis une ConfigEntry UI."""
     hass.data.setdefault(DOMAIN, {})
 
-    # 1. Instanciation du coordinator
+    # Instanciation du coordinator
     coordinator = HAMonitoringCoordinator(hass, entry)
 
-    # 2. Premier rafraîchissement des données au chargement
+    # Premier rafraîchissement des données au chargement
     await coordinator.async_config_entry_first_refresh()
 
-    # 3. Stockage de l'instance pour que sensor.py puisse y accéder
+    # Stockage du coordinator pour l'accès depuis les plateformes
     hass.data[DOMAIN][entry.entry_id] = coordinator
 
-    # Recharger automatiquement l'intégration si l'utilisateur change les options dans l'UI
+    # Rechargement automatique lors de la modification des options dans l'UI
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -36,16 +45,18 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Déchargement de l'intégration."""
+    """Déchargement des plateformes et nettoyage des ressources."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        coordinator = hass.data[DOMAIN].get(entry.entry_id)
-        if coordinator and hasattr(coordinator, "async_shutdown"):
+        coordinator: HAMonitoringCoordinator | None = hass.data[DOMAIN].pop(
+            entry.entry_id, None
+        )
+        if coordinator:
             await coordinator.async_shutdown()
-        hass.data[DOMAIN].pop(entry.entry_id, None)
+
     return unload_ok
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Recharge les entités avec le nouvel intervalle."""
+    """Recharge l'intégration lors d'un changement de configuration."""
     await hass.config_entries.async_reload(entry.entry_id)

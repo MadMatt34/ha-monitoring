@@ -1,32 +1,43 @@
 """Classe de base pour toutes les entités de HA Monitoring."""
+
+import logging
+
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.network import NoURLAvailableError, get_url
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import (
-    DOMAIN,
-    DEVICE_NAME,
     DEVICE_MANUFACTURER,
+    DEVICE_NAME,
+    DOMAIN,
 )
+from .coordinator import HAMonitoringCoordinator
+
+_LOGGER = logging.getLogger("custom_components.ha_monitoring.entity")
 
 
-class HAMonitoringBaseEntity(CoordinatorEntity):
+class HAMonitoringBaseEntity(CoordinatorEntity[HAMonitoringCoordinator]):
     """Classe de base pour toutes les entités de HA Monitoring."""
 
-    def __init__(self, coordinator) -> None:
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator: HAMonitoringCoordinator) -> None:
         """Initialise l'entité de base."""
         super().__init__(coordinator)
-        self._attr_has_entity_name = True
 
     @property
     def device_info(self) -> DeviceInfo:
-        """Retourne les informations du Device unique."""
-        # Tente de récupérer l'URL externe en priorité, sinon bascule sur l'interne
-        try:
-            config_url = get_url(self.hass, prefer_external=True)
-        except NoURLAvailableError:
-            config_url = None
+        """Retourne les informations de l'appareil (Device) unique."""
+        config_url: str | None = None
+        if self.hass:
+            try:
+                config_url = get_url(self.hass, prefer_external=True)
+            except NoURLAvailableError:
+                config_url = None
+            except Exception as err:
+                _LOGGER.debug("[HA Monitoring] Erreur récupération URL réseau : %s", err)
+                config_url = None
 
         return DeviceInfo(
             identifiers={(DOMAIN, self.coordinator.entry.entry_id)},

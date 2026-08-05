@@ -1,4 +1,5 @@
-"""Diagnostics support for HA Monitoring."""
+"""Support du diagnostic pour l'intégration HA Monitoring."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -8,8 +9,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
 from .const import DOMAIN
+from .coordinator import HAMonitoringCoordinator
 
-TO_REDACT = {
+TO_REDACT: set[str] = {
     "unique_id",
     "mac",
     "ip",
@@ -28,10 +30,10 @@ TO_REDACT = {
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
-    """Return diagnostics for a config entry."""
-    coordinator = hass.data[DOMAIN][entry.entry_id]
+    """Retourne les données de diagnostic pour une ConfigEntry donnée."""
+    coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    diagnostics_data = {
+    return {
         "config_entry": {
             "entry_id": entry.entry_id,
             "version": entry.version,
@@ -42,9 +44,15 @@ async def async_get_config_entry_diagnostics(
         },
         "coordinator": {
             "last_update_success": coordinator.last_update_success,
-            "last_exception": str(coordinator.last_exception) if coordinator.last_exception else None,
-            "data": async_redact_data(coordinator.data, TO_REDACT) if coordinator.data else {},
+            "last_exception": (
+                str(coordinator.last_exception)
+                if coordinator.last_exception
+                else None
+            ),
+            "data": (
+                async_redact_data(coordinator.data, TO_REDACT)
+                if coordinator.data
+                else {}
+            ),
         },
     }
-
-    return diagnostics_data

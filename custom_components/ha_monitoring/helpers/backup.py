@@ -1,205 +1,287 @@
-"""Gestionnaire d'état et de planification des sauvegardes."""
+"""DataUpdateCoordinator centralisé et optimisé pour HA Monitoring."""
 
-from datetime import datetime, time, timedelta
+from datetime import timedelta
 import logging
-from homeassistant.const import STATE_UNAVAILABLE
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers import entity_registry as er
+from typing import Any
+
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.core import CoreState, Event, HomeAssistant, callback
+from homeassistant.helpers.event import async_call_later
+from homeassistant.helpers.translation import async_get_translations
+from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
-from .utils import format_date_local, format_size, is_hassio_running
+from .const import (
+    CONF_EXCLUDED_ADDONS,
+    CONF_EXCLUDED_AUTOMATIONS,
+    CONF_EXCLUDED_INTEGRATIONS,
+    CONF_EXCLUDED_OFFLINE,
+    CONF_EXCLUDED_REPAIRS,
+    CONF_EXCLUDED_SCRIPTS,
+    CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
+    CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+    CONF_EXCLUDED_UPDATES,
+    CONF_OFFLINE_TIMEOUT,
+    CONF_SCAN_INTERVAL,
+    CONF_STARTUP_DELAY,
+    CONF_TRACES_SCAN_INTERVAL,
+    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
+    DEFAULT_LAST_SEEN_ATTRS,
+    DEFAULT_OFFLINE_TIMEOUT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_STARTUP_DELAY,
+    DEFAULT_TRACES_SCAN_INTERVAL,
+    DOMAIN,
+)
+from .helpers.backup import async_get_backup_info
+from .helpers.system import (
+    async_get_addons,
+    async_get_failed_integrations,
+    async_get_pending_repairs,
+    scan_all_states,
+)
+from .helpers.trace import get_trace_errors
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("custom_components.ha_monitoring.coordinator")
 
 
-def calculate_next_backup(schedule_state: Any, schedule_time_obj: Any) -> datetime | None:
-    """Calcule la date et l'heure de la prochaine sauvegarde."""
-    try:
-        state_str = str(schedule_state).split(".")[-1].lower()
-        if not state_str or state_str == "never":
-            return None
+class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+    """Coordinator principal gérant les collectes et la temporisation."""
 
-        now = dt_util.now()
+    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        """Initialise le coordinateur."""
+        self.entry = entry
 
-        if isinstance(schedule_time_obj, time):
-            h, m = schedule_time_obj.hour, schedule_time_obj.minute
-        elif hasattr(schedule_time_obj, "hour") and hasattr(schedule_time_obj, "minute"):
-            h, m = schedule_time_obj.hour, schedule_time_obj.minute
-        else:
-            parts = str(schedule_time_obj).split(":")
-            h, m = int(parts[0]), int(parts[1])
+        if DOMAIN not in hass.data:
+            hass.data[DOMAIN] = {}
+        if "ha_start_time" not in hass.data[DOMAIN]:
+            hass.data[DOMAIN]["ha_start_time"] = dt_util.utcnow()
 
-        target_time = time(hour=h, minute=m)
-        target_dt = datetime.combine(now.date(), target_time, tzinfo=now.tzinfo)
+        self._ha_start_time = hass.data[DOMAIN]["ha_start_time"]
+        self._skip_startup_delay = False
+        self._cached_backup_info: dict[str, Any] | None = None
+        self._last_backup_failure_reason: str | None = None
+        self._startup_timer_unsub: Any = None
+        self._bus_listeners_unsub: list[Any] = []
 
-        if state_str == "daily":
-            if now >= target_dt:
-                target_dt += timedelta(days=1)
-            return target_dt
+        self._last_trace_check_time: Any = None
+        self._cached_automations: list[dict[str, Any]] = []
+        self._cached_scripts: list[dict[str, Any]] = []
 
-        days = {
-            "monday": 0, "tuesday": 1, "wednesday": 2, "thursday": 3,
-            "friday": 4, "saturday": 5, "sunday": 6
-        }
-        if state_str in days:
-            target_day = days[state_str]
-            current_day = now.weekday()
+        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
-            days_ahead = target_day - current_day
-            if days_ahead < 0 or (days_ahead == 0 and now >= target_dt):
-                days_ahead += 7
-
-            target_dt += timedelta(days=days_ahead)
-            return target_dt
-
-    except Exception as err:
-        _LOGGER.debug("Erreur calcul prochaine sauvegarde : %s", err)
-
-    return None
-
-async def async_get_backup_info(hass: HomeAssistant, last_failure_reason: str | None) -> dict:
-    """Interroge le gestionnaire officiel de sauvegarde (Backup Core ou Supervisor)."""
-    backups_list = []
-    next_scheduled = None
-
-    if is_hassio_running(hass):
-        try:
-            client = hass.data.get("hassio")
-            if client:
-                backups_info = None
-                if hasattr(client, "async_get_backups"):
-                    backups_info = await client.async_get_backups()
-                elif hasattr(client, "send_command"):
-                    backups_info = await client.send_command("/backups", method="get")
-
-                if isinstance(backups_info, dict):
-                    if "data" in backups_info and isinstance(backups_info["data"], dict):
-                        backups_list = backups_info["data"].get("backups", [])
-                    elif "backups" in backups_info:
-                        backups_list = backups_info.get("backups", [])
-        except Exception as err:
-            _LOGGER.debug("Erreur récupération sauvegardes via Hassio : %s", err)
-
-    if "backup" in hass.data:
-        try:
-            backup_manager = hass.data["backup"]
-            raw_backups = None
-
-            if not backups_list:
-                if hasattr(backup_manager, "async_get_backups"):
-                    raw_backups = await backup_manager.async_get_backups()
-                elif hasattr(backup_manager, "backups"):
-                    raw_backups = backup_manager.backups
-
-                if isinstance(raw_backups, dict):
-                    for b in raw_backups.values():
-                        if isinstance(b, dict):
-                            backups_list.append(b)
-                        else:
-                            backups_list.append({
-                                "slug": getattr(b, "slug", None) or getattr(b, "id", ""),
-                                "name": getattr(b, "name", ""),
-                                "date": getattr(b, "date", None),
-                                "size": getattr(b, "size", 0),
-                                "failed": getattr(b, "failed", False) or getattr(b, "status", "") == "failed",
-                                "reason": getattr(b, "reason", None) or getattr(b, "error", None),
-                            })
-
-            if hasattr(backup_manager, "async_get_config") or hasattr(backup_manager, "config"):
-                try:
-                    cfg = await backup_manager.async_get_config() if hasattr(backup_manager, "async_get_config") else backup_manager.config
-                    state, time_val = None, None
-
-                    if isinstance(cfg, dict):
-                        cb = cfg.get("create_backup", {})
-                        if isinstance(cb, dict):
-                            state, time_val = cb.get("state"), cb.get("time")
-                    else:
-                        cb = getattr(cfg, "create_backup", None)
-                        if cb:
-                            state = getattr(cb, "state", None)
-                            time_val = getattr(cb, "time", None)
-                            if hasattr(state, "value"):
-                                state = state.value
-
-                    if state and time_val:
-                        next_scheduled = calculate_next_backup(state, time_val)
-                except Exception as err:
-                    _LOGGER.debug("Erreur async_get_config backup : %s", err)
-
-        except Exception as err:
-            _LOGGER.debug("Erreur récupération sauvegardes via Backup Core : %s", err)
-
-    if not next_scheduled:
-        ent_reg = er.async_get(hass)
-        for entity_id, entity_entry in ent_reg.entities.items():
-            if entity_entry.platform == "backup" and entity_entry.domain == "sensor":
-                state_obj = hass.states.get(entity_id)
-                if state_obj and state_obj.state not in (STATE_UNAVAILABLE, None, ""):
-                    parsed_dt = dt_util.parse_datetime(state_obj.state)
-                    if parsed_dt and parsed_dt > dt_util.utcnow():
-                        next_scheduled = parsed_dt
-                        break
-
-    if not backups_list:
-        return {
-            "is_ok": False,
-            "date_last_run": None,
-            "date_last_success": None,
-            "date_next_schedule": format_date_local(next_scheduled) if next_scheduled else "Not planned",
-            "size": None,
-            "failure": last_failure_reason or "No backup available",
-        }
-
-    def get_date(b):
-        d = b.get("date")
-        if isinstance(d, datetime):
-            return dt_util.as_utc(d)
-        if isinstance(d, str):
-            parsed = dt_util.parse_datetime(d)
-            if parsed:
-                return dt_util.as_utc(parsed)
-        return datetime.min.replace(tzinfo=dt_util.UTC)
-
-    sorted_backups = sorted(backups_list, key=get_date, reverse=True)
-    latest_backup = sorted_backups[0]
-
-    is_failed = latest_backup.get("failed", False) or latest_backup.get("status") == "failed"
-    is_ok = not is_failed
-
-    failure = last_failure_reason
-    if is_failed:
-        failure = (
-            latest_backup.get("reason")
-            or latest_backup.get("error")
-            or latest_backup.get("failure_reason")
-            or last_failure_reason
-            or "Unknown failure reason"
+        super().__init__(
+            hass,
+            _LOGGER,
+            name=DOMAIN,
+            update_interval=timedelta(seconds=int(scan_interval)),
         )
 
-    last_dt = get_date(latest_backup)
-    date_last_run = format_date_local(last_dt) if last_dt != datetime.min.replace(tzinfo=dt_util.UTC) else format_date_local(latest_backup.get("date"))
+        self._setup_backup_listeners()
 
-    last_successful_dt = None
-    for b in sorted_backups:
-        if not b.get("failed", False) and b.get("status") != "failed":
-            last_successful_dt = get_date(b)
-            break
+    async def _async_get_last_seen_suffixes(self) -> tuple[str, ...]:
+        """Charge les suffixes de 'last_seen' localisés depuis les traductions HA."""
+        suffixes = set(DEFAULT_LAST_SEEN_ATTRS)
+        try:
+            translations = await async_get_translations(
+                self.hass,
+                self.hass.config.language,
+                "config",
+                integrations=[DOMAIN],
+            )
+            key = f"component.{DOMAIN}.config.last_seen_suffix"
+            if key in translations and translations[key]:
+                suffixes.add(translations[key].lower())
+        except Exception as err:
+            _LOGGER.debug("[HA Monitoring] Erreur chargement traduction last_seen_suffix : %s", err)
 
-    date_last_success = (
-        format_date_local(last_successful_dt)
-        if last_successful_dt and last_successful_dt != datetime.min.replace(tzinfo=dt_util.UTC)
-        else (date_last_run if is_ok else "Aucune")
-    )
+        return tuple(suffixes)
 
-    date_next_schedule = format_date_local(next_scheduled) if next_scheduled else "Non planifiée"
-    size = format_size(latest_backup.get("size"))
+    def _setup_backup_listeners(self) -> None:
+        """Écoute les événements du bus déclenchés lors des sauvegardes."""
+        async def _async_on_backup_event(event: Event) -> None:
+            _LOGGER.debug(
+                "[HA Monitoring] Événement de sauvegarde détecté : %s",
+                event.event_type,
+            )
+            try:
+                if event.event_type == "backup_failed" or event.data.get("status") == "failed":
+                    self._last_backup_failure_reason = (
+                        event.data.get("reason")
+                        or event.data.get("error")
+                        or event.data.get("message")
+                        or "Échec de sauvegarde signalé par événement"
+                    )
 
-    return {
-        "is_ok": is_ok,
-        "date_last_run": date_last_run,
-        "date_last_success": date_last_success,
-        "date_next_schedule": date_next_schedule,
-        "size": size,
-        "failure": failure,
-    }
+                self._cached_backup_info = await async_get_backup_info(
+                    self.hass, self._last_backup_failure_reason
+                )
+                self.async_update_listeners()
+            except Exception as err:
+                _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
+
+        for event_type in (
+            "backup_completed",
+            "backup_successful",
+            "backup_failed",
+            "hassio_backup_completed",
+        ):
+            unsub = self.hass.bus.async_listen(event_type, _async_on_backup_event)
+            self._bus_listeners_unsub.append(unsub)
+
+    async def async_shutdown(self) -> None:
+        """Détruit proprement les écouteurs et temporisateurs lors de la fermeture."""
+        if self._startup_timer_unsub:
+            self._startup_timer_unsub()
+            self._startup_timer_unsub = None
+
+        for unsub in self._bus_listeners_unsub:
+            unsub()
+        self._bus_listeners_unsub.clear()
+
+        await super().async_shutdown()
+
+    async def async_force_refresh(self) -> None:
+        """Force un rafraîchissement immédiat de toutes les données sans temporisation."""
+        if self._startup_timer_unsub:
+            self._startup_timer_unsub()
+            self._startup_timer_unsub = None
+
+        self._skip_startup_delay = True
+        self._last_trace_check_time = None
+        self._cached_backup_info = None
+
+        await self.async_refresh()
+
+    async def _async_update_data(self) -> dict[str, Any]:
+        """Récupère l'ensemble des métriques d'état du système."""
+        startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
+        now = dt_util.utcnow()
+        elapsed_seconds = (now - self._ha_start_time).total_seconds()
+
+        in_startup_phase = (
+            not self._skip_startup_delay
+            and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
+        )
+
+        # Mise à jour du cache de sauvegarde si nécessaire
+        if self._cached_backup_info is None:
+            self._cached_backup_info = await async_get_backup_info(
+                self.hass, self._last_backup_failure_reason
+            )
+
+        # Traitement de la période d'initialisation
+        if in_startup_phase:
+            remaining = max(0.0, startup_delay - elapsed_seconds)
+
+            if not self._startup_timer_unsub and remaining > 0:
+                @callback
+                def _force_refresh_after_delay(_: Any) -> None:
+                    self._startup_timer_unsub = None
+                    self.hass.async_create_task(self.async_refresh())
+
+                self._startup_timer_unsub = async_call_later(
+                    self.hass, remaining + 0.1, _force_refresh_after_delay
+                )
+
+            results = self._empty_results(in_startup_delay=True)
+            results["monitoring_backup"] = self._cached_backup_info
+            return results
+
+        if self._startup_timer_unsub:
+            self._startup_timer_unsub()
+            self._startup_timer_unsub = None
+
+        options = self.entry.options
+        offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
+
+        excluded_unavailable_entities = options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES, [])
+        excluded_unavailable_domains = options.get(
+            CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
+        )
+
+        last_seen_suffixes = await self._async_get_last_seen_suffixes()
+
+        # Balayage complet des états (système, hors-ligne, indisponibles, updates)
+        updates, unavailable, offline = scan_all_states(
+            self.hass,
+            excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
+            excluded_unavailable_entities=excluded_unavailable_entities,
+            excluded_unavailable_domains=excluded_unavailable_domains,
+            excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
+            timeout_hours=offline_timeout,
+            last_seen_suffixes=last_seen_suffixes,
+        )
+
+        # Vérification périodique des traces d'erreurs (automations & scripts)
+        traces_scan_interval_min = options.get(
+            CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
+        )
+        traces_scan_interval_sec = float(traces_scan_interval_min) * 60
+
+        if (
+            self._last_trace_check_time is None
+            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
+        ):
+            self._cached_automations = get_trace_errors(
+                self.hass, "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
+            )
+            self._cached_scripts = get_trace_errors(
+                self.hass, "script", options.get(CONF_EXCLUDED_SCRIPTS, [])
+            )
+            self._last_trace_check_time = now
+
+        # Collecte asynchrone des Add-ons, Intégrations et Réparations
+        addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
+        integrations = await async_get_failed_integrations(
+            self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
+        )
+        repairs = await async_get_pending_repairs(
+            self.hass, options.get(CONF_EXCLUDED_REPAIRS, [])
+        )
+
+        return {
+            "in_startup_delay": False,
+            "monitoring_addons": {"items": addons, "total": len(addons)},
+            "monitoring_integrations": {"items": integrations, "total": len(integrations)},
+            "monitoring_automations": {
+                "items": self._cached_automations,
+                "total": len(self._cached_automations),
+            },
+            "monitoring_scripts": {
+                "items": self._cached_scripts,
+                "total": len(self._cached_scripts),
+            },
+            "monitoring_updates": {"items": updates, "total": len(updates)},
+            "monitoring_repairs": {"items": repairs, "total": len(repairs)},
+            "monitoring_unavailable": {"items": unavailable, "total": len(unavailable)},
+            "monitoring_offline": {
+                "items": offline,
+                "total": len(offline),
+                "timeout": offline_timeout,
+            },
+            "monitoring_backup": self._cached_backup_info,
+        }
+
+    def _empty_results(self, in_startup_delay: bool) -> dict[str, Any]:
+        """Génère la structure par défaut pendant le délai de démarrage."""
+        timeout = self.entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
+        return {
+            "in_startup_delay": in_startup_delay,
+            "monitoring_addons": {"items": [], "total": 0},
+            "monitoring_integrations": {"items": [], "total": 0},
+            "monitoring_automations": {"items": [], "total": 0},
+            "monitoring_scripts": {"items": [], "total": 0},
+            "monitoring_updates": {"items": [], "total": 0},
+            "monitoring_repairs": {"items": [], "total": 0},
+            "monitoring_unavailable": {"items": [], "total": 0},
+            "monitoring_offline": {"items": [], "total": 0, "timeout": timeout},
+            "monitoring_backup": {
+                "is_ok": True,
+                "date_last_run": None,
+                "date_last_success": None,
+                "date_next_schedule": "Démarrage...",
+                "size": None,
+                "failure": None,
+            },
+        }

@@ -1,40 +1,43 @@
 """Config Flow et Options Flow pour l'intégration HA Monitoring."""
+
 import logging
+from typing import Any
+
 import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import section
+from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.helpers import selector
 
 from .const import (
-    DOMAIN,
-    CONF_SCAN_INTERVAL,
-    DEFAULT_SCAN_INTERVAL,
-    CONF_TRACES_SCAN_INTERVAL,
-    DEFAULT_TRACES_SCAN_INTERVAL,
-    CONF_OFFLINE_TIMEOUT,
-    DEFAULT_OFFLINE_TIMEOUT,
-    CONF_STARTUP_DELAY,
-    DEFAULT_STARTUP_DELAY,
     CONF_EXCLUDED_ADDONS,
-    CONF_EXCLUDED_INTEGRATIONS,
     CONF_EXCLUDED_AUTOMATIONS,
-    CONF_EXCLUDED_SCRIPTS,
-    CONF_EXCLUDED_UPDATES,
-    CONF_EXCLUDED_REPAIRS,
-    CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-    CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
-    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
+    CONF_EXCLUDED_INTEGRATIONS,
     CONF_EXCLUDED_OFFLINE,
+    CONF_EXCLUDED_REPAIRS,
+    CONF_EXCLUDED_SCRIPTS,
+    CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
+    CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+    CONF_EXCLUDED_UPDATES,
+    CONF_OFFLINE_TIMEOUT,
+    CONF_SCAN_INTERVAL,
+    CONF_STARTUP_DELAY,
+    CONF_TRACES_SCAN_INTERVAL,
+    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
+    DEFAULT_OFFLINE_TIMEOUT,
+    DEFAULT_SCAN_INTERVAL,
+    DEFAULT_STARTUP_DELAY,
+    DEFAULT_TRACES_SCAN_INTERVAL,
+    DOMAIN,
 )
 
-_LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger("custom_components.ha_monitoring.config_flow")
 
 
-def _flatten_options(user_input: dict) -> dict:
+def _flatten_options(user_input: dict[str, Any]) -> dict[str, Any]:
     """Aplatit les données des sections pour les extraire au niveau racine."""
-    flat = {}
+    flat: dict[str, Any] = {}
     for key, value in user_input.items():
         if isinstance(value, dict):
             flat.update(value)
@@ -43,12 +46,17 @@ def _flatten_options(user_input: dict) -> dict:
     return flat
 
 
-def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -> vol.Schema:
+def get_schema(
+    hass: HomeAssistant | None = None,
+    options: dict[str, Any] | None = None,
+) -> vol.Schema:
     """Construit le schéma du formulaire avec sélecteurs et exclusions."""
     options = options or {}
 
     current_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    current_traces_interval = options.get(CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL)
+    current_traces_interval = options.get(
+        CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
+    )
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
@@ -56,19 +64,17 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
         CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
     )
 
-    domain_options = []
-    allowed_domains = None
+    domain_options: list[dict[str, str]] = []
+    allowed_domains: list[str] | None = None
 
     if hass is not None:
         entity_ids = hass.states.async_entity_ids()
         all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
-        
+
         domain_options = [
-            #selector.SelectOptionDict(value=d, label=d)
-            {"value": d, "label": d}
-            for d in sorted(all_domains)
+            {"value": d, "label": d} for d in sorted(all_domains)
         ]
-        
+
         # Filtre les domaines autorisés pour le sélecteur d'entités (Domaines totaux - Domaines exclus)
         allowed_domains = sorted(list(all_domains - set(current_excluded_domains)))
 
@@ -83,7 +89,11 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             default=current_interval,
                         ): selector.NumberSelector(
                             selector.NumberSelectorConfig(
-                                min=5, max=3600, step=5, mode=selector.NumberSelectorMode.BOX, unit_of_measurement="s"
+                                min=5,
+                                max=3600,
+                                step=5,
+                                mode=selector.NumberSelectorMode.BOX,
+                                unit_of_measurement="s",
                             )
                         ),
                         vol.Required(
@@ -164,13 +174,17 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             CONF_EXCLUDED_AUTOMATIONS,
                             default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
                         ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(domain="automation", multiple=True)
+                            selector.EntitySelectorConfig(
+                                domain="automation", multiple=True
+                            )
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_SCRIPTS,
                             default=options.get(CONF_EXCLUDED_SCRIPTS) or [],
                         ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(domain="script", multiple=True)
+                            selector.EntitySelectorConfig(
+                                domain="script", multiple=True
+                            )
                         ),
                     }
                 )
@@ -183,7 +197,9 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                             CONF_EXCLUDED_UPDATES,
                             default=options.get(CONF_EXCLUDED_UPDATES) or [],
                         ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(domain="update", multiple=True)
+                            selector.EntitySelectorConfig(
+                                domain="update", multiple=True
+                            )
                         ),
                     }
                 )
@@ -205,11 +221,14 @@ def get_schema(hass: HomeAssistant | None = None, options: dict | None = None) -
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES)
+                            or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
-                                filter=selector.EntityFilterSelectorConfig(domain=allowed_domains)
+                                filter=selector.EntityFilterSelectorConfig(
+                                    domain=allowed_domains
+                                )
                                 if allowed_domains
                                 else None,
                             )
@@ -239,7 +258,9 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(self, user_input=None):
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Formulaire initial d'ajout de l'intégration."""
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
@@ -259,7 +280,9 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     @staticmethod
     @callback
-    def async_get_options_flow(config_entry: config_entries.ConfigEntry) -> config_entries.OptionsFlow:
+    def async_get_options_flow(
+        config_entry: config_entries.ConfigEntry,
+    ) -> config_entries.OptionsFlow:
         """Retourne le gestionnaire d'options."""
         return HAMonitoringOptionsFlowHandler(config_entry)
 
@@ -271,7 +294,9 @@ class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
         """Initialise le flux d'options."""
         self._config_entry = config_entry
 
-    async def async_step_init(self, user_input=None):
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> FlowResult:
         """Gère l'étape initiale du menu d'options."""
         if user_input is not None:
             cleaned_options = _flatten_options(user_input)
