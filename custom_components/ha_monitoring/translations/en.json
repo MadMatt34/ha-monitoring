@@ -155,5 +155,19 @@
     "button": {
       "force_scan": { "name": "Monitoring Force Refresh" }
     }
+  },
+  "issues": {
+    "setup_retry": {
+      "title": "Connection temporarily unavailable (retry in progress)"
+    },
+    "setup_error": {
+      "title": "Setup failed / Configuration error"
+    },
+    "migration_error": {
+      "title": "Error migrating integration data"
+    },
+    "unknown_error": {
+      "title": "Abnormal status ({state})"
+    }
   }
 }

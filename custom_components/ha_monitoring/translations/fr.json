@@ -155,5 +155,19 @@
     "button": {
       "force_scan": { "name": "Monitoring Forcer le rafraîchissement" }
     }
+  },
+  "issues": {
+    "setup_retry": {
+      "title": "Connexion temporairement impossible (tentative de reconnexion en cours)"
+    },
+    "setup_error": {
+      "title": "Échec d'initialisation / Erreur de configuration"
+    },
+    "migration_error": {
+      "title": "Erreur lors de la migration des données de l'intégration"
+    },
+    "unknown_error": {
+      "title": "État anormal ({state})"
+    }
   }
 }

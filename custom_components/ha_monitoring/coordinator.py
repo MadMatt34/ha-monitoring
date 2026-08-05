@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, time
 from homeassistant.const import (STATE_UNAVAILABLE, STATE_UNKNOWN)
 from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.loader import async_get_integration
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.helpers import device_registry as dr, entity_registry as er, issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.event import async_call_later
@@ -664,20 +665,92 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return []
 
     async def _async_get_failed_integrations(self, excluded: list) -> list:
-        failed = []
-        for entry in self.hass.config_entries.async_entries():
-            if entry.state in INTEGRATION_ERROR_STATES:
-                if entry.domain in excluded:
-                    continue
-                try:
-                    integration = await async_get_integration(self.hass, entry.domain)
-                    integration_name = integration.name
-                except Exception:
-                    integration_name = entry.domain.replace("_", " ").title()
+        """Récupère les intégrations en erreur avec la raison traduite."""
+        error_states = {
+            ConfigEntryState.SETUP_ERROR,
+            ConfigEntryState.SETUP_RETRY,
+            ConfigEntryState.MIGRATION_ERROR,
+        }
 
-                if integration_name not in excluded and integration_name not in failed:
-                    failed.append(integration_name)
-        return failed
+        entries = [
+            entry
+            for entry in self.hass.config_entries.async_entries()
+            if entry.state in error_states
+            and entry.domain not in excluded
+            and entry.title not in excluded
+            and entry.entry_id not in excluded
+        ]
+
+        if not entries:
+            return []
+
+        # 1. Domaines des intégrations en erreur + ha_monitoring pour nos fallbacks
+        domains = {entry.domain for entry in entries}
+        domains.add(DOMAIN)
+
+        # 2. Chargement des traductions (HA inclut automatiquement custom_components/ha_monitoring/translations/)
+        translations = {}
+        try:
+            translations = await async_get_translations(
+                self.hass,
+                self.hass.config.language,
+                "issues",
+                domains=domains,
+            )
+        except Exception:
+            translations = {}
+
+        failed_entries = []
+
+        for entry in entries:
+            raw_reason = getattr(entry, "reason", None)
+            friendly_reason = None
+
+            # 3. Recherche dans la traduction de l'intégration tierce
+            if raw_reason:
+                error_key = f"component.{entry.domain}.config.error.{raw_reason}"
+                abort_key = f"component.{entry.domain}.config.abort.{raw_reason}"
+
+                if error_key in translations:
+                    friendly_reason = translations[error_key]
+                elif abort_key in translations:
+                    friendly_reason = translations[abort_key]
+                else:
+                    friendly_reason = raw_reason
+
+            # 4. Fallbacks extraits de fr.json (ha_monitoring)
+            if not friendly_reason:
+                if entry.state == ConfigEntryState.SETUP_RETRY:
+                    friendly_reason = translations.get(
+                        f"component.{DOMAIN}.issues.setup_retry.title",
+                        "Connexion temporairement impossible",
+                    )
+                elif entry.state == ConfigEntryState.SETUP_ERROR:
+                    friendly_reason = translations.get(
+                        f"component.{DOMAIN}.issues.setup_error.title",
+                        "Échec d'initialisation / Erreur de configuration",
+                    )
+                elif entry.state == ConfigEntryState.MIGRATION_ERROR:
+                    friendly_reason = translations.get(
+                        f"component.{DOMAIN}.issues.migration_error.title",
+                        "Erreur lors de la migration des données",
+                    )
+                else:
+                    raw_unknown = translations.get(
+                        f"component.{DOMAIN}.issues.unknown_error.title",
+                        "État anormal ({state})",
+                    )
+                    friendly_reason = raw_unknown.format(state=entry.state.value)
+
+            failed_entries.append({
+                "name": entry.title or entry.domain.replace("_", " ").title(),
+                "domain": entry.domain,
+                "entry_id": entry.entry_id,
+                "state": entry.state.value,
+                "reason": friendly_reason,
+            })
+
+        return failed_entries
 
     def _get_trace_errors(self, domain: str, excluded: list) -> list:
         """Récupère les erreurs dans les traces d'automatisations ou de scripts avec horodatage."""
