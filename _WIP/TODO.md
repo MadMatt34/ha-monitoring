@@ -1,13 +1,13 @@
 
 TODO
 - tout texte dans translations
-- batteries faibles
-- service pour ajouter des exclusions
+- capteur batteries faibles seuil 15% modifiable
+- capteur notifs persistantes
+- service pour ajouter/supprimer des exclusions (?)
 
 TOTEST
 - tout suppr et réinstall
 - backup en erreur
-- refresh manuel après une modif
 - last_seen localisé en offline
 - changement des options individuellement
   - updates : ok
@@ -24,14 +24,13 @@ TOTEST
   - offline : ok
   - unavailable : ok
   - backup : ok
-  - repairs
+  - repairs : 
   - applications
   - automations
   - scripts
 
 TOCORRECT
-- pour unavailable entities, prendre aussi unknown
-- pour repairs_pending, la liste en attribut doit indiquer la date/heure de l'alerte, la plateforme, une dénomination plus conviviale
+- pour repairs_pending, nom plus convivial (translation system)
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 
 DONE
@@ -56,3 +55,5 @@ DONE
 - Exceptions pour entités indispos > revenir à un sélecteur classique entités et ajouter un sélecteur domaine
 - Standardiser les noms d'attributs
 - Nombre de zombies incorrect au démarrage/reload > compte ses propres capteurs tant qu'ils ne sont pas peuplés
+- pour repairs_pending, la liste en attribut doit indiquer la date/heure de l'alerte, la plateforme, une dénomination plus conviviale
+- pour unavailable entities, prendre aussi unknown

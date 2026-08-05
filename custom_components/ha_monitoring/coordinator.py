@@ -5,9 +5,8 @@ from datetime import datetime, timedelta, time
 from homeassistant.const import (STATE_UNAVAILABLE, STATE_UNKNOWN)
 from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.loader import async_get_integration
-from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers import device_registry as dr, entity_registry as er, issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
-from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
@@ -247,7 +246,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         addons = await self._async_get_addons(options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await self._async_get_failed_integrations(options.get(CONF_EXCLUDED_INTEGRATIONS, []))
-        repairs = self._get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
+        repairs = await self._async_get_pending_repairs(options.get(CONF_EXCLUDED_REPAIRS, []))
 
         return {
             "in_startup_delay": False,
@@ -774,46 +773,74 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         return failed
 
-    def _get_pending_repairs(self, excluded: list) -> list:
-        """Récupère les problèmes de réparation en attente avec détails enrichis."""
+    async def _async_get_pending_repairs(self, excluded: list) -> list:
+        """Récupère les réparations en attente avec leurs titres officiels traduits."""
         issue_registry = ir.async_get(self.hass)
+        active_issues = [
+            issue for issue in issue_registry.issues.values()
+            if getattr(issue, "active", True) and getattr(issue, "dismissed_version", None) is None
+        ]
+
+        # 1. Récupération des domaines concernés
+        domains = {issue.domain for issue in active_issues}
+
+        # 2. Chargement des traductions officielles HA pour la catégorie 'issues'
+        translations = {}
+        if domains:
+            try:
+                translations = await async_get_translations(
+                    self.hass,
+                    self.hass.config.language,
+                    "issues",
+                    domains=domains,
+                )
+            except Exception:
+                translations = {}
+
         pending = []
-
-        for issue in issue_registry.issues.values():
-            # Filtre les problèmes inactifs ou ignorés
-            if hasattr(issue, "active") and not issue.active:
-                continue
-            if getattr(issue, "dismissed_version", None) is not None:
-                continue
-
+        for issue in active_issues:
             issue_identifier = f"{issue.domain}: {issue.issue_id}"
             if (
-                issue_identifier in excluded
+                excluded in issue_identifier
                 or issue.domain in excluded
-                or issue.issue_id in excluded
+                or excluded in issue.issue_id
             ):
                 continue
 
-            # 1. Date / heure de l'alerte (convertie en format local ISO)
+            # 3. Recherche du titre traduit dans le dictionnaire HA
+            key_name = getattr(issue, "translation_key", None) or issue.issue_id
+            trans_key = f"component.{issue.domain}.issues.{key_name}.title"
+
+            friendly_name = None
+            if trans_key in translations:
+                raw_title = translations[trans_key]
+                # Injection des variables si l'alerte contient des placeholders (ex: nom d'entité, version...)
+                placeholders = getattr(issue, "translation_placeholders", None)
+                if placeholders and isinstance(placeholders, dict):
+                    try:
+                        friendly_name = raw_title.format(**placeholders)
+                    except Exception:
+                        friendly_name = raw_title
+                else:
+                    friendly_name = raw_title
+
+            # 4. Fallback propre si aucune traduction n'est trouvée
+            if not friendly_name:
+                domain_friendly = issue.domain.replace("_", " ").title()
+                issue_friendly = key_name.replace("_", " ").capitalize()
+                friendly_name = f"{domain_friendly} — {issue_friendly}"
+
+            # 5. Date / heure
             created_at = getattr(issue, "created", None)
             formatted_date = _format_date_local(created_at)
 
-            # 2. Plateforme / Domaine
-            platform = issue.domain
-
-            # 3. Dénomination conviviale
-            domain_friendly = issue.domain.replace("_", " ").title()
-            issue_friendly = issue.issue_id.replace("_", " ").capitalize()
-            friendly_name = f"{domain_friendly} — {issue_friendly}"
-
             repair_item = {
                 "name": friendly_name,
-                "domain": platform,
+                "domain": issue.domain,
                 "date": formatted_date,
                 "issue_id": issue.issue_id,
             }
 
-            # Évite les doublons stricts
             if repair_item not in pending:
                 pending.append(repair_item)
 
