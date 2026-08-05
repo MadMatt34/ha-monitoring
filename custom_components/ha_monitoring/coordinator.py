@@ -680,7 +680,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     failed.append(integration_name)
         return failed
 
-def _get_trace_errors(self, domain: str, excluded: list) -> list:
+    def _get_trace_errors(self, domain: str, excluded: list) -> list:
         """Récupère les erreurs dans les traces d'automatisations ou de scripts avec horodatage."""
         trace_data = self.hass.data.get("trace", {})
         failed = []
