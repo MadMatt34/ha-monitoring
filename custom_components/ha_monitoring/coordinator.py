@@ -684,18 +684,29 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         if not entries:
             return []
 
-        # 1. Domaines des intégrations en erreur + ha_monitoring pour nos fallbacks
         domains = {entry.domain for entry in entries}
-        domains.add(DOMAIN)
+
+        # 1. Chargement des noms officiels des intégrations (catégorie "title")
+        integration_titles = {}
+        try:
+            integration_titles = await async_get_translations(
+                self.hass,
+                self.hass.config.language,
+                "title",
+                domains=domains,
+            )
+        except Exception:
+            integration_titles = {}
 
         # 2. Chargement des traductions (HA inclut automatiquement custom_components/ha_monitoring/translations/)
+        domains_for_issues = domains | {DOMAIN}
         translations = {}
         try:
             translations = await async_get_translations(
                 self.hass,
                 self.hass.config.language,
                 "issues",
-                domains=domains,
+                domains=domains_for_issues,
             )
         except Exception:
             translations = {}
@@ -703,10 +714,17 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         failed_entries = []
 
         for entry in entries:
+            # Récupération du nom officiel de l'intégration (ex: "Philips Hue" et non "Hue Salon")
+            title_key = f"component.{entry.domain}.title"
+            integration_name = (
+                integration_titles.get(title_key)
+                or entry.domain.replace("_", " ").title()
+            )
+
+            # Récupération et traduction de la raison d'erreur
             raw_reason = getattr(entry, "reason", None)
             friendly_reason = None
 
-            # 3. Recherche dans la traduction de l'intégration tierce
             if raw_reason:
                 error_key = f"component.{entry.domain}.config.error.{raw_reason}"
                 abort_key = f"component.{entry.domain}.config.abort.{raw_reason}"
@@ -718,7 +736,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 else:
                     friendly_reason = raw_reason
 
-            # 4. Fallbacks extraits de fr.json (ha_monitoring)
+            # Fallbacks depuis fr.json / en.json de ha_monitoring
             if not friendly_reason:
                 if entry.state == ConfigEntryState.SETUP_RETRY:
                     friendly_reason = translations.get(
@@ -728,7 +746,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                 elif entry.state == ConfigEntryState.SETUP_ERROR:
                     friendly_reason = translations.get(
                         f"component.{DOMAIN}.issues.setup_error.title",
-                        "Échec d'initialisation / Erreur de configuration",
+                        "Échec d'initialisation ou erreur de configuration",
                     )
                 elif entry.state == ConfigEntryState.MIGRATION_ERROR:
                     friendly_reason = translations.get(
@@ -743,7 +761,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     friendly_reason = raw_unknown.format(state=entry.state.value)
 
             failed_entries.append({
-                "name": entry.title or entry.domain.replace("_", " ").title(),
+                "name": integration_name,
                 "domain": entry.domain,
                 "entry_id": entry.entry_id,
                 "state": entry.state.value,
