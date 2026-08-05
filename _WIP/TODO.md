@@ -5,6 +5,12 @@ TODO
 - capteur notifs persistantes
 - service pour ajouter/supprimer des exclusions (?)
 
+- debug :
+logger:
+  default: info
+  logs:
+    custom_components.ha_monitoring: debug
+
 TOTEST
 - tout suppr et réinstall
 - backup en erreur
