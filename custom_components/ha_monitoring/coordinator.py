@@ -770,6 +770,41 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         return failed_entries
 
+    def _extract_trace_error(trace) -> str | None:
+        """Extrait le message d'erreur d'un objet ActionTrace Home Assistant."""
+        # 1. Attribut 'exception' principal de Home Assistant ActionTrace
+        exc = getattr(trace, "exception", None)
+        if exc is not None:
+            return str(exc)
+
+        # 2. Attributs secondaires de secours
+        for attr in ("_exception", "_error", "error"):
+            val = getattr(trace, attr, None)
+            if val is not None:
+                return str(val)
+
+        # 3. Analyse approfondie via as_dict()
+        if hasattr(trace, "as_dict"):
+            try:
+                t_dict = trace.as_dict()
+
+                # A. Recherche d'une erreur dans les étapes individuelles d'exécution
+                steps_trace = t_dict.get("trace", {})
+                if isinstance(steps_trace, dict):
+                    for step_runs in steps_trace.values():
+                        if isinstance(step_runs, list):
+                            for run in step_runs:
+                                if isinstance(run, dict) and "error" in run:
+                                    return str(run["error"])
+
+                # B. Échec d'exécution marqué globalement
+                if t_dict.get("script_execution") == "failed":
+                    return "Échec d'exécution (script_execution: failed)"
+            except Exception:
+                pass
+
+        return None
+
     def _get_trace_errors(self, domain: str, excluded: list) -> list:
         """Récupère les erreurs dans les traces d'automatisations ou de scripts."""
         trace_data = self.hass.data.get("trace", {})
@@ -790,12 +825,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             # Filtrage par domaine (ex: "automation." ou "script.")
             if not key.startswith(f"{domain}."):
                 continue
-
-            _LOGGER.debug(
-                "[HA Monitoring] Clé de trace trouvée pour '%s': type=%s",
-                key,
-                type(traces).__name__,
-            )
 
             if not traces:
                 continue
@@ -818,43 +847,20 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             target_trace = None
             error_msg = None
 
-            # Parcours inversé pour analyser la trace la plus récente
+            # Parcours inversé (de la trace la plus récente à la plus ancienne)
             for idx, trace in enumerate(reversed(trace_list)):
-                dict_error = None
-                t_dict = {}
+                extracted_err = _extract_trace_error(trace)
 
-                # A. Inspection via as_dict()
-                if hasattr(trace, "as_dict"):
-                    try:
-                        t_dict = trace.as_dict()
-                        dict_error = t_dict.get("error")
-                    except Exception as err:
-                        _LOGGER.debug(
-                            "[HA Monitoring] [%s] Échec de trace.as_dict(): %s", key, err
-                        )
-
-                # B. Inspection des attributs directs (_error / error)
-                direct_error = getattr(trace, "_error", None) or getattr(
-                    trace, "error", None
-                )
-
-                # Log de débogage détaillé par trace
                 _LOGGER.debug(
-                    "[HA Monitoring] [%s - Trace #%d] as_dict error: '%s' | direct _error: '%s' | script_execution: '%s'",
+                    "[HA Monitoring] [%s - Trace #%d] Erreur extraite: '%s'",
                     key,
                     idx,
-                    dict_error,
-                    direct_error,
-                    t_dict.get("script_execution"),
+                    extracted_err,
                 )
 
-                if dict_error:
+                if extracted_err:
                     target_trace = trace
-                    error_msg = dict_error
-                    break
-                elif direct_error:
-                    target_trace = trace
-                    error_msg = str(direct_error)
+                    error_msg = extracted_err
                     break
 
             if not target_trace or not error_msg:

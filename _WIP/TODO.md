@@ -37,7 +37,6 @@ TOTEST
 
 TOCORRECT
 - pour repairs_pending, nom plus convivial (translation system)
-- pour integrations, ajouter la raison de l'échec
 - rien remonté sur script/automation
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 
@@ -65,3 +64,4 @@ DONE
 - Nombre de zombies incorrect au démarrage/reload > compte ses propres capteurs tant qu'ils ne sont pas peuplés
 - pour repairs_pending, la liste en attribut doit indiquer la date/heure de l'alerte, la plateforme, une dénomination plus conviviale
 - pour unavailable entities, prendre aussi unknown
+- pour integrations, ajouter la raison de l'échec
