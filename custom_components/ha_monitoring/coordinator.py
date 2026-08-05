@@ -665,7 +665,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return []
 
     async def _async_get_failed_integrations(self, excluded: list) -> list:
-        """Récupère les intégrations en erreur avec la raison traduite."""
+        """Récupère les intégrations en erreur avec le nom officiel, le nom d'entrée et la raison traduite."""
         error_states = {
             ConfigEntryState.SETUP_ERROR,
             ConfigEntryState.SETUP_RETRY,
@@ -685,83 +685,83 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             return []
 
         domains = {entry.domain for entry in entries}
+        lang = self.hass.config.language
 
-        # 1. Chargement des noms officiels des intégrations (catégorie "title")
+        # 1. Chargement des noms officiels des intégrations ("title")
         integration_titles = {}
         try:
             integration_titles = await async_get_translations(
-                self.hass,
-                self.hass.config.language,
-                "title",
-                domains=domains,
+                self.hass, lang, "title", domains=domains
             )
         except Exception:
-            integration_titles = {}
+            pass
 
-        # 2. Chargement des traductions (HA inclut automatiquement custom_components/ha_monitoring/translations/)
-        domains_for_issues = domains | {DOMAIN}
-        translations = {}
+        # 2. Chargement des traductions de configuration (erreurs/aborts des flux de config)
+        config_translations = {}
         try:
-            translations = await async_get_translations(
-                self.hass,
-                self.hass.config.language,
-                "issues",
-                domains=domains_for_issues,
+            config_translations = await async_get_translations(
+                self.hass, lang, "config", domains=domains
             )
         except Exception:
-            translations = {}
+            pass
+
+        # 3. Chargement des traductions "issues" (inclut ha_monitoring pour les fallbacks)
+        issue_translations = {}
+        try:
+            issue_translations = await async_get_translations(
+                self.hass, lang, "issues", domains=domains | {DOMAIN}
+            )
+        except Exception:
+            pass
 
         failed_entries = []
 
         for entry in entries:
-            # Récupération du nom officiel de l'intégration (ex: "Philips Hue" et non "Hue Salon")
+            # Nom officiel de l'intégration (ex: "Philips Hue")
             title_key = f"component.{entry.domain}.title"
             integration_name = (
                 integration_titles.get(title_key)
                 or entry.domain.replace("_", " ").title()
             )
 
-            # Récupération et traduction de la raison d'erreur
             raw_reason = getattr(entry, "reason", None)
             friendly_reason = None
 
+            # A. Recherche dans les traductions natives de l'intégration tierce
             if raw_reason:
                 error_key = f"component.{entry.domain}.config.error.{raw_reason}"
                 abort_key = f"component.{entry.domain}.config.abort.{raw_reason}"
+                issue_key = f"component.{entry.domain}.issues.{raw_reason}.title"
 
-                if error_key in translations:
-                    friendly_reason = translations[error_key]
-                elif abort_key in translations:
-                    friendly_reason = translations[abort_key]
-                else:
-                    friendly_reason = raw_reason
+                if error_key in config_translations:
+                    friendly_reason = config_translations[error_key]
+                elif abort_key in config_translations:
+                    friendly_reason = config_translations[abort_key]
+                elif issue_key in issue_translations:
+                    friendly_reason = issue_translations[issue_key]
 
-            # Fallbacks depuis fr.json / en.json de ha_monitoring
+            # B. Fallback sur les traductions génériques d'état définies dans fr.json / en.json de ha_monitoring
             if not friendly_reason:
                 if entry.state == ConfigEntryState.SETUP_RETRY:
-                    friendly_reason = translations.get(
-                        f"component.{DOMAIN}.issues.setup_retry.title",
-                        "Connexion temporairement impossible",
+                    friendly_reason = issue_translations.get(
+                        f"component.{DOMAIN}.issues.setup_retry.title"
                     )
                 elif entry.state == ConfigEntryState.SETUP_ERROR:
-                    friendly_reason = translations.get(
-                        f"component.{DOMAIN}.issues.setup_error.title",
-                        "Échec d'initialisation ou erreur de configuration",
+                    friendly_reason = issue_translations.get(
+                        f"component.{DOMAIN}.issues.setup_error.title"
                     )
                 elif entry.state == ConfigEntryState.MIGRATION_ERROR:
-                    friendly_reason = translations.get(
-                        f"component.{DOMAIN}.issues.migration_error.title",
-                        "Erreur lors de la migration des données",
+                    friendly_reason = issue_translations.get(
+                        f"component.{DOMAIN}.issues.migration_error.title"
                     )
-                else:
-                    raw_unknown = translations.get(
-                        f"component.{DOMAIN}.issues.unknown_error.title",
-                        "État anormal ({state})",
-                    )
-                    friendly_reason = raw_unknown.format(state=entry.state.value)
+
+            # C. Dernier recours si aucune traduction n'a été trouvée
+            if not friendly_reason:
+                friendly_reason = raw_reason or entry.state.value
 
             failed_entries.append({
                 "name": integration_name,
+                "entry_name": entry.title,
                 "domain": entry.domain,
                 "entry_id": entry.entry_id,
                 "state": entry.state.value,
