@@ -20,10 +20,10 @@ TOTEST
   - integrations : ok
   - unavailable : ok
   - offline : ok
-  - repairs
-  - applications
-  - automations
-  - scripts
+  - repairs :
+  - applications :
+  - automations :
+  - scripts :
 - Qualité des attributs
   - integrations : ok
   - updates : ok
@@ -31,9 +31,9 @@ TOTEST
   - unavailable : ok
   - backup : ok
   - repairs : 
-  - applications
-  - automations
-  - scripts
+  - applications :
+  - automations :
+  - scripts :
 
 TOCORRECT
 - pour repairs_pending, nom plus convivial (translation system)

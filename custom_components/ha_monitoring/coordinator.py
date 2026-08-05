@@ -11,6 +11,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
+from collections import deque
 
 from .const import (
     CONF_EXCLUDED_ADDONS,
@@ -771,37 +772,56 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         return failed_entries
 
     def _extract_trace_error(trace) -> str | None:
-        """Extrait le message d'erreur d'un objet ActionTrace Home Assistant."""
-        # 1. Attribut 'exception' principal de Home Assistant ActionTrace
-        exc = getattr(trace, "exception", None)
-        if exc is not None:
-            return str(exc)
-
-        # 2. Attributs secondaires de secours
-        for attr in ("_exception", "_error", "error"):
+        """Extrait l'erreur d'une trace HA (automatisation ou script) à tous les niveaux."""
+        # 1. Attributs d'erreur directs sur l'objet ActionTrace
+        for attr in ("_error", "error", "_exception", "exception"):
             val = getattr(trace, attr, None)
-            if val is not None:
+            if val is not None and str(val).strip():
                 return str(val)
 
-        # 3. Analyse approfondie via as_dict()
+        # 2. Dictionnaire as_dict() au niveau racine
+        t_dict = None
         if hasattr(trace, "as_dict"):
             try:
                 t_dict = trace.as_dict()
-
-                # A. Recherche d'une erreur dans les étapes individuelles d'exécution
-                steps_trace = t_dict.get("trace", {})
-                if isinstance(steps_trace, dict):
-                    for step_runs in steps_trace.values():
-                        if isinstance(step_runs, list):
-                            for run in step_runs:
-                                if isinstance(run, dict) and "error" in run:
-                                    return str(run["error"])
-
-                # B. Échec d'exécution marqué globalement
-                if t_dict.get("script_execution") == "failed":
-                    return "Échec d'exécution (script_execution: failed)"
             except Exception:
-                pass
+                t_dict = None
+
+        if isinstance(t_dict, dict):
+            dict_err = t_dict.get("error")
+            if dict_err:
+                return str(dict_err)
+
+        # 3. Parcours des étapes individuelles d'exécution (trace._trace ou t_dict["trace"])
+        # Récupère les erreurs survenues dans une action spécifique du script/automation
+        steps_trace = None
+        if t_dict and isinstance(t_dict.get("trace"), dict):
+            steps_trace = t_dict["trace"]
+        else:
+            steps_trace = getattr(trace, "_trace", None)
+
+        if isinstance(steps_trace, dict):
+            for path, step_runs in steps_trace.items():
+                if isinstance(step_runs, list):
+                    for run in reversed(step_runs):
+                        if isinstance(run, dict):
+                            if run.get("error"):
+                                return str(run["error"])
+                            res = run.get("result")
+                            if isinstance(res, dict) and res.get("error"):
+                                return str(res["error"])
+                        elif hasattr(run, "error") and getattr(run, "error"):
+                            return str(getattr(run, "error"))
+
+        # 4. Statut global d'exécution si marqué comme échec
+        script_exec = None
+        if t_dict:
+            script_exec = t_dict.get("script_execution")
+        if not script_exec:
+            script_exec = getattr(trace, "_script_execution", None) or getattr(trace, "script_execution", None)
+
+        if script_exec in ("failed", "aborted", "error"):
+            return f"Échec d'exécution ({script_exec})"
 
         return None
 
@@ -809,13 +829,17 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
         """Récupère les erreurs dans les traces d'automatisations ou de scripts."""
         trace_data = self.hass.data.get("trace", {})
 
+        # Normalisation du domaine (ex: "automations" -> "automation", "scripts" -> "script")
+        target_domain = domain.rstrip("s") if domain in ("scripts", "automations") else domain
+
         _LOGGER.debug(
-            "[HA Monitoring] Exécution de _get_trace_errors pour le domaine '%s'. Total clés dans trace_data: %s",
+            "[HA Monitoring] Diagnostic _get_trace_errors pour domaine '%s' (cible: '%s'). Clés en mémoire dans trace_data: %s",
             domain,
-            len(trace_data),
+            target_domain,
+            list(trace_data.keys()) if isinstance(trace_data, dict) else "Aucune",
         )
 
-        if not trace_data:
+        if not trace_data or not isinstance(trace_data, dict):
             return []
 
         ent_reg = er.async_get(self.hass)
@@ -823,23 +847,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         for key, traces in list(trace_data.items()):
             # Filtrage par domaine (ex: "automation." ou "script.")
-            if not key.startswith(f"{domain}."):
+            if not (key.startswith(f"{target_domain}.") or key.startswith(f"{domain}.")):
                 continue
+
+            _LOGGER.debug("[HA Monitoring] Clé de trace analysée: '%s'", key)
 
             if not traces:
                 continue
 
-            try:
-                trace_list = (
-                    list(traces.values()) if isinstance(traces, dict) else list(traces)
-                )
-            except Exception as err:
-                _LOGGER.debug(
-                    "[HA Monitoring] Erreur lors de la conversion de la trace pour '%s': %s",
-                    key,
-                    err,
-                )
-                continue
+            # Normalisation du conteneur de traces (dict, list, deque ou objet unique)
+            if isinstance(traces, dict):
+                trace_list = list(traces.values())
+            elif isinstance(traces, (list, deque)):
+                trace_list = list(traces)
+            else:
+                trace_list = [traces]
 
             if not trace_list:
                 continue
@@ -847,12 +869,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
             target_trace = None
             error_msg = None
 
-            # Parcours inversé (de la trace la plus récente à la plus ancienne)
+            # Parcours de la trace la plus récente à la plus ancienne
             for idx, trace in enumerate(reversed(trace_list)):
                 extracted_err = _extract_trace_error(trace)
 
                 _LOGGER.debug(
-                    "[HA Monitoring] [%s - Trace #%d] Erreur extraite: '%s'",
+                    "[HA Monitoring] [%s - Trace #%d] Résultat d'extraction d'erreur: '%s'",
                     key,
                     idx,
                     extracted_err,
@@ -865,13 +887,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
             if not target_trace or not error_msg:
                 _LOGGER.debug(
-                    "[HA Monitoring] Aucune erreur détectée/retenue dans les traces pour '%s'",
-                    key,
+                    "[HA Monitoring] Aucune erreur valide trouvée dans les traces pour '%s'", key
                 )
                 continue
 
             _LOGGER.debug(
-                "[HA Monitoring] Erreur validée pour '%s': %s", key, error_msg
+                "[HA Monitoring] Erreur confirmée pour '%s': %s", key, error_msg
             )
 
             # Résolution de l'entity_id
@@ -880,18 +901,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
             if self.hass.states.get(key):
                 entity_id = key
+            elif self.hass.states.get(f"{target_domain}.{raw_id}"):
+                entity_id = f"{target_domain}.{raw_id}"
             else:
                 for entry in ent_reg.entities.values():
-                    if entry.domain == domain and (
-                        entry.unique_id == raw_id or entry.entity_id == key
+                    if entry.domain == target_domain and (
+                        entry.unique_id == raw_id or entry.entity_id == key or entry.unique_id == key
                     ):
                         entity_id = entry.entity_id
                         break
 
             entity_id = entity_id or key
 
+            # Filtrage d'exclusion
             if entity_id in excluded or key in excluded:
-                _LOGGER.debug("[HA Monitoring] Entité exclue: '%s'", entity_id)
+                _LOGGER.debug("[HA Monitoring] Entité exclue par ID: '%s'", entity_id)
                 continue
 
             state = self.hass.states.get(entity_id)
@@ -901,9 +925,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
             friendly_name = friendly_name or entity_id
             if friendly_name in excluded:
+                _LOGGER.debug("[HA Monitoring] Entité exclue par nom: '%s'", friendly_name)
                 continue
 
-            # Date / Heure
+            # Horodatage de l'erreur
             error_time = getattr(target_trace, "start_time", None)
             if not error_time and hasattr(target_trace, "as_dict"):
                 try:
@@ -911,8 +936,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
                     ts_info = t_dict.get("timestamp", {})
                     if isinstance(ts_info, dict):
                         error_time = ts_info.get("start") or ts_info.get("finish")
-                    else:
-                        error_time = t_dict.get("start_time")
                 except Exception:
                     pass
 
