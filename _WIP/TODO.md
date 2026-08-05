@@ -5,12 +5,6 @@ TODO
 - capteur notifs persistantes
 - service pour ajouter/supprimer des exclusions (?)
 
-- debug :
-logger:
-  default: info
-  logs:
-    custom_components.ha_monitoring: debug
-
 TOTEST
 - tout suppr et réinstall
 - backup en erreur
@@ -37,7 +31,6 @@ TOTEST
 
 TOCORRECT
 - pour repairs_pending, nom plus convivial (translation system)
-- rien remonté sur script/automation
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
 
@@ -66,3 +59,8 @@ DONE
 - pour repairs_pending, la liste en attribut doit indiquer la date/heure de l'alerte, la plateforme, une dénomination plus conviviale
 - pour unavailable entities, prendre aussi unknown
 - pour integrations, ajouter la raison de l'échec
+
+
+INFO
+- debug : custom_components.ha_monitoring: debug
+- system ligne 256 : pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.

@@ -253,10 +253,11 @@ async def async_get_pending_repairs(hass: HomeAssistant, excluded: list) -> list
     for issue in active_issues:
         issue_identifier = f"{issue.domain}: {issue.issue_id}"
         if (
-            excluded in issue_identifier
+            issue_identifier in excluded
             or issue.domain in excluded
-            or excluded in issue.issue_id
+            or issue.issue_id in excluded
         ):
+            # pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.
             continue
 
         key_name = getattr(issue, "translation_key", None) or issue.issue_id
