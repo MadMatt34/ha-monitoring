@@ -755,94 +755,106 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
     def _get_trace_errors(self, domain: str, excluded: list) -> list:
         """Récupère les erreurs dans les traces d'automatisations ou de scripts avec horodatage."""
         trace_data = self.hass.data.get("trace", {})
+        if not trace_data:
+            return []
+
+        # Récupération du registre des entités pour la correspondance des unique_id
+        ent_reg = er.async_get(self.hass)
         failed = []
 
         for key, traces in list(trace_data.items()):
+            # Filtrage par domaine (automation ou script)
             if not (key.startswith(f"{domain}.") or key.startswith(f"{domain} ")):
                 continue
             if not traces:
                 continue
 
+            # Récupération de la dernière trace d'exécution
             try:
-                trace_list = list(traces.values()) if isinstance(traces, dict) else list(traces)
+                trace_list = (
+                    list(traces.values()) if isinstance(traces, dict) else list(traces)
+                )
                 if not trace_list:
                     continue
                 latest_trace = trace_list[-1]
             except Exception:
                 continue
 
-            error = (
-                latest_trace.as_dict().get("error")
-                if hasattr(latest_trace, "as_dict")
-                else latest_trace.get("error")
-                if isinstance(latest_trace, dict)
-                else getattr(latest_trace, "error", None)
-            )
+            # 1. Extraction du dictionnaire de trace et du message d'erreur
+            trace_dict = {}
+            if hasattr(latest_trace, "as_dict"):
+                try:
+                    trace_dict = latest_trace.as_dict()
+                except Exception:
+                    trace_dict = {}
+            elif isinstance(latest_trace, dict):
+                trace_dict = latest_trace
 
-            if error:
-                entity_id = key if key.startswith(f"{domain}.") else None
-                friendly_name = None
+            error_msg = trace_dict.get("error")
+            if not error_msg and hasattr(latest_trace, "error"):
+                error_msg = getattr(latest_trace, "error", None)
 
-                if entity_id:
-                    if entity_id in excluded:
-                        continue
-                    state = self.hass.states.get(entity_id)
-                    if state:
-                        friendly_name = state.attributes.get("friendly_name") or entity_id
+            # Si aucune erreur dans la dernière trace, on passe au suivant
+            if not error_msg:
+                continue
 
-                if not friendly_name:
-                    for state in self.hass.states.async_all(domain):
-                        item_id = state.attributes.get("id")
-                        if item_id is not None and str(item_id) in key:
-                            if state.entity_id in excluded:
-                                friendly_name = "EXCLUDED"
-                                break
-                            friendly_name = state.attributes.get("friendly_name") or state.entity_id
-                            entity_id = state.entity_id
-                            break
+            # 2. Résolution de l'entity_id réel via l'Entity Registry
+            entity_id = None
+            raw_id = key.split(".", 1)[-1] if "." in key else key.split(" ", 1)[-1]
 
-                if friendly_name == "EXCLUDED":
+            # Cas A: La clé est déjà un entity_id valide (très fréquent pour les scripts)
+            if key in self.hass.states.async_entity_ids(domain):
+                entity_id = key
+            else:
+                # Cas B: Recherche dans le registre par unique_id (très fréquent pour les automatisations)
+                for entry in ent_reg.entities.values():
+                    if entry.domain == domain and (
+                        entry.unique_id == raw_id or entry.entity_id == key
+                    ):
+                        entity_id = entry.entity_id
+                        break
+
+            # 3. Récupération du friendly_name et vérification des exclusions
+            friendly_name = None
+
+            if entity_id:
+                if entity_id in excluded:
                     continue
+                state = self.hass.states.get(entity_id)
+                if state:
+                    friendly_name = (
+                        state.attributes.get("friendly_name") or entity_id
+                    )
 
-                friendly_name = friendly_name or key
-                if friendly_name in excluded:
-                    continue
+            # Fallback si l'entité n'a pas été trouvée dans le registre
+            friendly_name = friendly_name or key
+            if friendly_name in excluded:
+                continue
 
-                # 1. Extraire la date/heure d'exécution depuis la trace
-                error_time = None
-                if hasattr(latest_trace, "start_time"):
-                    error_time = getattr(latest_trace, "start_time")
+            # 4. Extraire la date/heure d'exécution
+            error_time = None
+            if hasattr(latest_trace, "start_time"):
+                error_time = getattr(latest_trace, "start_time")
 
-                if not error_time and hasattr(latest_trace, "as_dict"):
-                    try:
-                        trace_dict = latest_trace.as_dict()
-                        ts_info = trace_dict.get("timestamp")
-                        if isinstance(ts_info, dict):
-                            error_time = ts_info.get("start") or ts_info.get("finish")
-                        else:
-                            error_time = trace_dict.get("start_time")
-                    except Exception:
-                        pass
+            if not error_time and trace_dict:
+                ts_info = trace_dict.get("timestamp")
+                if isinstance(ts_info, dict):
+                    error_time = ts_info.get("start") or ts_info.get("finish")
+                else:
+                    error_time = trace_dict.get("start_time")
 
-                if not error_time and isinstance(latest_trace, dict):
-                    ts_info = latest_trace.get("timestamp")
-                    if isinstance(ts_info, dict):
-                        error_time = ts_info.get("start") or ts_info.get("finish")
-                    else:
-                        error_time = latest_trace.get("start_time")
+            formatted_date = _format_date_local(error_time)
 
-                # 2. Formater la date en heure locale
-                formatted_date = _format_date_local(error_time)
+            item = {
+                "name": friendly_name,
+                "entity_id": entity_id or key,
+                "date": formatted_date,
+                "error": str(error_msg),
+            }
 
-                item = {
-                    "name": friendly_name,
-                    "entity_id": entity_id,
-                    "date": formatted_date,
-                }
-
-                # Évite les doublons
-                if not any(f["name"] == friendly_name for f in failed):
-                    failed.append(item)
+            # Évite les doublons dans la liste
+            if not any(f["name"] == friendly_name for f in failed):
+                failed.append(item)
 
         return failed
 
