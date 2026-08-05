@@ -28,7 +28,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STARTUP_DELAY,
     DEFAULT_TRACES_SCAN_INTERVAL,
-    DEFAULT_UNAVAILABLE_DOMAINS,
+    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DOMAIN,
 )
 from .helpers.backup import async_get_backup_info
@@ -189,7 +189,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator):
 
         excluded_unavailable_entities = options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES, [])
         excluded_unavailable_domains = options.get(
-            CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_UNAVAILABLE_DOMAINS
+            CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
         )
 
         last_seen_suffixes = await self._async_get_last_seen_suffixes()
