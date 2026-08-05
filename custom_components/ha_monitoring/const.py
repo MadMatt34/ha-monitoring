@@ -86,6 +86,14 @@ TRANSLATION_KEY_OFFLINE = "offline_devices"
 TRANSLATION_KEY_BACKUP = "backup_status"
 TRANSLATION_KEY_REFRESH = "force_scan"
 
+# Suffixes et clés d'attributs utilisés pour la détection Hors-ligne
+DEFAULT_LAST_SEEN_ATTRS = (
+    "last_seen",
+    "last_updated",
+    "_last_seen",
+    "_last_updated",
+)
+
 # Attributs
 ATTR_STARTUP_DELAY = "startup_delay"
 ATTR_DATE_LAST_RUN = "date_last_run"
