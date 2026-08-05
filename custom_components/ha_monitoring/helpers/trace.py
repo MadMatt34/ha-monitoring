@@ -1,11 +1,13 @@
 """Gestionnaire d'inspection des traces pour automatisations et scripts."""
 
 from collections import deque
+from datetime import datetime
 import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
+from homeassistant.util import dt as dt_util
 
 from .utils import format_date_local
 
@@ -33,16 +35,64 @@ def _unwrap_traces(val: Any) -> list[Any]:
     return unwrapped
 
 
+def _get_raw_trace_timestamp(trace: Any) -> Any:
+    """Extrait l'horodatage brut (datetime ou chaîne ISO) d'une trace."""
+    # 1. Attributs directs de l'objet
+    for attr in ("timestamp_start", "start_time", "timestamp_finish", "finish_time"):
+        val = getattr(trace, attr, None)
+        if val:
+            return val
+
+    # 2. Structure as_dict() / dictionnaire
+    t_dict = trace.as_dict() if hasattr(trace, "as_dict") else (trace if isinstance(trace, dict) else None)
+    if isinstance(t_dict, dict):
+        ts_info = t_dict.get("timestamp")
+        if isinstance(ts_info, dict):
+            val = ts_info.get("start") or ts_info.get("finish")
+            if val:
+                return val
+
+    # 3. Attribut interne _timestamp ou timestamp
+    ts_attr = getattr(trace, "_timestamp", None) or getattr(trace, "timestamp", None)
+    if isinstance(ts_attr, dict):
+        return ts_attr.get("start") or ts_attr.get("finish")
+
+    return None
+
+
+def _parse_timestamp(val: Any) -> datetime | None:
+    """Convertit un horodatage brut en objet datetime comparable."""
+    if isinstance(val, datetime):
+        return val
+    if isinstance(val, str):
+        return dt_util.parse_datetime(val)
+    return None
+
+
+def extract_trace_timestamp(trace: Any, hass: HomeAssistant, entity_id: str) -> Any:
+    """Extrait la date/heure d'exécution de la trace ou bascule sur l'état de l'entité."""
+    raw_ts = _get_raw_trace_timestamp(trace)
+    if raw_ts:
+        return raw_ts
+
+    state = hass.states.get(entity_id)
+    if state:
+        last_triggered = state.attributes.get("last_triggered")
+        if last_triggered:
+            return last_triggered
+        return state.last_updated
+
+    return None
+
+
 def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
-    """Extrait l'erreur d'une trace HA (ActionTrace / RestoredTrace / dict) en ignorant les statuts 'aborted'."""
+    """Extrait l'erreur d'une trace HA en ignorant les statuts 'aborted'."""
     if obj is None or depth > 6:
         return None
 
-    # 1. Exception Python directe
     if isinstance(obj, Exception):
         return str(obj)
 
-    # 2. Dictionnaire ou objet convertible via as_dict()
     t_dict = None
     if hasattr(obj, "as_dict"):
         try:
@@ -55,12 +105,10 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
         t_dict = obj
 
     if t_dict is not None:
-        # Ignorer si le statut d'exécution est 'aborted'
         script_exec = t_dict.get("script_execution") or t_dict.get("state")
         if script_exec == "aborted":
             return None
 
-        # Recherche directe dans le dictionnaire
         for key in ("error", "exception", "_error", "_exception"):
             val = t_dict.get(key)
             if val is not None and not callable(val):
@@ -68,7 +116,6 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
                 if err_str and err_str != "None":
                     return err_str
 
-        # Examen des étapes dans trace
         trace_steps = t_dict.get("trace")
         if isinstance(trace_steps, dict):
             for step_runs in trace_steps.values():
@@ -88,7 +135,6 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
         if script_exec in ("failed", "error", "failed_before_steps"):
             return f"Échec d'exécution (statut: {script_exec})"
 
-    # 3. Attributs directs sur l'objet Python
     script_exec = getattr(obj, "_script_execution", None) or getattr(obj, "script_execution", None)
     state_val = getattr(obj, "_state", None) or getattr(obj, "state", None)
 
@@ -125,40 +171,6 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
         return f"Échec d'exécution (statut: {script_exec})"
     if state_val in ("failed", "error"):
         return f"Échec d'exécution (état: {state_val})"
-
-    return None
-
-
-def extract_trace_timestamp(trace: Any, hass: HomeAssistant, entity_id: str) -> Any:
-    """Extrait la date/heure d'exécution de la trace ou de l'entité."""
-    # 1. Attributs directes de la trace (ActionTrace / RestoredTrace)
-    for attr in ("timestamp_start", "timestamp_finish", "start_time", "finish_time"):
-        val = getattr(trace, attr, None)
-        if val:
-            return val
-
-    # 2. Dictionnaire timestamp internal à HA
-    ts_dict = getattr(trace, "_timestamp", None) or getattr(trace, "timestamp", None)
-    if not ts_dict and hasattr(trace, "as_dict"):
-        try:
-            td = trace.as_dict()
-            if isinstance(td, dict):
-                ts_dict = td.get("timestamp")
-        except Exception:
-            pass
-
-    if isinstance(ts_dict, dict):
-        val = ts_dict.get("start") or ts_dict.get("finish")
-        if val:
-            return val
-
-    # 3. Repli sur les attributs de l'entité dans Home Assistant (ex: last_triggered)
-    state = hass.states.get(entity_id)
-    if state:
-        last_triggered = state.attributes.get("last_triggered")
-        if last_triggered:
-            return last_triggered
-        return state.last_updated
 
     return None
 
@@ -246,10 +258,21 @@ def get_trace_errors(hass: HomeAssistant, domain: str, excluded: list) -> list[d
     failed = []
 
     for item_id, trace_list in domain_traces.items():
+        # Tri explicite par date/heure décroissante (la trace la plus récente EN PREMIER)
+        def _sort_key(t: Any) -> datetime:
+            raw_ts = _get_raw_trace_timestamp(t)
+            dt_val = _parse_timestamp(raw_ts)
+            if dt_val:
+                return dt_val
+            return datetime.min.replace(tzinfo=dt_util.UTC)
+
+        sorted_traces = sorted(trace_list, key=_sort_key, reverse=True)
+
         target_trace = None
         error_msg = None
 
-        for trace in reversed(trace_list):
+        # Parcours de la trace la plus récente vers la plus ancienne
+        for trace in sorted_traces:
             extracted_err = extract_trace_error(trace)
             if extracted_err:
                 target_trace = trace
@@ -269,7 +292,7 @@ def get_trace_errors(hass: HomeAssistant, domain: str, excluded: list) -> list[d
         if friendly_name in excluded:
             continue
 
-        # Extraction de la date de dernière exécution de la trace
+        # Extraction de la date de la trace sélectionnée (la plus récente ayant échoué)
         error_time = extract_trace_timestamp(target_trace, hass, entity_id)
         formatted_date = format_date_local(error_time)
 

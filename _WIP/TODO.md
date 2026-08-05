@@ -4,6 +4,8 @@ TODO
 - capteur batteries faibles seuil 15% modifiable
 - capteur notifs persistantes
 - service pour ajouter/supprimer des exclusions (?)
+- README
+  - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
 
 TOTEST
 - tout suppr et réinstall
