@@ -157,16 +157,20 @@
   },
   "issues": {
     "setup_retry": {
-      "title": "Connexion temporairement impossible (tentative de reconnexion en cours)"
+      "title": "Connexion temporairement impossible",
+      "description": "Tentative de reconnexion en cours."
     },
     "setup_error": {
-      "title": "Échec d'initialisation / Erreur de configuration"
+      "title": "Échec d'initialisation / Erreur de configuration",
+      "description": "Une erreur est survenue lors du démarrage. Veuillez consulter les journaux."
     },
     "migration_error": {
-      "title": "Erreur lors de la migration des données de l'intégration"
+      "title": "Erreur lors de la migration des données",
+      "description": "Impossible de migrer les données de l'intégration vers la nouvelle version."
     },
     "unknown_error": {
-      "title": "État anormal ({state})"
+      "title": "État anormal ({state})",
+      "description": "Un problème inattendu est survenu (état : {state})."
     }
   }
 }

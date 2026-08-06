@@ -157,16 +157,20 @@
   },
   "issues": {
     "setup_retry": {
-      "title": "Connection temporarily unavailable (retry in progress)"
+      "title": "Connection temporarily unavailable",
+      "description": "The integration is currently attempting to reconnect."
     },
     "setup_error": {
-      "title": "Setup failed / Configuration error"
+      "title": "Setup failed / Configuration error",
+      "description": "An error occurred during initialization. Please check the logs."
     },
     "migration_error": {
-      "title": "Error migrating integration data"
+      "title": "Error migrating integration data",
+      "description": "Failed to migrate integration configuration data to the latest version."
     },
     "unknown_error": {
-      "title": "Abnormal status ({state})"
+      "title": "Abnormal status ({state})",
+      "description": "An unexpected issue has occurred with state: {state}."
     }
   }
 }
