@@ -194,7 +194,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
         )
 
-        last_seen_suffixes = await self._async_get_last_seen_suffixes()
+        last_seen_suffixes = self._get_last_seen_suffixes()
 
         # Balayage complet des états (système, hors-ligne, indisponibles, updates)
         updates, unavailable, offline = scan_all_states(
