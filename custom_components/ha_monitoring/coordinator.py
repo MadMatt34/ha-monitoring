@@ -86,10 +86,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             translations = await async_get_translations(
                 self.hass,
                 self.hass.config.language,
-                "config",
+                "entity",
                 integrations=[DOMAIN],
             )
-            key = f"component.{DOMAIN}.config.last_seen_suffix"
+            key = f"component.{DOMAIN}.entity.sensor.last_seen.suffix"
             if key in translations and translations[key]:
                 suffixes.add(translations[key].lower())
         except Exception as err:

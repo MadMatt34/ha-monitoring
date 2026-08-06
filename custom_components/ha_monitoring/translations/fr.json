@@ -1,6 +1,5 @@
 {
   "config": {
-    "last_seen_suffix": "derniere_connexion",
     "step": {
       "user": {
         "title": "HA Monitoring",
@@ -146,7 +145,8 @@
       "updates_pending": { "name": "Monitoring Mises à jour en attente" },
       "repairs_pending": { "name": "Monitoring Corrections en attente" },
       "unavailable_entities": { "name": "Monitoring Entités indisponibles" },
-      "offline_devices": { "name": "Monitoring Appareils hors ligne" }
+      "offline_devices": { "name": "Monitoring Appareils hors ligne" },
+      "last_seen": { "suffix": "derniere_connexion" }
     },
     "binary_sensor": {
       "global_status": { "name": "Monitoring Statut Global" },
