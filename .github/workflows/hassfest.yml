@@ -1,8 +1,24 @@
-name: Validate with Hassfest
+name: Hassfest Check
 
 on:
   push:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'README.fr.md'
+      - '_WIP/**'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - 'ha-monitoring/custom_components/ha_monitoring/brand/**'
   pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'README.fr.md'
+      - '_WIP/**'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - 'ha-monitoring/custom_components/ha_monitoring/brand/**'
 
 jobs:
   validate:

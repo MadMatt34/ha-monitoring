@@ -1,9 +1,24 @@
-name: HACS Action
+name: HACS Check
 
 on:
   push:
-    branches: [ main ]
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'README.fr.md'
+      - '_WIP/**'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - 'ha-monitoring/custom_components/ha_monitoring/brand/**'
   pull_request:
+    branches: [ "main" ]
+    paths-ignore:
+      - 'README.md'
+      - 'README.fr.md'
+      - '_WIP/**'
+      - '.github/workflows/**'
+      - '.gitignore'
+      - 'ha-monitoring/custom_components/ha_monitoring/brand/**'
 
 jobs:
   hacs:
@@ -13,3 +28,4 @@ jobs:
       - uses: hacs/action@main
         with:
           category: "integration"
+

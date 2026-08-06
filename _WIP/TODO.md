@@ -1,16 +1,20 @@
 
 TODO
-- tout texte dans translations
+- tout texte d'interface dans translations
+- dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
 - capteur notifs persistantes
+- capteur système (version, uptime host, uptime HA, métrics contenus, taille DB)
 - service pour ajouter/supprimer des exclusions (?)
 - event pour notifier d'une nouvelle erreur
+- publication hacs
 - README
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
   - informer des différents timings de synchro
 
 TOTEST
 - tout suppr et réinstall
+- actualisation après backup
 - backup en erreur
 - last_seen localisé en offline
 - changement des options individuellement
@@ -20,9 +24,9 @@ TOTEST
   - offline : ok
   - repairs :
   - applications :
-  - automations :
-  - scripts :
-- Qualité des attributs
+  - automations : ok
+  - scripts : ok
+- Qualité des attributs >> traductions ?
   - integrations : ok
   - updates : ok
   - offline : ok
