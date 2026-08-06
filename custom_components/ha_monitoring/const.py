@@ -88,12 +88,18 @@ TRANSLATION_KEY_BACKUP = "backup_status"
 TRANSLATION_KEY_REFRESH = "force_scan"
 
 # Suffixes et clés d'attributs utilisés pour la détection Hors-ligne
-DEFAULT_LAST_SEEN_ATTRS = (
+DEFAULT_LAST_SEEN_SUFFIX = (
     "last_seen",
     "last_updated",
     "_last_seen",
     "_last_updated",
 )
+LOCALIZED_LAST_SEEN_SUFFIX: dict[str, str] = {
+    "fr": "derniere_connexion",
+    "en": "last_seen",
+    "es": "ultima_conexion",
+    "de": "letztes_gesehen",
+}
 
 # Attributs
 ATTR_STARTUP_DELAY = "startup_delay"

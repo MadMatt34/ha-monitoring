@@ -145,8 +145,7 @@
       "updates_pending": { "name": "Monitoring Pending Updates" },
       "repairs_pending": { "name": "Monitoring Pending Repairs" },
       "unavailable_entities": { "name": "Monitoring Unavailable Entities" },
-      "offline_devices": { "name": "Monitoring Offline Devices" },
-      "last_seen": { "suffix": "last_seen" }
+      "offline_devices": { "name": "Monitoring Offline Devices" }
     },
     "binary_sensor": {
       "global_status": { "name": "Monitoring Global Status" },

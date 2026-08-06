@@ -79,21 +79,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._setup_backup_listeners()
 
-    async def _async_get_last_seen_suffixes(self) -> tuple[str, ...]:
-        """Charge les suffixes de 'last_seen' localisés depuis les traductions HA."""
-        suffixes = set(DEFAULT_LAST_SEEN_ATTRS)
-        try:
-            translations = await async_get_translations(
-                self.hass,
-                self.hass.config.language,
-                "entity",
-                integrations=[DOMAIN],
-            )
-            key = f"component.{DOMAIN}.entity.sensor.last_seen.suffix"
-            if key in translations and translations[key]:
-                suffixes.add(translations[key].lower())
-        except Exception as err:
-            _LOGGER.debug("[HA Monitoring] Erreur chargement traduction last_seen_suffix : %s", err)
+    def _get_last_seen_suffixes(self) -> tuple[str, ...]:
+        """Retourne la liste des suffixes/attributs 'last_seen' applicables."""
+        suffixes = set(DEFAULT_LAST_SEEN_SUFFIX)
+
+        lang = self.hass.config.language
+        localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(lang)
+
+        if localized_suffix:
+            suffixes.add(localized_suffix.lower())
 
         return tuple(suffixes)
 

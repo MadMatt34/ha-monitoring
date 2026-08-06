@@ -7,6 +7,7 @@ TODO
 - event pour notifier d'une nouvelle erreur
 - README
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
+  - informer des différents timings de synchro
 
 TOTEST
 - tout suppr et réinstall
