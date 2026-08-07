@@ -220,6 +220,14 @@ def get_schema(
                             )
                         ),
                         vol.Optional(
+                            CONF_EXCLUDED_UNAVAILABLE_GLOBS,
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[], custom_value=True, multiple=True
+                            )
+                        ),
+                        vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
                             default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES)
                             or [],
@@ -231,14 +239,6 @@ def get_schema(
                                 )
                                 if allowed_domains
                                 else None,
-                            )
-                        ),
-                        vol.Optional(
-                            CONF_EXCLUDED_UNAVAILABLE_GLOBS,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
-                        ): selector.SelectSelector(
-                            selector.SelectSelectorConfig(
-                                options=[], custom_value=True, multiple=True
                             )
                         ),
                     }

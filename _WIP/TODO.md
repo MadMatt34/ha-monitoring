@@ -7,6 +7,7 @@ TODO
 - capteur système (version, uptime host, uptime HA, métrics contenus, taille DB)
 - service pour ajouter/supprimer des exclusions (?)
 - event pour notifier d'une nouvelle erreur
+- capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
 - README
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot

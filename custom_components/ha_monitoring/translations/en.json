@@ -48,6 +48,7 @@
             "description": "Ignore specific entities or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Unavailable entities to exclude",
+              "excluded_unavailable_globs": "Unavailable entities to exclude with globs",
               "excluded_unavailable_domains": "Unavailable domains to exclude"
             }
           },
@@ -118,6 +119,7 @@
             "description": "Ignore specific entities or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Unavailable entities to exclude",
+              "excluded_unavailable_globs": "Unavailable entities to exclude with globs",
               "excluded_unavailable_domains": "Unavailable domains to exclude"
             }
           },
