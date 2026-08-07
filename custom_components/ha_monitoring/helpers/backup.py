@@ -41,7 +41,7 @@ def _to_dict(obj: Any) -> dict[str, Any]:
 
 
 def _format_dt(raw_dt: Any) -> str | None:
-    """Formate une date (datetime, ISO str, timestamp) au format JJ/MM/AAAA HH:MM en heure locale."""
+    """Formate une date (datetime, ISO str, timestamp) au format ISO 8601 en heure locale avec fuseau horaire."""
     if not raw_dt:
         return None
 
@@ -49,24 +49,26 @@ def _format_dt(raw_dt: Any) -> str | None:
     if s_val.lower() in ("unknown", "unavailable", "blocked", "none", "null", "inconnu", ""):
         return None
 
-    if isinstance(raw_dt, datetime):
-        try:
-            return dt_util.as_local(raw_dt).strftime("%d/%m/%Y %H:%M")
-        except Exception:
-            return raw_dt.strftime("%d/%m/%Y %H:%M")
+    dt_obj: datetime | None = None
 
-    if isinstance(raw_dt, (int, float)):
+    if isinstance(raw_dt, datetime):
+        dt_obj = raw_dt
+    elif isinstance(raw_dt, (int, float)):
         try:
-            return dt_util.as_local(dt_util.utc_from_timestamp(raw_dt)).strftime("%d/%m/%Y %H:%M")
+            dt_obj = dt_util.utc_from_timestamp(raw_dt)
+        except Exception:
+            pass
+    else:
+        try:
+            dt_obj = dt_util.parse_datetime(s_val)
         except Exception:
             pass
 
-    try:
-        parsed = dt_util.parse_datetime(s_val)
-        if parsed:
-            return dt_util.as_local(parsed).strftime("%d/%m/%Y %H:%M")
-    except Exception:
-        pass
+    if dt_obj:
+        try:
+            return dt_util.as_local(dt_obj).isoformat()
+        except Exception:
+            return dt_obj.isoformat()
 
     return s_val if len(s_val) >= 8 else None
 
@@ -234,7 +236,6 @@ async def async_get_backup_info(
                 config_raw = manager.config
 
             if config_raw:
-                # Extraction directe ciblée depuis la structure BackupConfig -> BackupConfigData -> BackupSchedule
                 data_obj = getattr(config_raw, "data", config_raw)
                 schedule_obj = getattr(data_obj, "schedule", None) if not isinstance(data_obj, dict) else data_obj.get("schedule")
 
@@ -243,7 +244,6 @@ async def async_get_backup_info(
                 if next_dt:
                     info["date_next_schedule"] = _format_dt(next_dt)
                 else:
-                    # Fallback par balayage sécurisé anti-récursion
                     config_dict = _to_dict(config_raw)
                     next_schedule = _find_scalar_field(
                         config_dict,
