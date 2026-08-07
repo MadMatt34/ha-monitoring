@@ -4,7 +4,6 @@ TODO
 - dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
 - service pour ajouter/supprimer des exclusions (?)
-
 - event pour notifier d'une nouvelle erreur
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
