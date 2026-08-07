@@ -1,4 +1,4 @@
-"""Gestionnaire d'inspection des traces pour automatisations et scripts."""
+"""Gestionnaire d'inspection des traces pour automatisations et scripts. """
 
 from collections import deque
 from datetime import datetime
