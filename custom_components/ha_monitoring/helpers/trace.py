@@ -11,7 +11,7 @@ from homeassistant.util import dt as dt_util
 
 from .utils import format_date_local
 
-_LOGGER = logging.getLogger("custom_components.ha_monitoring")
+_LOGGER = logging.getLogger("custom_components.ha_monitoring.trace")
 
 
 def _unwrap_traces(val: Any) -> list[Any]:
@@ -36,13 +36,11 @@ def _unwrap_traces(val: Any) -> list[Any]:
 
 def _get_raw_trace_timestamp(trace: Any) -> Any:
     """Extrait l'horodatage brut d'une trace."""
-    # 1. Attributs directs
     for attr in ("timestamp_start", "start_time", "timestamp_finish", "finish_time"):
         val = getattr(trace, attr, None)
         if val:
             return val
 
-    # 2. Objet timestamp interne (TraceDataTimestamp ou dict)
     ts_attr = getattr(trace, "_timestamp", None) or getattr(trace, "timestamp", None)
     if ts_attr:
         if isinstance(ts_attr, dict):
@@ -54,7 +52,6 @@ def _get_raw_trace_timestamp(trace: Any) -> Any:
             if val:
                 return val
 
-    # 3. Structure via as_dict()
     if hasattr(trace, "as_dict"):
         try:
             t_dict = trace.as_dict()
@@ -71,7 +68,7 @@ def _get_raw_trace_timestamp(trace: Any) -> Any:
 
 
 def _parse_timestamp(val: Any) -> datetime | None:
-    """Convertit un horodatage brut en objet datetime comparable (avec timezone UTC si naïf)."""
+    """Convertit un horodatage brut en objet datetime comparable."""
     if isinstance(val, datetime):
         return val.replace(tzinfo=dt_util.UTC) if val.tzinfo is None else val
     if isinstance(val, str):
@@ -113,7 +110,6 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
     elif isinstance(obj, dict):
         t_dict = obj
 
-    # --- ÉTAPE 1 : Inspection du dictionnaire (as_dict / dict) ---
     if t_dict is not None:
         script_exec = t_dict.get("script_execution")
         if script_exec == "aborted":
@@ -145,7 +141,6 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
         if script_exec in ("failed", "error", "failed_before_steps"):
             return f"Échec d'exécution (statut: {script_exec})"
 
-    # --- ÉTAPE 2 : Inspection directe des attributs de l'objet Python ---
     script_exec_obj = getattr(obj, "_script_execution", None) or getattr(obj, "script_execution", None)
     state_obj = getattr(obj, "_state", None) or getattr(obj, "state", None)
 
@@ -297,12 +292,5 @@ def get_trace_errors(
                 "date": formatted_date,
                 "error": str(error_msg),
             })
-
-    if not failed:
-        _LOGGER.debug(
-            "[HA Monitoring] Bilan pour '%s' : 0 erreur détectée sur %d élément(s) analysé(s).",
-            target_domain,
-            len(domain_traces),
-        )
 
     return failed

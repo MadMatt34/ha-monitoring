@@ -7,7 +7,6 @@ from typing import Any
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import CoreState, Event, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
-from homeassistant.helpers.translation import async_get_translations
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
@@ -26,7 +25,7 @@ from .const import (
     CONF_STARTUP_DELAY,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
-    DEFAULT_LAST_SEEN_ATTRS,
+    DEFAULT_LAST_SEEN_SUFFIX,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STARTUP_DELAY,
@@ -83,11 +82,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Retourne la liste des suffixes/attributs 'last_seen' applicables."""
         suffixes = set(DEFAULT_LAST_SEEN_SUFFIX)
 
-        lang = self.hass.config.language
-        localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(lang)
-
-        if localized_suffix:
-            suffixes.add(localized_suffix.lower())
+        try:
+            from .const import LOCALIZED_LAST_SEEN_SUFFIX
+            lang = self.hass.config.language
+            localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(lang)
+            if localized_suffix:
+                suffixes.add(localized_suffix.lower())
+        except (ImportError, AttributeError):
+            pass
 
         return tuple(suffixes)
 
@@ -107,6 +109,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         or "Échec de sauvegarde signalé par événement"
                     )
 
+                # Mise à jour déclenchée uniquement lors d'un événement
                 self._cached_backup_info = await async_get_backup_info(
                     self.hass, self._last_backup_failure_reason
                 )
@@ -143,7 +146,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._skip_startup_delay = True
         self._last_trace_check_time = None
-        self._cached_backup_info = None
+        self._cached_backup_info = None  # Force la réinterrogation au refresh manuel
 
         await self.async_refresh()
 
@@ -158,11 +161,17 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
         )
 
-        # Mise à jour du cache de sauvegarde si nécessaire
+        # 1. Chargement initial du cache si non défini
+        fetched_info = None
         if self._cached_backup_info is None:
-            self._cached_backup_info = await async_get_backup_info(
+            fetched_info = await async_get_backup_info(
                 self.hass, self._last_backup_failure_reason
             )
+            # Ne verrouille en cache que si une date est trouvée OU si la phase de boot est passée
+            if not in_startup_phase or fetched_info.get("date_last_run") is not None:
+                self._cached_backup_info = fetched_info
+
+        current_backup_info = self._cached_backup_info or fetched_info or self._empty_results(False)["monitoring_backup"]
 
         # Traitement de la période d'initialisation
         if in_startup_phase:
@@ -179,12 +188,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
 
             results = self._empty_results(in_startup_delay=True)
-            results["monitoring_backup"] = self._cached_backup_info
+            results["monitoring_backup"] = current_backup_info
             return results
 
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
+
+        # --- Remarque : AUCUN appel à async_get_backup_info ici ---
+        # Le coordinateur réutilise exclusivement self._cached_backup_info
 
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
@@ -274,7 +286,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "is_ok": True,
                 "date_last_run": None,
                 "date_last_success": None,
-                "date_next_schedule": "Démarrage...",
+                "date_next_schedule": None,
                 "size": None,
                 "failure": None,
             },

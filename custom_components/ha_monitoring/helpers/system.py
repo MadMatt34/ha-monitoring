@@ -15,7 +15,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
-from ..const import DEFAULT_LAST_SEEN_ATTRS, DOMAIN
+from ..const import DEFAULT_LAST_SEEN_SUFFIX, DOMAIN
 from .utils import format_date_local, is_hassio_running
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.system")
@@ -23,12 +23,10 @@ _LOGGER = logging.getLogger("custom_components.ha_monitoring.system")
 
 def _extract_last_seen_dt(state_obj: Any, last_seen_suffixes: tuple[str, ...]) -> datetime | None:
     """Extrait et convertit en datetime UTC la date de dernière vue d'une entité."""
-    # 1. Vérification si l'état lui-même est une date ISO
     dt_val = dt_util.parse_datetime(str(state_obj.state))
     if dt_val:
         return dt_util.as_utc(dt_val)
 
-    # 2. Recherche dans les attributs
     attrs = state_obj.attributes or {}
     for attr_key in last_seen_suffixes:
         val = attrs.get(attr_key)
@@ -58,13 +56,12 @@ def scan_all_states(
     excluded_unavailable_domains: list[str],
     excluded_offline: list[str],
     timeout_hours: float,
-    last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_ATTRS,
+    last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_SUFFIX,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     """Parcourt TOUS les états de Home Assistant en une seule passe."""
     now = dt_util.utcnow()
     cutoff = now - timedelta(hours=float(timeout_hours))
 
-    # Conversion des listes d'exclusions en ensembles (sets) pour des recherches O(1)
     excl_updates = set(excluded_updates)
     excl_unavail_entities = set(excluded_unavailable_entities)
     excl_unavail_domains = set(excluded_unavailable_domains)
@@ -81,7 +78,6 @@ def scan_all_states(
         friendly_name = state_obj.attributes.get("friendly_name") or entity_id
 
         entity_entry = ent_reg.async_get(entity_id)
-        # Ignorer les propres entités du composant HA Monitoring
         if entity_entry and entity_entry.platform == DOMAIN:
             continue
 

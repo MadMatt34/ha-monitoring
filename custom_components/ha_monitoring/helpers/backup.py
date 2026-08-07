@@ -1,281 +1,271 @@
-"""DataUpdateCoordinator centralisé et optimisé pour HA Monitoring."""
+"""Gestionnaire d'inspection des sauvegardes basé exclusivement sur les APIs natives HA."""
 
-from datetime import timedelta
+import dataclasses
+from datetime import datetime
 import logging
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CoreState, Event, HomeAssistant, callback
-from homeassistant.helpers.event import async_call_later
-from homeassistant.helpers.translation import async_get_translations
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .const import (
-    CONF_EXCLUDED_ADDONS,
-    CONF_EXCLUDED_AUTOMATIONS,
-    CONF_EXCLUDED_INTEGRATIONS,
-    CONF_EXCLUDED_OFFLINE,
-    CONF_EXCLUDED_REPAIRS,
-    CONF_EXCLUDED_SCRIPTS,
-    CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
-    CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-    CONF_EXCLUDED_UPDATES,
-    CONF_OFFLINE_TIMEOUT,
-    CONF_SCAN_INTERVAL,
-    CONF_STARTUP_DELAY,
-    CONF_TRACES_SCAN_INTERVAL,
-    DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
-    DEFAULT_LAST_SEEN_ATTRS,
-    DEFAULT_OFFLINE_TIMEOUT,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_STARTUP_DELAY,
-    DEFAULT_TRACES_SCAN_INTERVAL,
-    DOMAIN,
-)
-from .helpers.backup import async_get_backup_info
-from .helpers.system import (
-    async_get_addons,
-    async_get_failed_integrations,
-    async_get_pending_repairs,
-    scan_all_states,
-)
-from .helpers.trace import get_trace_errors
-
-_LOGGER = logging.getLogger("custom_components.ha_monitoring.coordinator")
+_LOGGER = logging.getLogger("custom_components.ha_monitoring.backup")
 
 
-class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
-    """Coordinator principal gérant les collectes et la temporisation."""
+def _to_dict(obj: Any) -> dict[str, Any]:
+    """Convertit de manière ultra-robuste tout objet/dataclass HA en dictionnaire (en ignorant les attributs privés)."""
+    if obj is None:
+        return {}
+    if isinstance(obj, dict):
+        return {k: v for k, v in obj.items() if not str(k).startswith("_")}
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
-        """Initialise le coordinateur."""
-        self.entry = entry
+    res: dict[str, Any] = {}
+    if hasattr(obj, "to_dict") and callable(obj.to_dict):
+        try:
+            res = obj.to_dict()
+        except Exception:
+            pass
+    elif hasattr(obj, "as_dict") and callable(obj.as_dict):
+        try:
+            res = obj.as_dict()
+        except Exception:
+            pass
+    elif dataclasses.is_dataclass(obj):
+        try:
+            res = dataclasses.asdict(obj)
+        except Exception:
+            pass
+    elif hasattr(obj, "__dict__"):
+        res = vars(obj)
 
-        if DOMAIN not in hass.data:
-            hass.data[DOMAIN] = {}
-        if "ha_start_time" not in hass.data[DOMAIN]:
-            hass.data[DOMAIN]["ha_start_time"] = dt_util.utcnow()
+    return {k: v for k, v in res.items() if not str(k).startswith("_")}
 
-        self._ha_start_time = hass.data[DOMAIN]["ha_start_time"]
-        self._skip_startup_delay = False
-        self._cached_backup_info: dict[str, Any] | None = None
-        self._last_backup_failure_reason: str | None = None
-        self._startup_timer_unsub: Any = None
-        self._bus_listeners_unsub: list[Any] = []
 
-        self._last_trace_check_time: Any = None
-        self._cached_automations: list[dict[str, Any]] = []
-        self._cached_scripts: list[dict[str, Any]] = []
+def _format_dt(raw_dt: Any) -> str | None:
+    """Formate une date (datetime, ISO str, timestamp) au format JJ/MM/AAAA HH:MM en heure locale."""
+    if not raw_dt:
+        return None
 
-        scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    s_val = str(raw_dt).strip()
+    if s_val.lower() in ("unknown", "unavailable", "blocked", "none", "null", "inconnu", ""):
+        return None
 
-        super().__init__(
-            hass,
-            _LOGGER,
-            name=DOMAIN,
-            update_interval=timedelta(seconds=int(scan_interval)),
-        )
+    if isinstance(raw_dt, datetime):
+        try:
+            return dt_util.as_local(raw_dt).strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            return raw_dt.strftime("%d/%m/%Y %H:%M")
 
-        self._setup_backup_listeners()
+    if isinstance(raw_dt, (int, float)):
+        try:
+            return dt_util.as_local(dt_util.utc_from_timestamp(raw_dt)).strftime("%d/%m/%Y %H:%M")
+        except Exception:
+            pass
 
-    def _get_last_seen_suffixes(self) -> tuple[str, ...]:
-        """Retourne la liste des suffixes/attributs 'last_seen' applicables."""
-        suffixes = set(DEFAULT_LAST_SEEN_ATTRS)
+    try:
+        parsed = dt_util.parse_datetime(s_val)
+        if parsed:
+            return dt_util.as_local(parsed).strftime("%d/%m/%Y %H:%M")
+    except Exception:
+        pass
 
-        lang = self.hass.config.language
-        localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(lang)
+    return s_val if len(s_val) >= 8 else None
 
-        if localized_suffix:
-            suffixes.add(localized_suffix.lower())
 
-        return tuple(suffixes)
+def _format_size_bytes(bytes_val: Any) -> str | None:
+    """Formate la taille en octets vers une chaîne lisible (KB, MB, GB)."""
+    if bytes_val is None:
+        return None
+    try:
+        val = float(bytes_val)
+        if val > 0:
+            if val >= 1024 * 1024 * 1024:
+                return f"{val / (1024 * 1024 * 1024):.2f} GB"
+            if val >= 1024 * 1024:
+                return f"{val / (1024 * 1024):.1f} MB"
+            if val >= 1024:
+                return f"{val / 1024:.0f} KB"
+            return f"{val:.0f} B"
+    except (ValueError, TypeError):
+        pass
+    return str(bytes_val)
 
-    def _setup_backup_listeners(self) -> None:
-        """Écoute les événements du bus déclenchés lors des sauvegardes."""
-        async def _async_on_backup_event(event: Event) -> None:
-            _LOGGER.debug(
-                "[HA Monitoring] Événement de sauvegarde détecté : %s",
-                event.event_type,
-            )
-            try:
-                if event.event_type == "backup_failed" or event.data.get("status") == "failed":
-                    self._last_backup_failure_reason = (
-                        event.data.get("reason")
-                        or event.data.get("error")
-                        or event.data.get("message")
-                        or "Échec de sauvegarde signalé par événement"
+
+def _extract_backup_objects(raw: Any) -> list[Any]:
+    """Aplatit et extrait la liste de tous les objets ManagerBackup indifféremment de la structure."""
+    if not raw:
+        return []
+
+    if isinstance(raw, dict) or (hasattr(raw, "values") and callable(raw.values)):
+        res = []
+        for item in raw.values():
+            res.extend(_extract_backup_objects(item))
+        return res
+
+    if isinstance(raw, (list, tuple, set)):
+        res = []
+        for item in raw:
+            res.extend(_extract_backup_objects(item))
+        return res
+
+    return [raw]
+
+
+def _find_scalar_field(
+    data: dict[str, Any], candidate_keys: tuple[str, ...], depth: int = 0
+) -> Any:
+    """Recherche une valeur scalaire avec sécurité anti-récursion (depth max = 4)."""
+    if depth > 4 or not isinstance(data, dict):
+        return None
+
+    # 1. Recherche directe au niveau actuel
+    for key in candidate_keys:
+        if key in data and data[key] is not None:
+            val = data[key]
+            if isinstance(val, (datetime, str, int, float)):
+                return val
+
+    # 2. Exploration sous-niveaux (en ignorant les clés privées)
+    for k, v in data.items():
+        if str(k).startswith("_"):
+            continue
+        if isinstance(v, dict):
+            res = _find_scalar_field(v, candidate_keys, depth + 1)
+            if res is not None:
+                return res
+        elif dataclasses.is_dataclass(v) or hasattr(v, "__dict__"):
+            res = _find_scalar_field(_to_dict(v), candidate_keys, depth + 1)
+            if res is not None:
+                return res
+
+    return None
+
+
+def _get_backup_size_bytes(b_obj: Any) -> int | None:
+    """Extrait la taille en octets depuis l'attribut agents ou les champs de premier niveau."""
+    agents = getattr(b_obj, "agents", None)
+    if isinstance(agents, dict) and agents:
+        total = 0
+        found = False
+        for agent in agents.values():
+            sz = getattr(agent, "size", None)
+            if sz is None and isinstance(agent, dict):
+                sz = agent.get("size")
+            if sz is not None:
+                try:
+                    total += int(sz)
+                    found = True
+                except (ValueError, TypeError):
+                    pass
+        if found and total > 0:
+            return total
+
+    b_dict = _to_dict(b_obj)
+    sz = _find_scalar_field(b_dict, ("size", "bytes", "total_size", "file_size"))
+    if sz is not None:
+        try:
+            return int(sz)
+        except (ValueError, TypeError):
+            pass
+    return None
+
+
+async def async_get_backup_info(
+    hass: HomeAssistant, last_failure_reason: str | None = None
+) -> dict[str, Any]:
+    """Récupère les informations de sauvegarde via les APIs natives de Home Assistant."""
+    info: dict[str, Any] = {
+        "is_ok": True,
+        "date_last_run": None,
+        "date_last_success": None,
+        "date_next_schedule": None,
+        "size": None,
+        "failure": last_failure_reason,
+    }
+
+    if "backup" in hass.data:
+        try:
+            b_data = hass.data["backup"]
+            manager = getattr(b_data, "manager", b_data)
+
+            # -----------------------------------------------------------------
+            # 1. Extraction des sauvegardes existantes
+            # -----------------------------------------------------------------
+            backups_raw = None
+            if hasattr(manager, "async_get_backups"):
+                try:
+                    backups_raw = await manager.async_get_backups()
+                except Exception as err_m:
+                    _LOGGER.warning("[HA Monitoring Backup] Appel async_get_backups() échoué: %s", err_m)
+
+            if backups_raw is None and hasattr(manager, "backups"):
+                backups_raw = manager.backups
+
+            backup_list = _extract_backup_objects(backups_raw)
+
+            if backup_list:
+                valid_backups = []
+                for b_obj in backup_list:
+                    b_dict = _to_dict(b_obj)
+                    d = _find_scalar_field(
+                        b_dict, ("date", "created", "created_at", "timestamp", "utc_date")
                     )
+                    if d:
+                        sz = _get_backup_size_bytes(b_obj)
+                        valid_backups.append((str(d), d, sz))
 
-                self._cached_backup_info = await async_get_backup_info(
-                    self.hass, self._last_backup_failure_reason
-                )
-                self.async_update_listeners()
-            except Exception as err:
-                _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
+                if valid_backups:
+                    valid_backups.sort(key=lambda x: x[0], reverse=True)
+                    _, latest_date, latest_size = valid_backups[0]
 
-        for event_type in (
-            "backup_completed",
-            "backup_successful",
-            "backup_failed",
-            "hassio_backup_completed",
-        ):
-            unsub = self.hass.bus.async_listen(event_type, _async_on_backup_event)
-            self._bus_listeners_unsub.append(unsub)
+                    info["date_last_run"] = _format_dt(latest_date)
+                    info["date_last_success"] = info["date_last_run"]
+                    info["size"] = _format_size_bytes(latest_size)
 
-    async def async_shutdown(self) -> None:
-        """Détruit proprement les écouteurs et temporisateurs lors de la fermeture."""
-        if self._startup_timer_unsub:
-            self._startup_timer_unsub()
-            self._startup_timer_unsub = None
+            # -----------------------------------------------------------------
+            # 2. Extraction de la planification native (BackupConfig)
+            # -----------------------------------------------------------------
+            config_raw = None
+            if hasattr(manager, "async_get_config"):
+                try:
+                    config_raw = await manager.async_get_config()
+                except Exception:
+                    pass
+            if config_raw is None and hasattr(manager, "config"):
+                config_raw = manager.config
 
-        for unsub in self._bus_listeners_unsub:
-            unsub()
-        self._bus_listeners_unsub.clear()
+            if config_raw:
+                # Extraction directe ciblée depuis la structure BackupConfig -> BackupConfigData -> BackupSchedule
+                data_obj = getattr(config_raw, "data", config_raw)
+                schedule_obj = getattr(data_obj, "schedule", None) if not isinstance(data_obj, dict) else data_obj.get("schedule")
 
-        await super().async_shutdown()
+                next_dt = getattr(schedule_obj, "next_automatic_backup", None) if not isinstance(schedule_obj, dict) else (schedule_obj.get("next_automatic_backup") if schedule_obj else None)
 
-    async def async_force_refresh(self) -> None:
-        """Force un rafraîchissement immédiat de toutes les données sans temporisation."""
-        if self._startup_timer_unsub:
-            self._startup_timer_unsub()
-            self._startup_timer_unsub = None
+                if next_dt:
+                    info["date_next_schedule"] = _format_dt(next_dt)
+                else:
+                    # Fallback par balayage sécurisé anti-récursion
+                    config_dict = _to_dict(config_raw)
+                    next_schedule = _find_scalar_field(
+                        config_dict,
+                        ("next_automatic_backup", "next_backup", "next_run", "next_scheduled", "next_execution"),
+                    )
+                    if next_schedule:
+                        info["date_next_schedule"] = _format_dt(next_schedule)
 
-        self._skip_startup_delay = True
-        self._last_trace_check_time = None
-        self._cached_backup_info = None
+        except Exception as err:
+            _LOGGER.warning("[HA Monitoring Backup] Erreur HA Core Manager: %s", err)
 
-        await self.async_refresh()
+    if last_failure_reason:
+        info["is_ok"] = False
 
-    async def _async_update_data(self) -> dict[str, Any]:
-        """Récupère l'ensemble des métriques d'état du système."""
-        startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
-        now = dt_util.utcnow()
-        elapsed_seconds = (now - self._ha_start_time).total_seconds()
+    _LOGGER.warning(
+        "[HA Monitoring Backup] RÉSULTAT API NATIVE -> "
+        "last_run=%s | last_success=%s | next_schedule=%s | size=%s | is_ok=%s",
+        info["date_last_run"],
+        info["date_last_success"],
+        info["date_next_schedule"],
+        info["size"],
+        info["is_ok"],
+    )
 
-        in_startup_phase = (
-            not self._skip_startup_delay
-            and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
-        )
-
-        # Mise à jour du cache de sauvegarde si nécessaire
-        if self._cached_backup_info is None:
-            self._cached_backup_info = await async_get_backup_info(
-                self.hass, self._last_backup_failure_reason
-            )
-
-        # Traitement de la période d'initialisation
-        if in_startup_phase:
-            remaining = max(0.0, startup_delay - elapsed_seconds)
-
-            if not self._startup_timer_unsub and remaining > 0:
-                @callback
-                def _force_refresh_after_delay(_: Any) -> None:
-                    self._startup_timer_unsub = None
-                    self.hass.async_create_task(self.async_refresh())
-
-                self._startup_timer_unsub = async_call_later(
-                    self.hass, remaining + 0.1, _force_refresh_after_delay
-                )
-
-            results = self._empty_results(in_startup_delay=True)
-            results["monitoring_backup"] = self._cached_backup_info
-            return results
-
-        if self._startup_timer_unsub:
-            self._startup_timer_unsub()
-            self._startup_timer_unsub = None
-
-        options = self.entry.options
-        offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-
-        excluded_unavailable_entities = options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES, [])
-        excluded_unavailable_domains = options.get(
-            CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
-        )
-
-        last_seen_suffixes = self._get_last_seen_suffixes()
-
-        # Balayage complet des états (système, hors-ligne, indisponibles, updates)
-        updates, unavailable, offline = scan_all_states(
-            self.hass,
-            excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
-            excluded_unavailable_entities=excluded_unavailable_entities,
-            excluded_unavailable_domains=excluded_unavailable_domains,
-            excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
-            timeout_hours=offline_timeout,
-            last_seen_suffixes=last_seen_suffixes,
-        )
-
-        # Vérification périodique des traces d'erreurs (automations & scripts)
-        traces_scan_interval_min = options.get(
-            CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
-        )
-        traces_scan_interval_sec = float(traces_scan_interval_min) * 60
-
-        if (
-            self._last_trace_check_time is None
-            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
-        ):
-            self._cached_automations = get_trace_errors(
-                self.hass, "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
-            )
-            self._cached_scripts = get_trace_errors(
-                self.hass, "script", options.get(CONF_EXCLUDED_SCRIPTS, [])
-            )
-            self._last_trace_check_time = now
-
-        # Collecte asynchrone des Add-ons, Intégrations et Réparations
-        addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
-        integrations = await async_get_failed_integrations(
-            self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
-        )
-        repairs = await async_get_pending_repairs(
-            self.hass, options.get(CONF_EXCLUDED_REPAIRS, [])
-        )
-
-        return {
-            "in_startup_delay": False,
-            "monitoring_addons": {"items": addons, "total": len(addons)},
-            "monitoring_integrations": {"items": integrations, "total": len(integrations)},
-            "monitoring_automations": {
-                "items": self._cached_automations,
-                "total": len(self._cached_automations),
-            },
-            "monitoring_scripts": {
-                "items": self._cached_scripts,
-                "total": len(self._cached_scripts),
-            },
-            "monitoring_updates": {"items": updates, "total": len(updates)},
-            "monitoring_repairs": {"items": repairs, "total": len(repairs)},
-            "monitoring_unavailable": {"items": unavailable, "total": len(unavailable)},
-            "monitoring_offline": {
-                "items": offline,
-                "total": len(offline),
-                "timeout": offline_timeout,
-            },
-            "monitoring_backup": self._cached_backup_info,
-        }
-
-    def _empty_results(self, in_startup_delay: bool) -> dict[str, Any]:
-        """Génère la structure par défaut pendant le délai de démarrage."""
-        timeout = self.entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
-        return {
-            "in_startup_delay": in_startup_delay,
-            "monitoring_addons": {"items": [], "total": 0},
-            "monitoring_integrations": {"items": [], "total": 0},
-            "monitoring_automations": {"items": [], "total": 0},
-            "monitoring_scripts": {"items": [], "total": 0},
-            "monitoring_updates": {"items": [], "total": 0},
-            "monitoring_repairs": {"items": [], "total": 0},
-            "monitoring_unavailable": {"items": [], "total": 0},
-            "monitoring_offline": {"items": [], "total": 0, "timeout": timeout},
-            "monitoring_backup": {
-                "is_ok": True,
-                "date_last_run": None,
-                "date_last_success": None,
-                "date_next_schedule": "Démarrage...",
-                "size": None,
-                "failure": None,
-            },
-        }
+    return info

@@ -47,7 +47,6 @@ def format_size(size_val: Any) -> str | None:
     if size_val is None:
         return None
 
-    # Tente de convertir une chaîne numérique en float si nécessaire
     if isinstance(size_val, str):
         try:
             size_val = float(size_val)
@@ -55,7 +54,6 @@ def format_size(size_val: Any) -> str | None:
             return size_val
 
     if isinstance(size_val, (int, float)):
-        # Si la valeur est > 10240, on considère qu'elle est fournie en octets
         mb = size_val / (1024 * 1024) if size_val > 10240 else float(size_val)
 
         if mb >= 1024:
