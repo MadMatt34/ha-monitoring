@@ -11,5 +11,9 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/MadMatt34/ha-monitoring/issues",
   "requirements": [],
-  "version": "0.11.10"
+  "version": "0.11.10",
+  "after_dependencies": [
+    "hassio",
+    "recorder"
+  ]
 }

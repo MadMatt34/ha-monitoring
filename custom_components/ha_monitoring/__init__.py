@@ -10,6 +10,8 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import HAMonitoringCoordinator
 
+CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
+
 _LOGGER = logging.getLogger("custom_components.ha_monitoring")
 
 PLATFORMS: list[Platform] = [
