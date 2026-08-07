@@ -12,6 +12,7 @@ TODO
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
   - informer des différents timings de synchro
   - criteres de prise en compte des éléments dans le scan
+  - exclusion entities offline par globs / wildcard patterns sur id et displayname
 
 TOTEST
 - tout suppr et réinstall
@@ -20,10 +21,10 @@ TOTEST
 - last_seen localisé en offline
 - changement des options individuellement
   - updates : ok
-  - integrations : ok
+  - integrations : uniquement plateforme, ajouter possibilité nom convivial et mot clé
   - unavailable : ok
   - offline : ok
-  - repairs :
+  - repairs : uniquement plateforme, ajouter possibilité mot clé de l'issue
   - applications :
   - automations : ok
   - scripts : ok
@@ -39,7 +40,6 @@ TOTEST
   - scripts : ok
 
 TOCORRECT
-- liste d'exclusion entités par globs
 - pour repairs_pending, nom plus convivial (translation system)
 - pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
@@ -71,6 +71,7 @@ DONE
 - pour unavailable entities, prendre aussi unknown
 - pour integrations, ajouter la raison de l'échec
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
+- liste d'exclusion entités par globs
 
 
 INFO

@@ -28,6 +28,7 @@ CONF_EXCLUDED_UPDATES = "excluded_updates"
 CONF_EXCLUDED_REPAIRS = "excluded_repairs"
 CONF_EXCLUDED_OFFLINE = "excluded_offline"
 CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
+CONF_EXCLUDED_UNAVAILABLE_GLOBS = "excluded_unavailable_globs"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 # Domaines indésirables masqués par défaut
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [

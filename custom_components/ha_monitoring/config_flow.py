@@ -19,6 +19,7 @@ from .const import (
     CONF_EXCLUDED_SCRIPTS,
     CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
     CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+    CONF_EXCLUDED_UNAVAILABLE_GLOBS,
     CONF_EXCLUDED_UPDATES,
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
@@ -75,7 +76,6 @@ def get_schema(
             {"value": d, "label": d} for d in sorted(all_domains)
         ]
 
-        # Filtre les domaines autorisés pour le sélecteur d'entités (Domaines totaux - Domaines exclus)
         allowed_domains = sorted(list(all_domains - set(current_excluded_domains)))
 
     return vol.Schema(
@@ -231,6 +231,14 @@ def get_schema(
                                 )
                                 if allowed_domains
                                 else None,
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_UNAVAILABLE_GLOBS,
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[], custom_value=True, multiple=True
                             )
                         ),
                     }

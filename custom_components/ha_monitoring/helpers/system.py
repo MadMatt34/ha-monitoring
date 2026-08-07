@@ -1,6 +1,7 @@
 """Collecteurs système : états, hors-ligne, extensions, intégrations et réparations."""
 
 from datetime import datetime, timedelta
+from fnmatch import fnmatch
 import logging
 from typing import Any
 
@@ -57,6 +58,7 @@ def scan_all_states(
     excluded_offline: list[str],
     timeout_hours: float,
     last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_SUFFIX,
+    excluded_unavailable_globs: list[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
     """Parcourt TOUS les états de Home Assistant en une seule passe."""
     now = dt_util.utcnow()
@@ -65,12 +67,20 @@ def scan_all_states(
     excl_updates = set(excluded_updates)
     excl_unavail_entities = set(excluded_unavailable_entities)
     excl_unavail_domains = set(excluded_unavailable_domains)
+    excl_unavail_globs = [g.lower().strip() for g in (excluded_unavailable_globs or []) if g]
     excl_offline = set(excluded_offline)
 
     updates, unavailable, offline = [], [], []
 
     ent_reg = er.async_get(hass)
     dev_reg = dr.async_get(hass)
+
+    def _is_unavail_glob_matched(text: str) -> bool:
+        """Vérifie si une chaîne correspond à l'un des motifs glob enregistrés."""
+        if not excl_unavail_globs or not text:
+            return False
+        text_lower = text.lower()
+        return any(fnmatch(text_lower, pattern) for pattern in excl_unavail_globs)
 
     for state_obj in hass.states.async_all():
         entity_id = state_obj.entity_id
@@ -83,7 +93,12 @@ def scan_all_states(
 
         # 1. Entités indisponibles ou inconnues
         if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
-            if entity_id not in excl_unavail_entities and domain not in excl_unavail_domains:
+            if (
+                entity_id not in excl_unavail_entities
+                and domain not in excl_unavail_domains
+                and not _is_unavail_glob_matched(entity_id)
+                and not _is_unavail_glob_matched(friendly_name)
+            ):
                 unavailable.append({
                     "entity_id": entity_id,
                     "name": friendly_name,

@@ -19,6 +19,7 @@ from .const import (
     CONF_EXCLUDED_SCRIPTS,
     CONF_EXCLUDED_UNAVAILABLE_DOMAINS,
     CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
+    CONF_EXCLUDED_UNAVAILABLE_GLOBS,
     CONF_EXCLUDED_UPDATES,
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
@@ -109,7 +110,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         or "Échec de sauvegarde signalé par événement"
                     )
 
-                # Mise à jour déclenchée uniquement lors d'un événement
                 self._cached_backup_info = await async_get_backup_info(
                     self.hass, self._last_backup_failure_reason
                 )
@@ -146,7 +146,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._skip_startup_delay = True
         self._last_trace_check_time = None
-        self._cached_backup_info = None  # Force la réinterrogation au refresh manuel
+        self._cached_backup_info = None
 
         await self.async_refresh()
 
@@ -161,19 +161,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
         )
 
-        # 1. Chargement initial du cache si non défini
         fetched_info = None
         if self._cached_backup_info is None:
             fetched_info = await async_get_backup_info(
                 self.hass, self._last_backup_failure_reason
             )
-            # Ne verrouille en cache que si une date est trouvée OU si la phase de boot est passée
             if not in_startup_phase or fetched_info.get("date_last_run") is not None:
                 self._cached_backup_info = fetched_info
 
         current_backup_info = self._cached_backup_info or fetched_info or self._empty_results(False)["monitoring_backup"]
 
-        # Traitement de la période d'initialisation
         if in_startup_phase:
             remaining = max(0.0, startup_delay - elapsed_seconds)
 
@@ -195,9 +192,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
 
-        # --- Remarque : AUCUN appel à async_get_backup_info ici ---
-        # Le coordinateur réutilise exclusivement self._cached_backup_info
-
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
@@ -205,21 +199,22 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         excluded_unavailable_domains = options.get(
             CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
         )
+        excluded_unavailable_globs = options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS, [])
 
         last_seen_suffixes = self._get_last_seen_suffixes()
 
-        # Balayage complet des états (système, hors-ligne, indisponibles, updates)
+        # Balayage complet des états
         updates, unavailable, offline = scan_all_states(
             self.hass,
             excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
             excluded_unavailable_entities=excluded_unavailable_entities,
             excluded_unavailable_domains=excluded_unavailable_domains,
+            excluded_unavailable_globs=excluded_unavailable_globs,
             excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
             timeout_hours=offline_timeout,
             last_seen_suffixes=last_seen_suffixes,
         )
 
-        # Vérification périodique des traces d'erreurs (automations & scripts)
         traces_scan_interval_min = options.get(
             CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
         )
@@ -237,7 +232,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             self._last_trace_check_time = now
 
-        # Collecte asynchrone des Add-ons, Intégrations et Réparations
         addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
