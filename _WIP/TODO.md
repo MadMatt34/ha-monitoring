@@ -26,7 +26,7 @@ TOTEST
 - changement des options individuellement
   - updates : ok
   - integrations : uniquement plateforme, ajouter possibilité nom convivial et mot clé
-  - unavailable : ok
+  - unavailable : ok > pas avec un mot clé du nom dans globs
   - offline : ok
   - repairs : uniquement plateforme, ajouter possibilité mot clé de l'issue
   - applications :
