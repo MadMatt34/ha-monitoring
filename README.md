@@ -9,7 +9,6 @@
 
 **HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and status in real time. It centralizes the detection of issues across add-ons, integrations, automations, scripts, unavailable or unknown entities, offline devices, pending updates, active repair alerts, and backup statuses.
 
-
 ---
 
 ## 🚀 Main Features
