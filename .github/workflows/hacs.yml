@@ -4,8 +4,7 @@ on:
   push:
     branches: [ "main" ]
     paths-ignore:
-      - 'README.md'
-      - 'README.fr.md'
+      - 'README.**'
       - '_WIP/**'
       - '.github/workflows/**'
       - '.gitignore'
@@ -13,8 +12,7 @@ on:
   pull_request:
     branches: [ "main" ]
     paths-ignore:
-      - 'README.md'
-      - 'README.fr.md'
+      - 'README.**'
       - '_WIP/**'
       - '.github/workflows/**'
       - '.gitignore'

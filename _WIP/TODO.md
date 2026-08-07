@@ -4,10 +4,12 @@ TODO
 - dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
 - service pour ajouter/supprimer des exclusions (?)
+
 - event pour notifier d'une nouvelle erreur
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
 - README
+  - condition avec in_startup_delay pour éviter de lancer des scripts/automations ou pour la cohérence de l'affichage lovelace
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
   - applications : uniquement si démarrage auto + watchdog
   - informer des différents timings de synchro
