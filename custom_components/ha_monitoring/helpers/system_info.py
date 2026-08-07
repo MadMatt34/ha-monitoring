@@ -15,10 +15,28 @@ from homeassistant.util import dt as dt_util
 
 from .utils import format_date_local
 
-from ..const import EXCLUDED_INTEGRATION_DOMAINS
-
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.system_info")
 
+# États valides pour une intégration configurée dans l'UI (inclut les erreurs de démarrage)
+VALID_ENTRY_STATES = {
+    ConfigEntryState.LOADED,
+    ConfigEntryState.SETUP_ERROR,
+    ConfigEntryState.SETUP_RETRY,
+    ConfigEntryState.FAILED_UNLOAD,
+    ConfigEntryState.SETUP_IN_PROGRESS,
+}
+# Domaines gérés comme des Helpers (onglets dédiés) ou composants internes
+EXCLUDED_INTEGRATION_DOMAINS = {
+   # Helpers / Entrées d'aide
+    "group", "utility_meter", "threshold", "min_max", "template",
+    "tod", "derivative", "integral", "compensation", "filter",
+    "generic_thermostat", "generic_hygrostat", "timer", "counter",
+    "input_boolean", "input_button", "input_datetime", "input_number",
+    "input_select", "input_text", "schedule", "bayesian", "trend",
+    'go2rtc', 'statistics', 'switch_as_x',
+    # Système / Interne
+    "hardware", "diagnostics", "analytics", "homeassistant", "integration",
+}
 
 def _is_hassio_running(hass: HomeAssistant) -> bool:
     """Vérifie si Home Assistant fonctionne sous HAOS / Supervisor."""
@@ -157,7 +175,11 @@ async def async_get_system_stats(
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
 
-    devices_count = len(dev_reg.devices)
+    # Appareils : uniquement les appareils activés (disabled_by est None)
+    devices_count = sum(
+        1 for device in dev_reg.devices.values()
+        if device.disabled_by is None
+    )
 
     # Entités : uniquement activées (disabled_by est None) et hors scripts/automations
     entities_count = sum(
@@ -169,23 +191,40 @@ async def async_get_system_stats(
     automations_count = len(hass.states.async_all("automation"))
     scripts_count = len(hass.states.async_all("script"))
 
-    # Intégrations activées (exclut les Helpers et composants système pour coller à l'UI)
+    # Intégrations activées ou en erreur (exclut les Helpers et composants système)
     active_entries = [
         e for e in hass.config_entries.async_entries()
-        if e.state == ConfigEntryState.LOADED
+        if e.state in VALID_ENTRY_STATES
         and getattr(e, "disabled_by", None) is None
         and e.domain not in EXCLUDED_INTEGRATION_DOMAINS
     ]
-    integrations_count = len({e.domain for e in active_entries})
+
+    # Déduplication par domaine
+    active_integration_domains = sorted(list({e.domain for e in active_entries}))
+    integrations_count = len(active_integration_domains)
+
+    _LOGGER.warning(
+        "[HA Monitoring] Domaines d'intégration comptabilisés (%d) : %s",
+        integrations_count,
+        active_integration_domains,
+    )
 
     # Intégrations personnalisées activées (Custom Components actuellement chargés dans HA)
     try:
         custom_components = await async_get_custom_components(hass)
-        custom_integrations_count = sum(
-            1 for domain in custom_components
+        active_custom_domains = sorted([
+            domain for domain in custom_components
             if domain in hass.config.components
+        ])
+        custom_integrations_count = len(active_custom_domains)
+
+        _LOGGER.warning(
+            "[HA Monitoring] Intégrations personnalisées détectées (%d) : %s",
+            custom_integrations_count,
+            active_custom_domains,
         )
-    except Exception:
+    except Exception as err:
+        _LOGGER.warning("[HA Monitoring] Erreur lors du comptage des custom components : %s", err)
         custom_integrations_count = 0
 
     # 4. Informations Recorder & Base de données

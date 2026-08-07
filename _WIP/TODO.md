@@ -9,10 +9,13 @@ TODO
 - publication hacs
 - README
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
+  - applications : uniquement si démarrage auto + watchdog
   - informer des différents timings de synchro
-  - criteres de prise en compte des éléments dans le scan
   - exclusion entities offline par globs / wildcard patterns sur id et displayname
   - informations systems en attributs du statut global
+    (comptage intégrations configurées via UI, impossible pour celles conf en yaml)
+    (comptage appareils n'inclus pas les désactivés)
+    (comptage devices n'inclus pas les désactivés ni scripts/automations)
 
 TOTEST
 - tout suppr et réinstall
