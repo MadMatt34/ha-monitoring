@@ -23,7 +23,7 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ Exclusions de composants Système",
-            "description": "Ignorer certains Add-ons, Intégrations ou Réparations des analyses.",
+            "description": "Ignorer lors du scan certains Add-ons, Intégrations ou Réparations.",
             "data": {
               "excluded_addons": "Add-ons à exclure (noms ou slugs)",
               "excluded_integrations": "Intégrations à exclure (noms ou domaines)",
@@ -45,17 +45,17 @@
           },
           "section_exclusions_unavailable": {
             "name": "🏷️ Exclusions d'Entités Indisponibles",
-            "description": "Ignorer des entités spécifiques ou des domaines complets.",
+            "description": "Ignorer des entités spécifiques ou avec des caractères génériques, ou des domaines complets.",
             "data": {
-              "excluded_unavailable_entities": "Entités indisponibles à exclure",
-              "excluded_unavailable_globs": "Entités indisponibles à exclure par globs",
-              "excluded_unavailable_domains": "Domaines indisponibles à exclure"
+              "excluded_unavailable_entities": "Entités à exclure",
+              "excluded_unavailable_globs": "Globs d'entités à exclure",
+              "excluded_unavailable_domains": "Domaines à exclure"
             }
           },
           "section_exclusions_offline": {
             "name": "🏷️ Exclusions d'Appareils Hors-ligne",
             "data": {
-              "excluded_offline": "Appareils hors-ligne à exclure"
+              "excluded_offline": "Appareils à exclure"
             }
           }
         }
@@ -94,7 +94,7 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ Exclusions de composants Système",
-            "description": "Ignorer certains Add-ons, Intégrations ou Réparations des analyses.",
+            "description": "Ignorer lors du scan certains Add-ons, Intégrations ou Réparations.",
             "data": {
               "excluded_addons": "Add-ons à exclure (noms ou slugs)",
               "excluded_integrations": "Intégrations à exclure (noms ou domaines)",
@@ -116,17 +116,17 @@
           },
           "section_exclusions_unavailable": {
             "name": "🏷️ Exclusions d'Entités Indisponibles",
-            "description": "Ignorer des entités spécifiques ou des domaines complets.",
+            "description": "Ignorer des entités spécifiques ou avec des caractères génériques, ou des domaines complets.",
             "data": {
-              "excluded_unavailable_entities": "Entités indisponibles à exclure",
-              "excluded_unavailable_globs": "Entités indisponibles à exclure par globs",
-              "excluded_unavailable_domains": "Domaines indisponibles à exclure"
+              "excluded_unavailable_entities": "Entités à exclure",
+              "excluded_unavailable_globs": "Globs d'entités à exclure",
+              "excluded_unavailable_domains": "Domaines à exclure"
             }
           },
           "section_exclusions_offline": {
             "name": "🏷️ Exclusions d'Appareils Hors-ligne",
             "data": {
-              "excluded_offline": "Appareils hors-ligne à exclure"
+              "excluded_offline": "Appareils à exclure"
             }
           }
         }

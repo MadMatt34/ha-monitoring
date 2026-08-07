@@ -23,7 +23,7 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore specific Add-ons, Integrations, or Repairs from scans.",
+            "description": "Ignore from scans specific Add-ons, Integrations, or Repairs.",
             "data": {
               "excluded_addons": "Add-ons to exclude (names or slugs)",
               "excluded_integrations": "Integrations to exclude (names or domains)",
@@ -45,17 +45,17 @@
           },
           "section_exclusions_unavailable": {
             "name": "🏷️ Unavailable Entity Exclusions",
-            "description": "Ignore specific entities or entire domains.",
+            "description": "Ignore specific entities or with wildcards, or entire domains.",
             "data": {
-              "excluded_unavailable_entities": "Unavailable entities to exclude",
-              "excluded_unavailable_globs": "Unavailable entities to exclude with globs",
-              "excluded_unavailable_domains": "Unavailable domains to exclude"
+              "excluded_unavailable_entities": "Entities to exclude",
+              "excluded_unavailable_globs": "Globs of entities to exclude",
+              "excluded_unavailable_domains": "Domains to exclude"
             }
           },
           "section_exclusions_offline": {
             "name": "🏷️ Offline Device Exclusions",
             "data": {
-              "excluded_offline": "Offline devices to exclude"
+              "excluded_offline": "Devices to exclude"
             }
           }
         }
@@ -94,7 +94,7 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore specific Add-ons, Integrations, or Repairs from scans.",
+            "description": "Ignore from scans specific Add-ons, Integrations, or Repairs.",
             "data": {
               "excluded_addons": "Add-ons to exclude (names or slugs)",
               "excluded_integrations": "Integrations to exclude (names or domains)",
@@ -116,17 +116,17 @@
           },
           "section_exclusions_unavailable": {
             "name": "🏷️ Unavailable Entity Exclusions",
-            "description": "Ignore specific entities or entire domains.",
+            "description": "Ignore specific entities or with wildcard, or entire domains.",
             "data": {
-              "excluded_unavailable_entities": "Unavailable entities to exclude",
-              "excluded_unavailable_globs": "Unavailable entities to exclude with globs",
-              "excluded_unavailable_domains": "Unavailable domains to exclude"
+              "excluded_unavailable_entities": "Entities to exclude",
+              "excluded_unavailable_globs": "Globs of entities to exclude",
+              "excluded_unavailable_domains": "Domains to exclude"
             }
           },
           "section_exclusions_offline": {
             "name": "🏷️ Offline Device Exclusions",
             "data": {
-              "excluded_offline": "Offline devices to exclude"
+              "excluded_offline": "Devices to exclude"
             }
           }
         }

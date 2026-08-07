@@ -12,7 +12,7 @@ TODO
   - informer des différents timings de synchro
   - criteres de prise en compte des éléments dans le scan
   - exclusion entities offline par globs / wildcard patterns sur id et displayname
-  - informations systems en attribut du statut global
+  - informations systems en attributs du statut global
 
 TOTEST
 - tout suppr et réinstall
