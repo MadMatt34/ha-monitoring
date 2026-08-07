@@ -8,7 +8,7 @@ DEVICE_MANUFACTURER = "Home Assistant Community"
 
 # Paramètres de configuration
 CONF_SCAN_INTERVAL = "scan_interval"
-DEFAULT_SCAN_INTERVAL = 120  # en secondes
+DEFAULT_SCAN_INTERVAL = 180  # en secondes
 
 CONF_TRACES_SCAN_INTERVAL = "traces_scan_interval"
 DEFAULT_TRACES_SCAN_INTERVAL = 30  # en minutes
@@ -117,4 +117,16 @@ INTEGRATION_ERROR_STATES = {
     ConfigEntryState.SETUP_ERROR,
     ConfigEntryState.SETUP_RETRY,
     ConfigEntryState.MIGRATION_ERROR,
+}
+
+# Domaines gérés comme des Helpers (onglets dédiés) ou composants internes
+EXCLUDED_INTEGRATION_DOMAINS = {
+    # Helpers / Entrées d'aide
+    "group", "utility_meter", "threshold", "min_max", "template",
+    "tod", "derivative", "integral", "compensation", "filter",
+    "generic_thermostat", "generic_hygrostat", "timer", "counter",
+    "input_boolean", "input_button", "input_datetime", "input_number",
+    "input_select", "input_text", "schedule", "bayesian", "trend",
+    # Système / Interne
+    "hardware", "diagnostics", "analytics", "homeassistant",
 }

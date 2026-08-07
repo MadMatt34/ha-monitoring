@@ -3,8 +3,6 @@ TODO
 - tout texte d'interface dans translations
 - dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
-- capteur notifs persistantes
-- capteur système (version, uptime host, uptime HA, métrics contenus, taille DB)
 - service pour ajouter/supprimer des exclusions (?)
 - event pour notifier d'une nouvelle erreur
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
@@ -14,6 +12,7 @@ TODO
   - informer des différents timings de synchro
   - criteres de prise en compte des éléments dans le scan
   - exclusion entities offline par globs / wildcard patterns sur id et displayname
+  - informations systems en attribut du statut global
 
 TOTEST
 - tout suppr et réinstall
@@ -44,7 +43,6 @@ TOCORRECT
 - pour repairs_pending, nom plus convivial (translation system)
 - pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
-- si un script/automation est en erreur et qu'il s'exécute correctement ensuite, le retirer de la liste
 
 DONE
 - regrouper toutes les entités dans la même application, comme le bouton
@@ -73,8 +71,10 @@ DONE
 - pour integrations, ajouter la raison de l'échec
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 - liste d'exclusion entités par globs
+- capteur système (version, uptime host, uptime HA, métrics contenus, taille DB)
 
 
 INFO
 - debug : custom_components.ha_monitoring: debug
 - system ligne 256 : pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.
+- si un script/automation est en erreur et qu'il s'exécute correctement ensuite, le retirer de la liste

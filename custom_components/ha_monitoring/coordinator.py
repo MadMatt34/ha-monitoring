@@ -34,6 +34,7 @@ from .const import (
     DOMAIN,
 )
 from .helpers.backup import async_get_backup_info
+from .helpers.system_info import async_get_system_stats
 from .helpers.system import (
     async_get_addons,
     async_get_failed_integrations,
@@ -232,6 +233,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             self._last_trace_check_time = now
 
+        system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
         addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
@@ -242,6 +244,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return {
             "in_startup_delay": False,
+            "system_stats": system_stats,
             "monitoring_addons": {"items": addons, "total": len(addons)},
             "monitoring_integrations": {"items": integrations, "total": len(integrations)},
             "monitoring_automations": {
@@ -268,6 +271,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         timeout = self.entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
         return {
             "in_startup_delay": in_startup_delay,
+            "system_stats": {},
             "monitoring_addons": {"items": [], "total": 0},
             "monitoring_integrations": {"items": [], "total": 0},
             "monitoring_automations": {"items": [], "total": 0},

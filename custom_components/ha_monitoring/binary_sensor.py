@@ -77,6 +77,36 @@ class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
 
         return False
 
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Attributs détaillés du statut global et des métriques système."""
+        if not self.coordinator.data:
+            return {}
+
+        stats = self.coordinator.data.get("system_stats", {})
+
+        return {
+            "in_startup_delay": self.coordinator.data.get("in_startup_delay", False),
+            # HA / OS : versions et démarrages
+            "ha_version": stats.get("ha_version"),
+            "ha_last_boot": stats.get("ha_last_boot"),
+            "os_version": stats.get("os_version"),
+            "os_last_boot": stats.get("os_last_boot"),
+            # Inventaire / Comptages
+            "devices_count": stats.get("devices_count", 0),
+            "entities_count": stats.get("entities_count", 0),
+            "automations_count": stats.get("automations_count", 0),
+            "scripts_count": stats.get("scripts_count", 0),
+            "integrations_count": stats.get("integrations_count", 0),
+            "custom_integrations_count": stats.get("custom_integrations_count", 0),
+            # Recorder et Base de données
+            "recorder_commit_interval": stats.get("recorder_commit_interval"),
+            "recorder_keep_days": stats.get("recorder_keep_days"),
+            "recorder_auto_purge": stats.get("recorder_auto_purge"),
+            "recorder_auto_repack": stats.get("recorder_auto_repack"),
+            "database_size_mb": stats.get("database_size_mb"),
+        }
+
 
 class BackupStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
     """Capteur binaire indiquant si la dernière sauvegarde a réussi."""
