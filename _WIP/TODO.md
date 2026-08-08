@@ -4,7 +4,7 @@ TODO
 - dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
 - service pour ajouter/supprimer des exclusions (?)
-- event pour notifier d'une nouvelle erreur
+- event pour notifier d'une nouvelle erreur + options (pour quels monitoring, et activé ou non pour compteur moins)
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
 - optimisation et cohérence du code
@@ -79,9 +79,9 @@ DONE
 - pour les scripts et automations en erreur, dans la liste en attribut indiquer le nom du script/automation et la date/heure de survenue de l'erreur à l'exécution
 - liste d'exclusion entités par globs
 - capteur système (version, uptime host, uptime HA, métrics contenus, taille DB)
+- si un script/automation est en erreur et qu'il s'exécute correctement ensuite, le retirer de la liste
 
 
 INFO
 - debug : custom_components.ha_monitoring: debug
 - system ligne 256 : pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.
-- si un script/automation est en erreur et qu'il s'exécute correctement ensuite, le retirer de la liste

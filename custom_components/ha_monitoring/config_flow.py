@@ -97,7 +97,7 @@ def get_schema(
                                 min=0,
                                 max=1800,
                                 step=30,
-                                mode=selector.NumberSelectorMode.BOX,
+                                mode="slider",
                                 unit_of_measurement="s",
                             )
                         ),
@@ -109,7 +109,7 @@ def get_schema(
                                 min=5,
                                 max=3600,
                                 step=5,
-                                mode=selector.NumberSelectorMode.BOX,
+                                mode="slider",
                                 unit_of_measurement="s",
                             )
                         ),
@@ -121,7 +121,7 @@ def get_schema(
                                 min=1,
                                 max=168,
                                 step=1,
-                                mode=selector.NumberSelectorMode.BOX,
+                                mode="slider",
                                 unit_of_measurement="h",
                             )
                         ),
@@ -133,7 +133,7 @@ def get_schema(
                                 min=1,
                                 max=1440,
                                 step=1,
-                                mode=selector.NumberSelectorMode.BOX,
+                                mode="slider",
                                 unit_of_measurement="m",
                             )
                         ),
@@ -145,12 +145,13 @@ def get_schema(
                                 min=1,
                                 max=720,
                                 step=1,
-                                mode=selector.NumberSelectorMode.BOX,
+                                mode="slider",
                                 unit_of_measurement="h",
                             )
                         ),
                     }
-                )
+                ),
+                {"collapsed": True},
             ),
             # --- SECTION 2 : Exclusions système ---
             vol.Required("section_exclusions_system"): section(
@@ -181,9 +182,26 @@ def get_schema(
                             )
                         ),
                     }
-                )
+                ),
+                {"collapsed": True},
             ),
-            # --- SECTION 3 : Exclusions Automatisations & Scripts ---
+            # --- SECTION 3 : Exclusions Mises à jour ---
+            vol.Required("section_exclusions_updates"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_UPDATES,
+                            default=options.get(CONF_EXCLUDED_UPDATES) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                domain="update", multiple=True
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            # --- SECTION 4 : Exclusions Automatisations & Scripts ---
             vol.Required("section_exclusions_scripts"): section(
                 vol.Schema(
                     {
@@ -204,24 +222,24 @@ def get_schema(
                             )
                         ),
                     }
-                )
+                ),
+                {"collapsed": True},
             ),
-            # --- SECTION 4 : Exclusions Mises à jour ---
-            vol.Required("section_exclusions_updates"): section(
+            # --- SECTION 5 : Exclusions Appareils Offline ---
+            vol.Required("section_exclusions_offline"): section(
                 vol.Schema(
                     {
                         vol.Optional(
-                            CONF_EXCLUDED_UPDATES,
-                            default=options.get(CONF_EXCLUDED_UPDATES) or [],
-                        ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(
-                                domain="update", multiple=True
-                            )
+                            CONF_EXCLUDED_OFFLINE,
+                            default=options.get(CONF_EXCLUDED_OFFLINE) or [],
+                        ): selector.DeviceSelector(
+                            selector.DeviceSelectorConfig(multiple=True)
                         ),
                     }
-                )
+                ),
+                {"collapsed": True},
             ),
-            # --- SECTION 5 : Exclusions Entités Indisponibles ---
+            # --- SECTION 6 : Exclusions Entités Indisponibles ---
             vol.Required("section_exclusions_unavailable"): section(
                 vol.Schema(
                     {
@@ -259,20 +277,8 @@ def get_schema(
                             )
                         ),
                     }
-                )
-            ),
-            # --- SECTION 6 : Exclusions Appareils Offline ---
-            vol.Required("section_exclusions_offline"): section(
-                vol.Schema(
-                    {
-                        vol.Optional(
-                            CONF_EXCLUDED_OFFLINE,
-                            default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(multiple=True)
-                        ),
-                    }
-                )
+                ),
+                {"collapsed": True},
             ),
         }
     )
