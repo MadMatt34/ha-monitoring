@@ -24,12 +24,14 @@ from .const import (
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
     CONF_STARTUP_DELAY,
+    CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_LAST_SEEN_SUFFIX,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STARTUP_DELAY,
+    DEFAULT_SYSTEM_INFO_SCAN_INTERVAL,
     DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
 )
@@ -69,6 +71,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._cached_automations: list[dict[str, Any]] = []
         self._cached_scripts: list[dict[str, Any]] = []
 
+        # Cache et temporisation pour System Info
+        self._last_system_stats_check_time: Any = None
+        self._cached_system_stats: dict[str, Any] | None = None
+
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
         super().__init__(
@@ -96,21 +102,29 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return tuple(suffixes)
 
     def _setup_backup_listeners(self) -> None:
-        """Écoute les événements du bus déclenchés lors des sauvegardes."""
+        """Écoute les événements du bus déclenchés lors de la fin d'une sauvegarde (succès ou échec)."""
         async def _async_on_backup_event(event: Event) -> None:
             _LOGGER.debug(
-                "[HA Monitoring] Événement de sauvegarde détecté : %s",
+                "[HA Monitoring] Événement de sauvegarde détecté : %s (data: %s)",
                 event.event_type,
+                event.data,
             )
             try:
-                if event.event_type == "backup_failed" or event.data.get("status") == "failed":
+                event_type = event.event_type.lower()
+                status = str(event.data.get("status", "")).lower()
+
+                # Détection d'un échec (dans le nom de l'événement ou le payload)
+                if "failed" in event_type or status == "failed" or "error" in event.data:
                     self._last_backup_failure_reason = (
                         event.data.get("reason")
                         or event.data.get("error")
                         or event.data.get("message")
                         or "Échec de sauvegarde signalé par événement"
                     )
+                else:
+                    self._last_backup_failure_reason = None
 
+                # Mise à jour immédiate du cache de sauvegarde
                 self._cached_backup_info = await async_get_backup_info(
                     self.hass, self._last_backup_failure_reason
                 )
@@ -118,12 +132,19 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except Exception as err:
                 _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
 
-        for event_type in (
+        # Liste étendue des événements émis par le Supervisor, HA Core et les intégrations de sauvegarde
+        backup_events = (
             "backup_completed",
             "backup_successful",
             "backup_failed",
+            "backup_end",
             "hassio_backup_completed",
-        ):
+            "hassio_backup_failed",
+            "auto_backup_complete",
+            "auto_backup_failed",
+        )
+
+        for event_type in backup_events:
             unsub = self.hass.bus.async_listen(event_type, _async_on_backup_event)
             self._bus_listeners_unsub.append(unsub)
 
@@ -148,6 +169,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._skip_startup_delay = True
         self._last_trace_check_time = None
         self._cached_backup_info = None
+        self._last_system_stats_check_time = None
+        self._cached_system_stats = None
 
         await self.async_refresh()
 
@@ -162,6 +185,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
         )
 
+        # Récupération uniquement si le cache est vide (premier démarrage)
         fetched_info = None
         if self._cached_backup_info is None:
             fetched_info = await async_get_backup_info(
@@ -170,7 +194,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if not in_startup_phase or fetched_info.get("date_last_run") is not None:
                 self._cached_backup_info = fetched_info
 
-        current_backup_info = self._cached_backup_info or fetched_info or self._empty_results(False)["monitoring_backup"]
+        current_backup_info = (
+            self._cached_backup_info
+            or fetched_info
+            or self._empty_results(False)["monitoring_backup"]
+        )
 
         if in_startup_phase:
             remaining = max(0.0, startup_delay - elapsed_seconds)
@@ -233,7 +261,20 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             self._last_trace_check_time = now
 
-        system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
+        # Collecte de System Info basée sur la durée configurée (en heures, convertie en secondes)
+        system_info_scan_interval_hours = options.get(
+            CONF_SYSTEM_INFO_SCAN_INTERVAL, DEFAULT_SYSTEM_INFO_SCAN_INTERVAL
+        )
+        system_info_scan_interval_sec = float(system_info_scan_interval_hours) * 3600
+
+        if (
+            self._last_system_stats_check_time is None
+            or self._cached_system_stats is None
+            or (now - self._last_system_stats_check_time).total_seconds() >= system_info_scan_interval_sec
+        ):
+            self._cached_system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
+            self._last_system_stats_check_time = now
+
         addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
@@ -244,7 +285,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return {
             "in_startup_delay": False,
-            "system_stats": system_stats,
+            "system_stats": self._cached_system_stats,
             "monitoring_addons": {"items": addons, "total": len(addons)},
             "monitoring_integrations": {"items": integrations, "total": len(integrations)},
             "monitoring_automations": {

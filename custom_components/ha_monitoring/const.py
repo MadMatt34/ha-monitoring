@@ -7,17 +7,20 @@ DEVICE_NAME = "Home Assistant"
 DEVICE_MANUFACTURER = "Home Assistant Community"
 
 # Paramètres de configuration
+CONF_STARTUP_DELAY = "startup_delay"
+DEFAULT_STARTUP_DELAY = 120  # en secondes
+
 CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 180  # en secondes
+
+CONF_SYSTEM_INFO_SCAN_INTERVAL = "system_info_scan_interval"
+DEFAULT_SYSTEM_INFO_SCAN_INTERVAL = 24  # En heures
 
 CONF_TRACES_SCAN_INTERVAL = "traces_scan_interval"
 DEFAULT_TRACES_SCAN_INTERVAL = 30  # en minutes
 
 CONF_OFFLINE_TIMEOUT = "offline_timeout"
 DEFAULT_OFFLINE_TIMEOUT = 24  # en heures
-
-CONF_STARTUP_DELAY = "startup_delay"
-DEFAULT_STARTUP_DELAY = 120  # en secondes
 
 # Clés d'exclusions
 CONF_EXCLUDED_ADDONS = "excluded_addons"

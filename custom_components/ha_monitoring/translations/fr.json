@@ -9,16 +9,18 @@
             "name": "⏱️ Fréquences & Temporisations",
             "description": "Ajustez les intervalles de rafraîchissement, les seuils, et le délai de démarrage.",
             "data": {
+              "startup_delay": "Délai de grâce au démarrage (en secondes)",
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
+              "system_info_scan_interval": "Intervalle de scan des informations système (en heures)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
-              "startup_delay": "Délai de grâce au démarrage (en secondes)"
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)"
             },
             "data_description": {
+              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes).",
               "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 3 min).",
+              "system_info_scan_interval": "Fréquence à laquelle le système vérifie les informations système (par défaut : 24 heures).",
               "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
-              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
-              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes)."
+              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures)."
             }
           },
           "section_exclusions_system": {
@@ -80,16 +82,18 @@
             "name": "⏱️ Fréquences & Temporisations",
             "description": "Ajustez les intervalles, les seuils, et le délai de démarrage.",
             "data": {
+              "startup_delay": "Délai de grâce au démarrage (en secondes)",
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
+              "system_info_scan_interval": "Intervalle de scan des informations système (en heures)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
-              "startup_delay": "Délai de grâce au démarrage (en secondes)"
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)"
             },
             "data_description": {
+              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes).",
               "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 3 min).",
+              "system_info_scan_interval": "Fréquence à laquelle le système vérifie les informations système (par défaut : 24 heures).",
               "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
-              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
-              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes)."
+              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures)."
             }
           },
           "section_exclusions_system": {

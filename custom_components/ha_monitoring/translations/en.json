@@ -9,16 +9,18 @@
             "name": "⏱️ Timings & Delays",
             "description": "Adjust refresh intervals, tresholds, and startup delay.",
             "data": {
+              "startup_delay": "Startup grace period (in seconds)",
               "scan_interval": "Refresh interval (in seconds)",
+              "system_info_scan_interval": "System info scan interval (in hours)",
               "traces_scan_interval": "Traces scan interval (in minutes)",
-              "offline_timeout": "Offline device inactivity threshold (in hours)",
-              "startup_delay": "Startup grace period (in seconds)"
+              "offline_timeout": "Offline device inactivity threshold (in hours)"
             },
             "data_description": {
+              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
               "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, add-ons, and checks for pending updates or repairs (default: 3 min).",
+              "system_info_scan_interval": "Frequency at which the system checks for system information (default: 24 hours).",
               "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
-              "offline_timeout": "Duration after which a device is considered offline (default: 24 hours).",
-              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes)."
+              "offline_timeout": "Duration after which a device is considered offline (default: 24 hours)."
             }
           },
           "section_exclusions_system": {
@@ -80,16 +82,18 @@
             "name": "⏱️ Timings & Delays",
             "description": "Adjust intervals, tresholds, and startup delay.",
             "data": {
+              "startup_delay": "Startup grace period (in seconds)",
               "scan_interval": "Refresh interval (in seconds)",
+              "system_info_scan_interval": "System info scan interval (in hours)",
               "traces_scan_interval": "Traces scan interval (in minutes)",
-              "offline_timeout": "Offline device inactivity threshold (in hours)",
-              "startup_delay": "Startup grace period (in seconds)"
+              "offline_timeout": "Offline device inactivity threshold (in hours)"
             },
             "data_description": {
+              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
               "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, add-ons, and checks for pending updates or repairs (default: 3 min).",
+              "system_info_scan_interval": "Frequency at which the system checks for system information (default: 24 hours).",
               "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
-              "offline_timeout": "Duration after which a device is considered offline (default: 24 hours).",
-              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes)."
+              "offline_timeout": "Duration after which a device is considered offline (default: 24 hours)."
             }
           },
           "section_exclusions_system": {

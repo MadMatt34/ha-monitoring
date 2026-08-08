@@ -7,11 +7,14 @@ TODO
 - event pour notifier d'une nouvelle erreur
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
+- optimisation et cohérence du code
 - README
   - condition avec in_startup_delay pour éviter de lancer des scripts/automations ou pour la cohérence de l'affichage lovelace
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
   - applications : uniquement si démarrage auto + watchdog
   - informer des différents timings de synchro
+    (backup uniquement après une sauvegarde ou bouton force)
+    (system_info toutes 24h ou fréquence modifiée dans options, ou bouton force)
   - exclusion entities offline par globs / wildcard patterns sur id et displayname
   - informations systems en attributs du statut global
     (comptage intégrations configurées via UI, impossible pour celles conf en yaml)

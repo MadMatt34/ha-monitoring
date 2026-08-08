@@ -24,11 +24,13 @@ from .const import (
     CONF_OFFLINE_TIMEOUT,
     CONF_SCAN_INTERVAL,
     CONF_STARTUP_DELAY,
+    CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_STARTUP_DELAY,
+    DEFAULT_SYSTEM_INFO_SCAN_INTERVAL,
     DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
 )
@@ -58,6 +60,9 @@ def get_schema(
     current_traces_interval = options.get(
         CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
     )
+    current_system_info_interval = options.get(
+        CONF_SYSTEM_INFO_SCAN_INTERVAL, DEFAULT_SYSTEM_INFO_SCAN_INTERVAL
+    )
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
 
@@ -85,6 +90,18 @@ def get_schema(
                 vol.Schema(
                     {
                         vol.Required(
+                            CONF_STARTUP_DELAY,
+                            default=current_startup_delay,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=0,
+                                max=1800,
+                                step=30,
+                                mode=selector.NumberSelectorMode.BOX,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
                             CONF_SCAN_INTERVAL,
                             default=current_interval,
                         ): selector.NumberSelector(
@@ -94,6 +111,18 @@ def get_schema(
                                 step=5,
                                 mode=selector.NumberSelectorMode.BOX,
                                 unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_SYSTEM_INFO_SCAN_INTERVAL,
+                            default=current_system_info_interval,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=1,
+                                max=168,
+                                step=1,
+                                mode=selector.NumberSelectorMode.BOX,
+                                unit_of_measurement="h",
                             )
                         ),
                         vol.Required(
@@ -118,18 +147,6 @@ def get_schema(
                                 step=1,
                                 mode=selector.NumberSelectorMode.BOX,
                                 unit_of_measurement="h",
-                            )
-                        ),
-                        vol.Required(
-                            CONF_STARTUP_DELAY,
-                            default=current_startup_delay,
-                        ): selector.NumberSelector(
-                            selector.NumberSelectorConfig(
-                                min=0,
-                                max=1800,
-                                step=30,
-                                mode=selector.NumberSelectorMode.BOX,
-                                unit_of_measurement="s",
                             )
                         ),
                     }
