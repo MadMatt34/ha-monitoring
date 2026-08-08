@@ -24,5 +24,10 @@ jobs:
       - name: Run Ruff Linter
         run: ruff check .
 
-      - name: Run Ruff Formatter
-        run: ruff format --check .
+      - name: Run Ruff format
+        run: ruff format .
+
+      - name: Auto-commit formatted files
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format avec Ruff"
