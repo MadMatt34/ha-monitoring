@@ -1,5 +1,6 @@
 """DataUpdateCoordinator centralisé et optimisé pour HA Monitoring."""
 
+from collections.abc import Callable
 from datetime import timedelta
 import logging
 from typing import Any
@@ -34,15 +35,16 @@ from .const import (
     DEFAULT_SYSTEM_INFO_SCAN_INTERVAL,
     DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
+    LOCALIZED_LAST_SEEN_SUFFIX,
 )
 from .helpers.backup import async_get_backup_info
-from .helpers.system_info import async_get_system_stats
 from .helpers.system import (
     async_get_addons,
     async_get_failed_integrations,
     async_get_pending_repairs,
     scan_all_states,
 )
+from .helpers.system_info import async_get_system_stats
 from .helpers.trace import get_trace_errors
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.coordinator")
@@ -64,8 +66,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._skip_startup_delay = False
         self._cached_backup_info: dict[str, Any] | None = None
         self._last_backup_failure_reason: str | None = None
-        self._startup_timer_unsub: Any = None
-        self._bus_listeners_unsub: list[Any] = []
+        self._startup_timer_unsub: Callable[[], None] | None = None
+        self._bus_listeners_unsub: list[Callable[[], None]] = []
 
         self._last_trace_check_time: Any = None
         self._cached_automations: list[dict[str, Any]] = []
@@ -89,20 +91,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _get_last_seen_suffixes(self) -> tuple[str, ...]:
         """Retourne la liste des suffixes/attributs 'last_seen' applicables."""
         suffixes = set(DEFAULT_LAST_SEEN_SUFFIX)
-
-        try:
-            from .const import LOCALIZED_LAST_SEEN_SUFFIX
-            lang = self.hass.config.language
-            localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(lang)
-            if localized_suffix:
-                suffixes.add(localized_suffix.lower())
-        except (ImportError, AttributeError):
-            pass
+        lang = self.hass.config.language
+        localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(lang)
+        if localized_suffix:
+            suffixes.add(localized_suffix.lower())
 
         return tuple(suffixes)
 
     def _setup_backup_listeners(self) -> None:
         """Écoute les événements du bus déclenchés lors de la fin d'une sauvegarde (succès ou échec)."""
+
         async def _async_on_backup_event(event: Event) -> None:
             _LOGGER.debug(
                 "[HA Monitoring] Événement de sauvegarde détecté : %s (data: %s)",
@@ -130,9 +128,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 self.async_update_listeners()
             except Exception as err:
-                _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
+                _LOGGER.error(
+                    "[HA Monitoring] Erreur traitement événement backup : %s", err
+                )
 
-        # Liste étendue des événements émis par le Supervisor, HA Core et les intégrations de sauvegarde
         backup_events = (
             "backup_completed",
             "backup_successful",
@@ -176,13 +175,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Récupère l'ensemble des métriques d'état du système."""
-        startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
+        startup_delay = float(
+            self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
+        )
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._ha_start_time).total_seconds()
 
-        in_startup_phase = (
-            not self._skip_startup_delay
-            and (self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5))
+        in_startup_phase = not self._skip_startup_delay and (
+            self.hass.state != CoreState.running
+            or elapsed_seconds < (startup_delay - 0.5)
         )
 
         # Récupération uniquement si le cache est vide (premier démarrage)
@@ -204,10 +205,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             remaining = max(0.0, startup_delay - elapsed_seconds)
 
             if not self._startup_timer_unsub and remaining > 0:
+
                 @callback
                 def _force_refresh_after_delay(_: Any) -> None:
                     self._startup_timer_unsub = None
-                    self.hass.async_create_task(self.async_refresh())
+                    self.entry.async_create_background_task(
+                        self.hass,
+                        self.async_refresh(),
+                        "ha_monitoring_startup_refresh",
+                    )
 
                 self._startup_timer_unsub = async_call_later(
                     self.hass, remaining + 0.1, _force_refresh_after_delay
@@ -224,7 +230,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
-        excluded_unavailable_entities = options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES, [])
+        excluded_unavailable_entities = options.get(
+            CONF_EXCLUDED_UNAVAILABLE_ENTITIES, []
+        )
         excluded_unavailable_domains = options.get(
             CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
         )
@@ -251,7 +259,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if (
             self._last_trace_check_time is None
-            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
+            or (now - self._last_trace_check_time).total_seconds()
+            >= traces_scan_interval_sec
         ):
             self._cached_automations = get_trace_errors(
                 self.hass, "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
@@ -270,12 +279,17 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if (
             self._last_system_stats_check_time is None
             or self._cached_system_stats is None
-            or (now - self._last_system_stats_check_time).total_seconds() >= system_info_scan_interval_sec
+            or (now - self._last_system_stats_check_time).total_seconds()
+            >= system_info_scan_interval_sec
         ):
-            self._cached_system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
+            self._cached_system_stats = await async_get_system_stats(
+                self.hass, self._ha_start_time
+            )
             self._last_system_stats_check_time = now
 
-        addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
+        addons = await async_get_addons(
+            self.hass, options.get(CONF_EXCLUDED_ADDONS, [])
+        )
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
         )
@@ -287,7 +301,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "in_startup_delay": False,
             "system_stats": self._cached_system_stats,
             "monitoring_addons": {"items": addons, "total": len(addons)},
-            "monitoring_integrations": {"items": integrations, "total": len(integrations)},
+            "monitoring_integrations": {
+                "items": integrations,
+                "total": len(integrations),
+            },
             "monitoring_automations": {
                 "items": self._cached_automations,
                 "total": len(self._cached_automations),
@@ -298,7 +315,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             },
             "monitoring_updates": {"items": updates, "total": len(updates)},
             "monitoring_repairs": {"items": repairs, "total": len(repairs)},
-            "monitoring_unavailable": {"items": unavailable, "total": len(unavailable)},
+            "monitoring_unavailable": {
+                "items": unavailable,
+                "total": len(unavailable),
+            },
             "monitoring_offline": {
                 "items": offline,
                 "total": len(offline),

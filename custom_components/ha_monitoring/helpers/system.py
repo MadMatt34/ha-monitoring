@@ -76,7 +76,6 @@ def scan_all_states(
     dev_reg = dr.async_get(hass)
 
     def _is_unavail_glob_matched(text: str) -> bool:
-        """Vérifie si une chaîne correspond à l'un des motifs glob enregistrés."""
         if not excl_unavail_globs or not text:
             return False
         text_lower = text.lower()
@@ -91,7 +90,6 @@ def scan_all_states(
         if entity_entry and entity_entry.platform == DOMAIN:
             continue
 
-        # 1. Entités indisponibles ou inconnues
         if state_obj.state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             if (
                 entity_id not in excl_unavail_entities
@@ -107,7 +105,6 @@ def scan_all_states(
                 })
             continue
 
-        # 2. Mises à jour disponibles
         if domain == "update" and state_obj.state == "on":
             if entity_id not in excl_updates:
                 updates.append({
@@ -118,7 +115,6 @@ def scan_all_states(
                 })
             continue
 
-        # 3. Détection hors-ligne (last_seen)
         if entity_id.endswith(last_seen_suffixes):
             device_id = entity_entry.device_id if entity_entry else None
             if (device_id and device_id in excl_offline) or entity_id in excl_offline:

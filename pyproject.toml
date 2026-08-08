@@ -1,0 +1,27 @@
+[tool.ruff]
+# Cibler Python 3.12 (standard HA actuel)
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort (tri automatique des imports)
+    "UP",  # pyupgrade (modernisation automatique de la syntaxe Python)
+    "B",   # flake8-bugbear (détection de bugs fréquents)
+    "SIM", # flake8-simplify (simplification du code)
+]
+
+ignore = [
+    "E501", # La longueur de ligne est gérée directement par le formateur
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
+force-sort-within-sections = true
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

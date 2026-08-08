@@ -13,11 +13,10 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.loader import async_get_custom_components
 from homeassistant.util import dt as dt_util
 
-from .utils import format_date_local
+from .utils import format_date_local, is_hassio_running
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.system_info")
 
-# États valides pour une intégration configurée dans l'UI (inclut les erreurs de démarrage)
 VALID_ENTRY_STATES = {
     ConfigEntryState.LOADED,
     ConfigEntryState.SETUP_ERROR,
@@ -25,22 +24,18 @@ VALID_ENTRY_STATES = {
     ConfigEntryState.FAILED_UNLOAD,
     ConfigEntryState.SETUP_IN_PROGRESS,
 }
-# Domaines gérés comme des Helpers (onglets dédiés) ou composants internes
+
 EXCLUDED_INTEGRATION_DOMAINS = {
-   # Helpers / Entrées d'aide
+    # Helpers / Entrées d'aide
     "group", "utility_meter", "threshold", "min_max", "template",
     "tod", "derivative", "integral", "compensation", "filter",
     "generic_thermostat", "generic_hygrostat", "timer", "counter",
     "input_boolean", "input_button", "input_datetime", "input_number",
     "input_select", "input_text", "schedule", "bayesian", "trend",
-    'go2rtc', 'statistics', 'switch_as_x',
+    "go2rtc", "statistics", "switch_as_x",
     # Système / Interne
     "hardware", "diagnostics", "analytics", "homeassistant", "integration",
 }
-
-def _is_hassio_running(hass: HomeAssistant) -> bool:
-    """Vérifie si Home Assistant fonctionne sous HAOS / Supervisor."""
-    return "hassio" in hass.config.components or "hassio" in hass.data
 
 
 def _get_host_boot_from_uptime() -> datetime | None:
@@ -74,7 +69,6 @@ async def async_get_recorder_info(hass: HomeAssistant) -> dict[str, Any]:
             info["recorder_commit_interval"] = getattr(instance, "commit_interval", None)
 
             def _get_db_size() -> float | None:
-                """Calcul exécuté dans l'executor pour ne pas bloquer HA."""
                 db_url = getattr(instance, "db_url", None)
                 db_path = None
 
@@ -101,15 +95,12 @@ async def async_get_system_stats(
     hass: HomeAssistant, ha_start_time: datetime
 ) -> dict[str, Any]:
     """Collecte l'ensemble des métriques d'inventaire et du système."""
-    # 1. Home Assistant Info
     ha_last_boot = format_date_local(ha_start_time)
 
-    # 2. Home Assistant OS / Supervisor Info
     os_version = None
     os_boot_dt = None
 
-    if _is_hassio_running(hass):
-        # Stratégie 1 : Helpers officiels du composant hassio
+    if is_hassio_running(hass):
         try:
             from homeassistant.components.hassio import async_get_host_info, async_get_os_info
 
@@ -129,7 +120,6 @@ async def async_get_system_stats(
         except Exception as err:
             _LOGGER.debug("[HA Monitoring] Échec des helpers hassio : %s", err)
 
-        # Stratégie 2 : Commande API Supervisor directe via le client hassio
         if not os_version or not os_boot_dt:
             client = hass.data.get("hassio")
             if client and hasattr(client, "send_command"):
@@ -156,7 +146,6 @@ async def async_get_system_stats(
                 except Exception as err:
                     _LOGGER.debug("[HA Monitoring] Échec API /host/info : %s", err)
 
-        # Stratégie 3 : Récupération de la version OS via les entités "update" enregistrées dans HA
         if not os_version:
             for state in hass.states.async_all("update"):
                 if "os" in state.entity_id or "operating_system" in state.entity_id:
@@ -165,23 +154,19 @@ async def async_get_system_stats(
                         os_version = str(installed)
                         break
 
-    # Secours pour le démarrage de l'hôte via /proc/uptime si l'API Supervisor ne le fournit pas
     if not os_boot_dt:
         os_boot_dt = await hass.async_add_executor_job(_get_host_boot_from_uptime)
 
     os_last_boot = format_date_local(os_boot_dt) if os_boot_dt else "Inconnu"
 
-    # 3. Comptages d'inventaire
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
 
-    # Appareils : uniquement les appareils activés (disabled_by est None)
     devices_count = sum(
         1 for device in dev_reg.devices.values()
         if device.disabled_by is None
     )
 
-    # Entités : uniquement activées (disabled_by est None) et hors scripts/automations
     entities_count = sum(
         1 for entry in ent_reg.entities.values()
         if entry.disabled_by is None
@@ -191,7 +176,6 @@ async def async_get_system_stats(
     automations_count = len(hass.states.async_all("automation"))
     scripts_count = len(hass.states.async_all("script"))
 
-    # Intégrations activées ou en erreur (exclut les Helpers et composants système)
     active_entries = [
         e for e in hass.config_entries.async_entries()
         if e.state in VALID_ENTRY_STATES
@@ -199,17 +183,15 @@ async def async_get_system_stats(
         and e.domain not in EXCLUDED_INTEGRATION_DOMAINS
     ]
 
-    # Déduplication par domaine
     active_integration_domains = sorted(list({e.domain for e in active_entries}))
     integrations_count = len(active_integration_domains)
 
-    _LOGGER.warning(
+    _LOGGER.debug(
         "[HA Monitoring] Domaines d'intégration comptabilisés (%d) : %s",
         integrations_count,
         active_integration_domains,
     )
 
-    # Intégrations personnalisées activées (Custom Components actuellement chargés dans HA)
     try:
         custom_components = await async_get_custom_components(hass)
         active_custom_domains = sorted([
@@ -218,7 +200,7 @@ async def async_get_system_stats(
         ])
         custom_integrations_count = len(active_custom_domains)
 
-        _LOGGER.warning(
+        _LOGGER.debug(
             "[HA Monitoring] Intégrations personnalisées détectées (%d) : %s",
             custom_integrations_count,
             active_custom_domains,
@@ -227,7 +209,6 @@ async def async_get_system_stats(
         _LOGGER.warning("[HA Monitoring] Erreur lors du comptage des custom components : %s", err)
         custom_integrations_count = 0
 
-    # 4. Informations Recorder & Base de données
     recorder_info = await async_get_recorder_info(hass)
 
     return {

@@ -1,4 +1,4 @@
-"""Gestionnaire d'inspection des traces pour automatisations et scripts. """
+"""Gestionnaire d'inspection des traces pour automatisations et scripts."""
 
 from collections import deque
 from datetime import datetime
@@ -26,7 +26,6 @@ def _unwrap_traces(val: Any) -> list[Any]:
         for item in val:
             unwrapped.extend(_unwrap_traces(item))
     elif isinstance(val, dict):
-        # Si le dict est lui-même une trace (possède des clés caractéristiques d'une trace)
         if any(k in val for k in ("trace", "script_execution", "run_id", "timestamp", "error", "config")):
             unwrapped.append(val)
         else:
@@ -43,7 +42,6 @@ def _get_raw_trace_timestamp(trace: Any) -> Any:
     if trace is None:
         return None
 
-    # 1. Vérification directe des attributs ou clés
     for attr in ("timestamp_start", "start_time", "timestamp_finish", "finish_time"):
         if isinstance(trace, dict):
             val = trace.get(attr)
@@ -52,7 +50,6 @@ def _get_raw_trace_timestamp(trace: Any) -> Any:
         if val:
             return val
 
-    # 2. Vérification du sous-dict/attribut timestamp
     if isinstance(trace, dict):
         ts_info = trace.get("timestamp")
     else:
@@ -68,7 +65,6 @@ def _get_raw_trace_timestamp(trace: Any) -> Any:
             if val:
                 return val
 
-    # 3. Fallback sur la méthode as_dict()
     if hasattr(trace, "as_dict"):
         try:
             t_dict = trace.as_dict()
@@ -269,7 +265,6 @@ def get_trace_errors(
     failed = []
 
     for item_id, trace_list in domain_traces.items():
-        # Tri en associant la date parsed et l'index d'origine comme garant d'ordre
         def _sort_key(item_tuple: tuple[int, Any]) -> tuple[datetime, int]:
             idx, t = item_tuple
             raw_ts = _get_raw_trace_timestamp(t)
@@ -284,11 +279,9 @@ def get_trace_errors(
         if not sorted_indexed:
             continue
 
-        # La dernière exécution enregistrée est la première du tri
         _, latest_trace = sorted_indexed[0]
         error_msg = extract_trace_error(latest_trace)
 
-        # Si la dernière exécution est un succès, l'entité est retirée de la liste des erreurs
         if not error_msg:
             continue
 
@@ -305,7 +298,7 @@ def get_trace_errors(
         formatted_date = format_date_local(error_time)
 
         if not any(f["entity_id"] == entity_id for f in failed):
-            _LOGGER.warning(
+            _LOGGER.debug(
                 "[HA Monitoring] ERREUR TROUVÉE sur %s (%s): %s",
                 entity_id,
                 formatted_date,

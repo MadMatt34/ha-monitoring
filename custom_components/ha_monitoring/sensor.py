@@ -60,8 +60,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_ADDONS,
             translation_key=TRANSLATION_KEY_ADDONS,
             icon=ICON_ADDONS,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -70,8 +68,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_INTEGRATIONS,
             translation_key=TRANSLATION_KEY_INTEGRATIONS,
             icon=ICON_INTEGRATIONS,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -80,8 +76,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_AUTOMATIONS,
             translation_key=TRANSLATION_KEY_AUTOMATIONS,
             icon=ICON_AUTOMATIONS,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -90,8 +84,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_SCRIPTS,
             translation_key=TRANSLATION_KEY_SCRIPTS,
             icon=ICON_SCRIPTS,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -100,8 +92,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_UPDATES,
             translation_key=TRANSLATION_KEY_UPDATES,
             icon=ICON_UPDATES,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -110,8 +100,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_REPAIRS,
             translation_key=TRANSLATION_KEY_REPAIRS,
             icon=ICON_REPAIRS,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -120,8 +108,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_UNAVAILABLE,
             translation_key=TRANSLATION_KEY_UNAVAILABLE,
             icon=ICON_UNAVAILABLE,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
         ),
         HAMonitoringGenericSensor(
             coordinator,
@@ -130,8 +116,6 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_OFFLINE,
             translation_key=TRANSLATION_KEY_OFFLINE,
             icon=ICON_OFFLINE,
-            list_attr=ATTR_LIST,
-            total_attr=ATTR_TOTAL,
             extra_keys=["timeout"],
         ),
     ]
@@ -150,8 +134,8 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         unique_key: str,
         translation_key: str,
         icon: str,
-        list_attr: str,
-        total_attr: str,
+        list_attr: str = ATTR_LIST,
+        total_attr: str = ATTR_TOTAL,
         extra_keys: list[str] | None = None,
     ) -> None:
         """Initialise le capteur générique."""

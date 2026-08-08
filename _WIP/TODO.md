@@ -7,7 +7,6 @@ TODO
 - event pour notifier d'une nouvelle erreur + options (pour quels monitoring, et activé ou non pour compteur moins)
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
-- optimisation et cohérence du code
 - README
   - condition avec in_startup_delay pour éviter de lancer des scripts/automations ou pour la cohérence de l'affichage lovelace
   - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot

@@ -11,6 +11,7 @@ from homeassistant.core import HomeAssistant
 from .const import DOMAIN
 from .coordinator import HAMonitoringCoordinator
 
+# Liste élargie des clés sensibles à anonymiser dans les rapports de diagnostic
 TO_REDACT: set[str] = {
     "unique_id",
     "mac",
@@ -24,6 +25,11 @@ TO_REDACT: set[str] = {
     "longitude",
     "host",
     "port",
+    "api_key",
+    "email",
+    "username",
+    "serial",
+    "device_id",
 }
 
 

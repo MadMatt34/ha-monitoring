@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger("custom_components.ha_monitoring.backup")
 
 
 def _to_dict(obj: Any) -> dict[str, Any]:
-    """Convertit de manière ultra-robuste tout objet/dataclass HA en dictionnaire (en ignorant les attributs privés)."""
+    """Convertit de manière ultra-robuste tout objet/dataclass HA en dictionnaire."""
     if obj is None:
         return {}
     if isinstance(obj, dict):
@@ -41,7 +41,7 @@ def _to_dict(obj: Any) -> dict[str, Any]:
 
 
 def _format_dt(raw_dt: Any) -> str | None:
-    """Formate une date (datetime, ISO str, timestamp) au format ISO 8601 en heure locale avec fuseau horaire."""
+    """Formate une date au format ISO 8601 en heure locale avec fuseau horaire."""
     if not raw_dt:
         return None
 
@@ -55,7 +55,7 @@ def _format_dt(raw_dt: Any) -> str | None:
         dt_obj = raw_dt
     elif isinstance(raw_dt, (int, float)):
         try:
-            dt_obj = dt_util.utc_from_timestamp(raw_dt)
+            dt_obj = datetime.fromtimestamp(raw_dt, tz=dt_util.UTC)
         except Exception:
             pass
     else:
@@ -119,14 +119,12 @@ def _find_scalar_field(
     if depth > 4 or not isinstance(data, dict):
         return None
 
-    # 1. Recherche directe au niveau actuel
     for key in candidate_keys:
         if key in data and data[key] is not None:
             val = data[key]
             if isinstance(val, (datetime, str, int, float)):
                 return val
 
-    # 2. Exploration sous-niveaux (en ignorant les clés privées)
     for k, v in data.items():
         if str(k).startswith("_"):
             continue
@@ -189,9 +187,6 @@ async def async_get_backup_info(
             b_data = hass.data["backup"]
             manager = getattr(b_data, "manager", b_data)
 
-            # -----------------------------------------------------------------
-            # 1. Extraction des sauvegardes existantes
-            # -----------------------------------------------------------------
             backups_raw = None
             if hasattr(manager, "async_get_backups"):
                 try:
@@ -223,9 +218,6 @@ async def async_get_backup_info(
                     info["date_last_success"] = info["date_last_run"]
                     info["size"] = _format_size_bytes(latest_size)
 
-            # -----------------------------------------------------------------
-            # 2. Extraction de la planification native (BackupConfig)
-            # -----------------------------------------------------------------
             config_raw = None
             if hasattr(manager, "async_get_config"):
                 try:
@@ -258,7 +250,7 @@ async def async_get_backup_info(
     if last_failure_reason:
         info["is_ok"] = False
 
-    _LOGGER.warning(
+    _LOGGER.debug(
         "[HA Monitoring Backup] RÉSULTAT API NATIVE -> "
         "last_run=%s | last_success=%s | next_schedule=%s | size=%s | is_ok=%s",
         info["date_last_run"],

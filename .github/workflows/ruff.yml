@@ -1,0 +1,23 @@
+name: Code Quality (Ruff)
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+
+jobs:
+  ruff:
+    name: Ruff Check & Format
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Ruff
+        uses: astral-sh/setup-ruff@v1
+
+      - name: Run Ruff Linter
+        run: ruff check .
+
+      - name: Run Ruff Formatter
+        run: ruff format --check .

@@ -12,7 +12,7 @@ _LOGGER = logging.getLogger("custom_components.ha_monitoring.utils")
 
 def is_hassio_running(hass: HomeAssistant) -> bool:
     """Vérifie si Home Assistant s'exécute sous Supervisor/Hassio."""
-    return "hassio" in hass.config.components
+    return "hassio" in hass.config.components or "hassio" in hass.data
 
 
 def format_date_local(val: Any) -> str | None:

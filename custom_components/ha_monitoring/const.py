@@ -1,5 +1,4 @@
 """Constantes pour l'intégration HA Monitoring."""
-from datetime import timedelta
 from homeassistant.config_entries import ConfigEntryState
 
 DOMAIN = "ha_monitoring"

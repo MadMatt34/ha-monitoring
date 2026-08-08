@@ -70,17 +70,14 @@ def get_schema(
         CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
     )
 
-    domain_options: list[dict[str, str]] = []
+    domain_options: list[str] = []
     allowed_domains: list[str] | None = None
 
     if hass is not None:
         entity_ids = hass.states.async_entity_ids()
         all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
 
-        domain_options = [
-            {"value": d, "label": d} for d in sorted(all_domains)
-        ]
-
+        domain_options = sorted(list(all_domains))
         allowed_domains = sorted(list(all_domains - set(current_excluded_domains)))
 
     return vol.Schema(
@@ -315,15 +312,11 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         config_entry: config_entries.ConfigEntry,
     ) -> config_entries.OptionsFlow:
         """Retourne le gestionnaire d'options."""
-        return HAMonitoringOptionsFlowHandler(config_entry)
+        return HAMonitoringOptionsFlowHandler()
 
 
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options avec écrasement plat."""
-
-    def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
-        """Initialise le flux d'options."""
-        self._config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
