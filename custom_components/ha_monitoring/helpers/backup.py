@@ -1,5 +1,6 @@
 """Gestionnaire d'inspection des sauvegardes basé exclusivement sur les APIs natives HA."""
 
+import contextlib
 import dataclasses
 from datetime import datetime
 import logging
@@ -20,20 +21,14 @@ def _to_dict(obj: Any) -> dict[str, Any]:
 
     res: dict[str, Any] = {}
     if hasattr(obj, "to_dict") and callable(obj.to_dict):
-        try:
+        with contextlib.suppress(Exception):
             res = obj.to_dict()
-        except Exception:
-            pass
     elif hasattr(obj, "as_dict") and callable(obj.as_dict):
-        try:
+        with contextlib.suppress(Exception):
             res = obj.as_dict()
-        except Exception:
-            pass
     elif dataclasses.is_dataclass(obj):
-        try:
+        with contextlib.suppress(Exception):
             res = dataclasses.asdict(obj)
-        except Exception:
-            pass
     elif hasattr(obj, "__dict__"):
         res = vars(obj)
 
@@ -54,15 +49,11 @@ def _format_dt(raw_dt: Any) -> str | None:
     if isinstance(raw_dt, datetime):
         dt_obj = raw_dt
     elif isinstance(raw_dt, (int, float)):
-        try:
+        with contextlib.suppress(Exception):
             dt_obj = datetime.fromtimestamp(raw_dt, tz=dt_util.UTC)
-        except Exception:
-            pass
     else:
-        try:
+        with contextlib.suppress(Exception):
             dt_obj = dt_util.parse_datetime(s_val)
-        except Exception:
-            pass
 
     if dt_obj:
         try:
@@ -220,10 +211,9 @@ async def async_get_backup_info(
 
             config_raw = None
             if hasattr(manager, "async_get_config"):
-                try:
+                with contextlib.suppress(Exception):
                     config_raw = await manager.async_get_config()
-                except Exception:
-                    pass
+
             if config_raw is None and hasattr(manager, "config"):
                 config_raw = manager.config
 

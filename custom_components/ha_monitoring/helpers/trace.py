@@ -21,7 +21,7 @@ def _unwrap_traces(val: Any) -> list[Any]:
 
     unwrapped = []
     if hasattr(val, "runs"):
-        unwrapped.extend(_unwrap_traces(getattr(val, "runs")))
+        unwrapped.extend(_unwrap_traces(val.runs))
     elif isinstance(val, (list, deque, set, tuple)):
         for item in val:
             unwrapped.extend(_unwrap_traces(item))
@@ -43,10 +43,7 @@ def _get_raw_trace_timestamp(trace: Any) -> Any:
         return None
 
     for attr in ("timestamp_start", "start_time", "timestamp_finish", "finish_time"):
-        if isinstance(trace, dict):
-            val = trace.get(attr)
-        else:
-            val = getattr(trace, attr, None)
+        val = trace.get(attr) if isinstance(trace, dict) else getattr(trace, attr, None)
         if val:
             return val
 
@@ -196,9 +193,8 @@ def resolve_trace_entity_id(
     hass: HomeAssistant, target_domain: str, key_id: str, ent_reg: er.EntityRegistry
 ) -> str:
     """Résout l'entity_id correspondant à l'ID d'une trace."""
-    if key_id.startswith(f"{target_domain}."):
-        if hass.states.get(key_id):
-            return key_id
+    if key_id.startswith(f"{target_domain}.") and hass.states.get(key_id):
+        return key_id
 
     prefixed_key = f"{target_domain}.{key_id}"
     if hass.states.get(prefixed_key):
@@ -258,7 +254,7 @@ def get_trace_errors(
     domain_traces: dict[str, list[Any]] = {}
     for dom, item_id, trace_obj in _flatten_trace_data(trace_data):
         obj_dom = getattr(trace_obj, "domain", None) or dom
-        if obj_dom == target_domain or dom == target_domain or dom == domain:
+        if obj_dom == target_domain or dom in (target_domain, domain):
             domain_traces.setdefault(item_id, []).append(trace_obj)
 
     ent_reg = er.async_get(hass)

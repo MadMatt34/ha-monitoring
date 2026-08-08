@@ -42,7 +42,7 @@ def _get_host_boot_from_uptime() -> datetime | None:
     """Calcule la date de démarrage de l'hôte via /proc/uptime en secours."""
     try:
         if os.path.exists("/proc/uptime"):
-            with open("/proc/uptime", "r") as f:
+            with open("/proc/uptime") as f:
                 uptime_sec = float(f.readline().split()[0])
             return dt_util.utcnow() - timedelta(seconds=uptime_sec)
     except Exception as err:

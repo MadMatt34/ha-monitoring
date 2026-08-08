@@ -136,13 +136,16 @@ def scan_all_states(
 
             last_seen_dt = _extract_last_seen_dt(state_obj, last_seen_suffixes)
 
-            if last_seen_dt and last_seen_dt < cutoff:
-                if not any(item["device"] == display_name for item in offline):
-                    offline.append({
-                        "device": display_name,
-                        "date": format_date_local(last_seen_dt),
-                        "platform": platform,
-                    })
+            if (
+                last_seen_dt
+                and last_seen_dt < cutoff
+                and not any(item["device"] == display_name for item in offline)
+            ):
+                offline.append({
+                    "device": display_name,
+                    "date": format_date_local(last_seen_dt),
+                    "platform": platform,
+                })
 
     return updates, unavailable, offline
 

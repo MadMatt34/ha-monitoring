@@ -1,5 +1,6 @@
 """Utilitaires généraux et formateurs pour HA Monitoring."""
 
+import contextlib
 from datetime import datetime
 import logging
 from typing import Any
@@ -25,10 +26,8 @@ def format_date_local(val: Any) -> str | None:
     if isinstance(val, datetime):
         dt_obj = val
     elif isinstance(val, (int, float)):
-        try:
+        with contextlib.suppress(ValueError, OverflowError, OSError):
             dt_obj = datetime.fromtimestamp(val, tz=dt_util.UTC)
-        except (ValueError, OverflowError, OSError):
-            pass
     elif isinstance(val, str):
         dt_obj = dt_util.parse_datetime(val)
         if dt_obj is None:
