@@ -97,22 +97,27 @@ def scan_all_states(
                 and not _is_unavail_glob_matched(entity_id)
                 and not _is_unavail_glob_matched(friendly_name)
             ):
-                unavailable.append({
-                    "entity_id": entity_id,
-                    "name": friendly_name,
-                    "domain": domain,
-                    "state": state_obj.state,
-                })
+                unavailable.append(
+                    {
+                        "entity_id": entity_id,
+                        "name": friendly_name,
+                        "domain": domain,
+                        "state": state_obj.state,
+                    }
+                )
             continue
 
         if domain == "update" and state_obj.state == "on":
             if entity_id not in excl_updates:
-                updates.append({
-                    "entity_id": entity_id,
-                    "name": friendly_name,
-                    "installed_version": state_obj.attributes.get("installed_version") or "Inconnue",
-                    "latest_version": state_obj.attributes.get("latest_version") or "Inconnue",
-                })
+                updates.append(
+                    {
+                        "entity_id": entity_id,
+                        "name": friendly_name,
+                        "installed_version": state_obj.attributes.get("installed_version")
+                        or "Inconnue",
+                        "latest_version": state_obj.attributes.get("latest_version") or "Inconnue",
+                    }
+                )
             continue
 
         if entity_id.endswith(last_seen_suffixes):
@@ -141,11 +146,13 @@ def scan_all_states(
                 and last_seen_dt < cutoff
                 and not any(item["device"] == display_name for item in offline)
             ):
-                offline.append({
-                    "device": display_name,
-                    "date": format_date_local(last_seen_dt),
-                    "platform": platform,
-                })
+                offline.append(
+                    {
+                        "device": display_name,
+                        "date": format_date_local(last_seen_dt),
+                        "platform": platform,
+                    }
+                )
 
     return updates, unavailable, offline
 
@@ -187,7 +194,9 @@ async def async_get_addons(hass: HomeAssistant, excluded: list[str]) -> list[str
         return []
 
 
-async def async_get_failed_integrations(hass: HomeAssistant, excluded: list[str]) -> list[dict[str, Any]]:
+async def async_get_failed_integrations(
+    hass: HomeAssistant, excluded: list[str]
+) -> list[dict[str, Any]]:
     """Récupère les intégrations en erreur avec traductions officielles."""
     error_states = {
         ConfigEntryState.SETUP_ERROR,
@@ -197,7 +206,8 @@ async def async_get_failed_integrations(hass: HomeAssistant, excluded: list[str]
     excl_set = set(excluded)
 
     entries = [
-        entry for entry in hass.config_entries.async_entries()
+        entry
+        for entry in hass.config_entries.async_entries()
         if entry.state in error_states
         and entry.domain not in excl_set
         and entry.title not in excl_set
@@ -224,7 +234,9 @@ async def async_get_failed_integrations(hass: HomeAssistant, excluded: list[str]
 
     for entry in entries:
         title_key = f"component.{entry.domain}.title"
-        integration_name = integration_titles.get(title_key) or entry.domain.replace("_", " ").title()
+        integration_name = (
+            integration_titles.get(title_key) or entry.domain.replace("_", " ").title()
+        )
 
         raw_reason = getattr(entry, "reason", None)
         friendly_reason = None
@@ -242,31 +254,42 @@ async def async_get_failed_integrations(hass: HomeAssistant, excluded: list[str]
 
         if not friendly_reason:
             if entry.state == ConfigEntryState.SETUP_RETRY:
-                friendly_reason = issue_translations.get(f"component.{DOMAIN}.issues.setup_retry.title")
+                friendly_reason = issue_translations.get(
+                    f"component.{DOMAIN}.issues.setup_retry.title"
+                )
             elif entry.state == ConfigEntryState.SETUP_ERROR:
-                friendly_reason = issue_translations.get(f"component.{DOMAIN}.issues.setup_error.title")
+                friendly_reason = issue_translations.get(
+                    f"component.{DOMAIN}.issues.setup_error.title"
+                )
             elif entry.state == ConfigEntryState.MIGRATION_ERROR:
-                friendly_reason = issue_translations.get(f"component.{DOMAIN}.issues.migration_error.title")
+                friendly_reason = issue_translations.get(
+                    f"component.{DOMAIN}.issues.migration_error.title"
+                )
 
         friendly_reason = friendly_reason or raw_reason or entry.state.value
 
-        failed_entries.append({
-            "name": integration_name,
-            "entry_name": entry.title,
-            "domain": entry.domain,
-            "entry_id": entry.entry_id,
-            "state": entry.state.value,
-            "reason": friendly_reason,
-        })
+        failed_entries.append(
+            {
+                "name": integration_name,
+                "entry_name": entry.title,
+                "domain": entry.domain,
+                "entry_id": entry.entry_id,
+                "state": entry.state.value,
+                "reason": friendly_reason,
+            }
+        )
 
     return failed_entries
 
 
-async def async_get_pending_repairs(hass: HomeAssistant, excluded: list[str]) -> list[dict[str, Any]]:
+async def async_get_pending_repairs(
+    hass: HomeAssistant, excluded: list[str]
+) -> list[dict[str, Any]]:
     """Récupère les réparations (issues) en attente."""
     issue_registry = ir.async_get(hass)
     active_issues = [
-        issue for issue in issue_registry.issues.values()
+        issue
+        for issue in issue_registry.issues.values()
         if getattr(issue, "active", True) and getattr(issue, "dismissed_version", None) is None
     ]
 
@@ -274,7 +297,9 @@ async def async_get_pending_repairs(hass: HomeAssistant, excluded: list[str]) ->
     translations = {}
     if domains:
         try:
-            translations = await async_get_translations(hass, hass.config.language, "issues", domains=domains)
+            translations = await async_get_translations(
+                hass, hass.config.language, "issues", domains=domains
+            )
         except Exception:
             translations = {}
 

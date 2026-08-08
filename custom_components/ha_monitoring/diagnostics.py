@@ -51,14 +51,8 @@ async def async_get_config_entry_diagnostics(
         "coordinator": {
             "last_update_success": coordinator.last_update_success,
             "last_exception": (
-                str(coordinator.last_exception)
-                if coordinator.last_exception
-                else None
+                str(coordinator.last_exception) if coordinator.last_exception else None
             ),
-            "data": (
-                async_redact_data(coordinator.data, TO_REDACT)
-                if coordinator.data
-                else {}
-            ),
+            "data": (async_redact_data(coordinator.data, TO_REDACT) if coordinator.data else {}),
         },
     }

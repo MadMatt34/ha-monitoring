@@ -39,10 +39,12 @@ async def async_setup_entry(
     """Configuration des capteurs binaires via Config Entry."""
     coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    async_add_entities([
-        GlobalStatusBinarySensor(coordinator, entry),
-        BackupStatusBinarySensor(coordinator, entry),
-    ])
+    async_add_entities(
+        [
+            GlobalStatusBinarySensor(coordinator, entry),
+            BackupStatusBinarySensor(coordinator, entry),
+        ]
+    )
 
 
 class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):

@@ -128,9 +128,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 self.async_update_listeners()
             except Exception as err:
-                _LOGGER.error(
-                    "[HA Monitoring] Erreur traitement événement backup : %s", err
-                )
+                _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
 
         backup_events = (
             "backup_completed",
@@ -175,23 +173,18 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Récupère l'ensemble des métriques d'état du système."""
-        startup_delay = float(
-            self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
-        )
+        startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
         now = dt_util.utcnow()
         elapsed_seconds = (now - self._ha_start_time).total_seconds()
 
         in_startup_phase = not self._skip_startup_delay and (
-            self.hass.state != CoreState.running
-            or elapsed_seconds < (startup_delay - 0.5)
+            self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
         )
 
         # Récupération uniquement si le cache est vide (premier démarrage)
         fetched_info = None
         if self._cached_backup_info is None:
-            fetched_info = await async_get_backup_info(
-                self.hass, self._last_backup_failure_reason
-            )
+            fetched_info = await async_get_backup_info(self.hass, self._last_backup_failure_reason)
             if not in_startup_phase or fetched_info.get("date_last_run") is not None:
                 self._cached_backup_info = fetched_info
 
@@ -230,9 +223,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
 
-        excluded_unavailable_entities = options.get(
-            CONF_EXCLUDED_UNAVAILABLE_ENTITIES, []
-        )
+        excluded_unavailable_entities = options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES, [])
         excluded_unavailable_domains = options.get(
             CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
         )
@@ -259,8 +250,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if (
             self._last_trace_check_time is None
-            or (now - self._last_trace_check_time).total_seconds()
-            >= traces_scan_interval_sec
+            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
         ):
             self._cached_automations = get_trace_errors(
                 self.hass, "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
@@ -282,20 +272,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or (now - self._last_system_stats_check_time).total_seconds()
             >= system_info_scan_interval_sec
         ):
-            self._cached_system_stats = await async_get_system_stats(
-                self.hass, self._ha_start_time
-            )
+            self._cached_system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
             self._last_system_stats_check_time = now
 
-        addons = await async_get_addons(
-            self.hass, options.get(CONF_EXCLUDED_ADDONS, [])
-        )
+        addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
         )
-        repairs = await async_get_pending_repairs(
-            self.hass, options.get(CONF_EXCLUDED_REPAIRS, [])
-        )
+        repairs = await async_get_pending_repairs(self.hass, options.get(CONF_EXCLUDED_REPAIRS, []))
 
         return {
             "in_startup_delay": False,

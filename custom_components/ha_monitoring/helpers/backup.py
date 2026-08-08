@@ -183,7 +183,9 @@ async def async_get_backup_info(
                 try:
                     backups_raw = await manager.async_get_backups()
                 except Exception as err_m:
-                    _LOGGER.warning("[HA Monitoring Backup] Appel async_get_backups() échoué: %s", err_m)
+                    _LOGGER.warning(
+                        "[HA Monitoring Backup] Appel async_get_backups() échoué: %s", err_m
+                    )
 
             if backups_raw is None and hasattr(manager, "backups"):
                 backups_raw = manager.backups
@@ -219,9 +221,17 @@ async def async_get_backup_info(
 
             if config_raw:
                 data_obj = getattr(config_raw, "data", config_raw)
-                schedule_obj = getattr(data_obj, "schedule", None) if not isinstance(data_obj, dict) else data_obj.get("schedule")
+                schedule_obj = (
+                    getattr(data_obj, "schedule", None)
+                    if not isinstance(data_obj, dict)
+                    else data_obj.get("schedule")
+                )
 
-                next_dt = getattr(schedule_obj, "next_automatic_backup", None) if not isinstance(schedule_obj, dict) else (schedule_obj.get("next_automatic_backup") if schedule_obj else None)
+                next_dt = (
+                    getattr(schedule_obj, "next_automatic_backup", None)
+                    if not isinstance(schedule_obj, dict)
+                    else (schedule_obj.get("next_automatic_backup") if schedule_obj else None)
+                )
 
                 if next_dt:
                     info["date_next_schedule"] = _format_dt(next_dt)
@@ -229,7 +239,13 @@ async def async_get_backup_info(
                     config_dict = _to_dict(config_raw)
                     next_schedule = _find_scalar_field(
                         config_dict,
-                        ("next_automatic_backup", "next_backup", "next_run", "next_scheduled", "next_execution"),
+                        (
+                            "next_automatic_backup",
+                            "next_backup",
+                            "next_run",
+                            "next_scheduled",
+                            "next_execution",
+                        ),
                     )
                     if next_schedule:
                         info["date_next_schedule"] = _format_dt(next_schedule)

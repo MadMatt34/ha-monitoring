@@ -26,7 +26,10 @@ def _unwrap_traces(val: Any) -> list[Any]:
         for item in val:
             unwrapped.extend(_unwrap_traces(item))
     elif isinstance(val, dict):
-        if any(k in val for k in ("trace", "script_execution", "run_id", "timestamp", "error", "config")):
+        if any(
+            k in val
+            for k in ("trace", "script_execution", "run_id", "timestamp", "error", "config")
+        ):
             unwrapped.append(val)
         else:
             for sub_val in val.values():
@@ -142,7 +145,11 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
         trace_steps = t_dict.get("trace")
         if isinstance(trace_steps, dict):
             for step_runs in trace_steps.values():
-                runs_list = list(step_runs) if isinstance(step_runs, (list, deque, set, tuple)) else [step_runs]
+                runs_list = (
+                    list(step_runs)
+                    if isinstance(step_runs, (list, deque, set, tuple))
+                    else [step_runs]
+                )
                 for run in reversed(runs_list):
                     if isinstance(run, dict):
                         for k in ("error", "exception"):
@@ -158,7 +165,9 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
         if script_exec in ("failed", "error", "failed_before_steps"):
             return f"Échec d'exécution (statut: {script_exec})"
 
-    script_exec_obj = getattr(obj, "_script_execution", None) or getattr(obj, "script_execution", None)
+    script_exec_obj = getattr(obj, "_script_execution", None) or getattr(
+        obj, "script_execution", None
+    )
     state_obj = getattr(obj, "_state", None) or getattr(obj, "state", None)
 
     if script_exec_obj == "aborted" or state_obj == "aborted":
@@ -174,7 +183,9 @@ def extract_trace_error(obj: Any, depth: int = 0) -> str | None:
     steps_obj = getattr(obj, "_trace", None)
     if isinstance(steps_obj, dict):
         for step_runs in steps_obj.values():
-            runs_list = list(step_runs) if isinstance(step_runs, (list, deque, set, tuple)) else [step_runs]
+            runs_list = (
+                list(step_runs) if isinstance(step_runs, (list, deque, set, tuple)) else [step_runs]
+            )
             for run in reversed(runs_list):
                 run_err = getattr(run, "_error", None) or getattr(run, "error", None)
                 if run_err and str(run_err).strip() and str(run_err) != "None":
@@ -202,8 +213,7 @@ def resolve_trace_entity_id(
 
     for entry in ent_reg.entities.values():
         if entry.domain == target_domain and (
-            entry.unique_id == key_id
-            or entry.entity_id in (prefixed_key, key_id)
+            entry.unique_id == key_id or entry.entity_id in (prefixed_key, key_id)
         ):
             return entry.entity_id
 
@@ -261,6 +271,7 @@ def get_trace_errors(
     failed = []
 
     for item_id, trace_list in domain_traces.items():
+
         def _sort_key(item_tuple: tuple[int, Any]) -> tuple[datetime, int]:
             idx, t = item_tuple
             raw_ts = _get_raw_trace_timestamp(t)
@@ -300,11 +311,13 @@ def get_trace_errors(
                 formatted_date,
                 error_msg,
             )
-            failed.append({
-                "name": friendly_name,
-                "entity_id": entity_id,
-                "date": formatted_date,
-                "error": str(error_msg),
-            })
+            failed.append(
+                {
+                    "name": friendly_name,
+                    "entity_id": entity_id,
+                    "date": formatted_date,
+                    "error": str(error_msg),
+                }
+            )
 
     return failed

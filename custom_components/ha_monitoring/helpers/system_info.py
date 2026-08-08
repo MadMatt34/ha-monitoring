@@ -27,14 +27,38 @@ VALID_ENTRY_STATES = {
 
 EXCLUDED_INTEGRATION_DOMAINS = {
     # Helpers / Entrées d'aide
-    "group", "utility_meter", "threshold", "min_max", "template",
-    "tod", "derivative", "integral", "compensation", "filter",
-    "generic_thermostat", "generic_hygrostat", "timer", "counter",
-    "input_boolean", "input_button", "input_datetime", "input_number",
-    "input_select", "input_text", "schedule", "bayesian", "trend",
-    "go2rtc", "statistics", "switch_as_x",
+    "group",
+    "utility_meter",
+    "threshold",
+    "min_max",
+    "template",
+    "tod",
+    "derivative",
+    "integral",
+    "compensation",
+    "filter",
+    "generic_thermostat",
+    "generic_hygrostat",
+    "timer",
+    "counter",
+    "input_boolean",
+    "input_button",
+    "input_datetime",
+    "input_number",
+    "input_select",
+    "input_text",
+    "schedule",
+    "bayesian",
+    "trend",
+    "go2rtc",
+    "statistics",
+    "switch_as_x",
     # Système / Interne
-    "hardware", "diagnostics", "analytics", "homeassistant", "integration",
+    "hardware",
+    "diagnostics",
+    "analytics",
+    "homeassistant",
+    "integration",
 }
 
 
@@ -63,7 +87,9 @@ async def async_get_recorder_info(hass: HomeAssistant) -> dict[str, Any]:
     try:
         instance = get_instance(hass)
         if instance:
-            info["recorder_keep_days"] = getattr(instance, "keep_days", None) or getattr(instance, "purge_keep_days", None)
+            info["recorder_keep_days"] = getattr(instance, "keep_days", None) or getattr(
+                instance, "purge_keep_days", None
+            )
             info["recorder_auto_purge"] = getattr(instance, "auto_purge", None)
             info["recorder_auto_repack"] = getattr(instance, "auto_repack", None)
             info["recorder_commit_interval"] = getattr(instance, "commit_interval", None)
@@ -91,9 +117,7 @@ async def async_get_recorder_info(hass: HomeAssistant) -> dict[str, Any]:
     return info
 
 
-async def async_get_system_stats(
-    hass: HomeAssistant, ha_start_time: datetime
-) -> dict[str, Any]:
+async def async_get_system_stats(hass: HomeAssistant, ha_start_time: datetime) -> dict[str, Any]:
     """Collecte l'ensemble des métriques d'inventaire et du système."""
     ha_last_boot = format_date_local(ha_start_time)
 
@@ -162,22 +186,20 @@ async def async_get_system_stats(
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
 
-    devices_count = sum(
-        1 for device in dev_reg.devices.values()
-        if device.disabled_by is None
-    )
+    devices_count = sum(1 for device in dev_reg.devices.values() if device.disabled_by is None)
 
     entities_count = sum(
-        1 for entry in ent_reg.entities.values()
-        if entry.disabled_by is None
-        and entry.domain not in ("script", "automation")
+        1
+        for entry in ent_reg.entities.values()
+        if entry.disabled_by is None and entry.domain not in ("script", "automation")
     )
 
     automations_count = len(hass.states.async_all("automation"))
     scripts_count = len(hass.states.async_all("script"))
 
     active_entries = [
-        e for e in hass.config_entries.async_entries()
+        e
+        for e in hass.config_entries.async_entries()
         if e.state in VALID_ENTRY_STATES
         and getattr(e, "disabled_by", None) is None
         and e.domain not in EXCLUDED_INTEGRATION_DOMAINS
@@ -194,10 +216,9 @@ async def async_get_system_stats(
 
     try:
         custom_components = await async_get_custom_components(hass)
-        active_custom_domains = sorted([
-            domain for domain in custom_components
-            if domain in hass.config.components
-        ])
+        active_custom_domains = sorted(
+            [domain for domain in custom_components if domain in hass.config.components]
+        )
         custom_integrations_count = len(active_custom_domains)
 
         _LOGGER.debug(

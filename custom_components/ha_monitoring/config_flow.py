@@ -56,9 +56,7 @@ def get_schema(
     options = options or {}
 
     current_interval = options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
-    current_traces_interval = options.get(
-        CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL
-    )
+    current_traces_interval = options.get(CONF_TRACES_SCAN_INTERVAL, DEFAULT_TRACES_SCAN_INTERVAL)
     current_system_info_interval = options.get(
         CONF_SYSTEM_INFO_SCAN_INTERVAL, DEFAULT_SYSTEM_INFO_SCAN_INTERVAL
     )
@@ -189,9 +187,7 @@ def get_schema(
                             CONF_EXCLUDED_UPDATES,
                             default=options.get(CONF_EXCLUDED_UPDATES) or [],
                         ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(
-                                domain="update", multiple=True
-                            )
+                            selector.EntitySelectorConfig(domain="update", multiple=True)
                         ),
                     }
                 ),
@@ -205,17 +201,13 @@ def get_schema(
                             CONF_EXCLUDED_AUTOMATIONS,
                             default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
                         ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(
-                                domain="automation", multiple=True
-                            )
+                            selector.EntitySelectorConfig(domain="automation", multiple=True)
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_SCRIPTS,
                             default=options.get(CONF_EXCLUDED_SCRIPTS) or [],
                         ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(
-                                domain="script", multiple=True
-                            )
+                            selector.EntitySelectorConfig(domain="script", multiple=True)
                         ),
                     }
                 ),
@@ -228,9 +220,7 @@ def get_schema(
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
                             default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(multiple=True)
-                        ),
+                        ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                     }
                 ),
                 {"collapsed": True},
@@ -260,14 +250,11 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES)
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
-                                filter=selector.EntityFilterSelectorConfig(
-                                    domain=allowed_domains
-                                )
+                                filter=selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                 if allowed_domains
                                 else None,
                             )
@@ -285,9 +272,7 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     VERSION = 1
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Formulaire initial d'ajout de l'intégration."""
         if self._async_current_entries():
             return self.async_abort(reason="already_configured")
@@ -317,9 +302,7 @@ class HAMonitoringConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options avec écrasement plat."""
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Gère l'étape initiale du menu d'options."""
         if user_input is not None:
             cleaned_options = _flatten_options(user_input)

@@ -51,9 +51,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Déchargement des plateformes et nettoyage des ressources."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        coordinator: HAMonitoringCoordinator | None = hass.data[DOMAIN].pop(
-            entry.entry_id, None
-        )
+        coordinator: HAMonitoringCoordinator | None = hass.data[DOMAIN].pop(entry.entry_id, None)
         if coordinator:
             await coordinator.async_shutdown()
 

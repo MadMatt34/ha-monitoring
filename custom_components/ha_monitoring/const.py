@@ -1,4 +1,5 @@
 """Constantes pour l'intégration HA Monitoring."""
+
 from homeassistant.config_entries import ConfigEntryState
 
 DOMAIN = "ha_monitoring"
