@@ -98,8 +98,18 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return tuple(suffixes)
 
+    def _unsubscribe_backup_listeners(self) -> None:
+        """Désabonne proprement tous les écouteurs du bus d'événements."""
+        while self._bus_listeners_unsub:
+            unsub = self._bus_listeners_unsub.pop()
+            try:
+                unsub()
+            except Exception as err:
+                _LOGGER.debug("[HA Monitoring] Erreur désabonnement : %s", err)
+
     def _setup_backup_listeners(self) -> None:
         """Écoute les événements du bus déclenchés lors de la fin d'une sauvegarde (succès ou échec)."""
+        self._unsubscribe_backup_listeners()
 
         async def _async_on_backup_event(event: Event) -> None:
             _LOGGER.debug(
@@ -180,10 +190,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
 
-        for unsub in self._bus_listeners_unsub:
-            unsub()
-        self._bus_listeners_unsub.clear()
-
+        self._unsubscribe_backup_listeners()
         await super().async_shutdown()
 
     async def async_force_refresh(self) -> None:

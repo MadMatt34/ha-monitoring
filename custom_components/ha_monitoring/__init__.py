@@ -34,6 +34,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     # Instanciation du coordinator
     coordinator = HAMonitoringCoordinator(hass, entry)
 
+    # Enregistre le nettoyage automatique au déchargement
+    entry.async_on_unload(coordinator.async_shutdown)
+
     # Premier rafraîchissement des données au chargement
     await coordinator.async_config_entry_first_refresh()
 
