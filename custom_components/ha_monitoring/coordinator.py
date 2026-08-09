@@ -159,7 +159,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
 
         backup_events = (
-            "backup_event",             # Événement officiel nativement émis par HA Backup
+            "backup_event",  # Événement officiel nativement émis par HA Backup
             "backup_completed",
             "backup_successful",
             "backup_failed",
