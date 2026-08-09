@@ -81,6 +81,13 @@ Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
 
 Toutes les entités sont rattachées au Device **Home Assistant** :
 
+> [!NOTE]
+> Chaque entité contient des attributs listant les éléments détectés.
+>
+> Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
+>
+> [![Ouvrir votre instance Home Assistant et affichier les outils.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
+
 ### Capteurs (`sensor.*`)
 
 | Entité | Nom | Description / Attributs |
@@ -93,12 +100,6 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 | `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre de problèmes de réparation en attente. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
 | `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs. |
-
-> [!NOTE]
-> Chaque capteur contient des attributs de liste listant précisément les éléments détectés.
->
-> Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
-> [![Ouvrir votre instance Home Assistant et affichier les outils.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
 
 ### Capteurs binaires (`binary_sensor.*`)
 

@@ -81,6 +81,13 @@ You can adjust thresholds and exclusion lists at any time:
 
 All entities are attached to the **Home Assistant** Device:
 
+> [!NOTE]
+> Each entity contains a list attribute detailing the items detected.
+>
+> Use **Settings** > **Tools** > **States** to explore all attributes.
+>
+> [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
+
 ### Sensors (`sensor.*`)
 
 | Entity | Name | Description / Attributes |
@@ -93,12 +100,6 @@ All entities are attached to the **Home Assistant** Device:
 | `sensor.monitoring_repairs` | Monitoring Pending Repairs | Number of active repair issues. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
 | `sensor.monitoring_offline_devices` | Monitoring Offline Devices | Count and list of inactive devices. |
-
-> [!NOTE]
-> Each sensor contains list attributes detailing the exact items detected.
->
-> Use **Settings** > **Tools** > **States** to explore all attributes.
-> [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
 
 ### Binary Sensors (`binary_sensor.*`)
 
