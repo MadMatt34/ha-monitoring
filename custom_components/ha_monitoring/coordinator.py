@@ -108,29 +108,58 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 event.data,
             )
             try:
+                data = event.data or {}
                 event_type = event.event_type.lower()
-                status = str(event.data.get("status", "")).lower()
 
-                # Détection d'un échec (dans le nom de l'événement ou le payload)
-                if "failed" in event_type or status == "failed" or "error" in event.data:
+                # Extraction robuste (gestion des dictionnaires plats ET imbriqués sous 'event')
+                event_sub = data.get("event")
+                sub_type = ""
+                sub_state = ""
+                if isinstance(event_sub, dict):
+                    sub_type = str(event_sub.get("type", "")).lower()
+                    sub_state = str(event_sub.get("state") or event_sub.get("status") or "").lower()
+                elif isinstance(event_sub, str):
+                    sub_type = event_sub.lower()
+
+                status = str(
+                    data.get("status") or data.get("state") or sub_state or sub_type
+                ).lower()
+
+                # On ignore uniquement si la sauvegarde vient de DÉBARRER ou est EN COURS
+                if status in ("in_progress", "start", "started") or sub_type == "start":
+                    return
+
+                # Détection d'un échec (dans l'événement, le statut ou la présence d'une erreur)
+                is_failed = (
+                    "failed" in event_type
+                    or status == "failed"
+                    or "error" in data
+                    or (isinstance(event_sub, dict) and "error" in event_sub)
+                )
+
+                if is_failed:
+                    err_source = event_sub if isinstance(event_sub, dict) else data
                     self._last_backup_failure_reason = (
-                        event.data.get("reason")
-                        or event.data.get("error")
-                        or event.data.get("message")
+                        err_source.get("reason")
+                        or err_source.get("error")
+                        or err_source.get("message")
                         or "Échec de sauvegarde signalé par événement"
                     )
                 else:
                     self._last_backup_failure_reason = None
 
-                # Mise à jour immédiate du cache de sauvegarde
+                # Re-lecture ponctuelle des sauvegardes auprès de Home Assistant
                 self._cached_backup_info = await async_get_backup_info(
                     self.hass, self._last_backup_failure_reason
                 )
+                # Notification immédiate de tous les capteurs dépendants du Coordinator
                 self.async_update_listeners()
+
             except Exception as err:
                 _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
 
         backup_events = (
+            "backup_event",             # Événement officiel nativement émis par HA Backup
             "backup_completed",
             "backup_successful",
             "backup_failed",
