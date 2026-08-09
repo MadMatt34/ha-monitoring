@@ -1,5 +1,7 @@
+# WIP
 
-TODO
+## TODO
+
 - tout texte d'interface dans translations
 - dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
@@ -7,20 +9,9 @@ TODO
 - event pour notifier d'une nouvelle erreur + options (pour quels monitoring, et activé ou non pour compteur moins)
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
-- README
-  - condition avec in_startup_delay pour éviter de lancer des scripts/automations ou pour la cohérence de l'affichage lovelace
-  - automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
-  - applications : uniquement si démarrage auto + watchdog
-  - informer des différents timings de synchro
-    (backup uniquement après une sauvegarde ou bouton force)
-    (system_info toutes 24h ou fréquence modifiée dans options, ou bouton force)
-  - exclusion entities offline par globs / wildcard patterns sur id et displayname
-  - informations systems en attributs du statut global
-    (comptage intégrations configurées via UI, impossible pour celles conf en yaml)
-    (comptage appareils n'inclus pas les désactivés)
-    (comptage devices n'inclus pas les désactivés ni scripts/automations)
 
-TOTEST
+## TOTEST
+
 - tout suppr et réinstall
 - actualisation après backup
 - backup en erreur
@@ -45,12 +36,14 @@ TOTEST
   - automations : ok
   - scripts : ok
 
-TOCORRECT
+## TOCORRECT
+
 - pour repairs_pending, nom plus convivial (translation system)
 - pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
 
-DONE
+## DONE
+
 - regrouper toutes les entités dans la même application, comme le bouton
 - nommer l'application Home assistant, identifier son numéro de version
 - utiliser le lien externe et pas interne pour le device
@@ -80,7 +73,7 @@ DONE
 - capteur système (version, uptime host, uptime HA, métrics contenus, taille DB)
 - si un script/automation est en erreur et qu'il s'exécute correctement ensuite, le retirer de la liste
 
+## INFO
 
-INFO
 - debug : custom_components.ha_monitoring: debug
 - system ligne 256 : pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.

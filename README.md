@@ -29,6 +29,7 @@
 ## 🧩 Installation
 
 ### Option 1: Installation via HACS (recommended)
+
 1. Open **HACS**.
 2. Click the 3 dots in the top right corner > **Custom repositories**.
 3. Add repository URL: `https://github.com/MadMatt34/ha-monitoring`
@@ -36,6 +37,7 @@
 5. Click **Download**, then restart Home Assistant.
 
 ### Option 2: Manual Installation
+
 1. Download the latest release archive from the repository.
 2. Copy the `ha_monitoring` directory into `/config/custom_components/`.
 3. Restart Home Assistant to load the custom component.
@@ -46,7 +48,8 @@
 
 Setup is **100% UI-based** in Home Assistant.
 
-1. Navigate to **Settings** > **Devices & Services**.<br>
+1. Navigate to **Settings** > **Devices & Services**.
+
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)]([https://my.home-assistant.io/redirect/integrations/](https://my.home-assistant.io/redirect/integrations/))
 2. Click **Add Integration** (bottom right).
 3. Search for **HA Monitoring** and select it.
@@ -61,12 +64,11 @@ Thresholds and exclusion rules can be updated at any time:
 1. Go to **Settings** > **Devices & Services** > **HA Monitoring**.
 2. Click **CONFIGURE** (gear icon).
 3. Adjust desired parameters:
-   ### Timings & Delays
-   - **Refresh interval** (in seconds): Main data update frequency (default: 2 min).
-   - **Traces scan interval** (in minutes): Analysis interval for automation and script execution traces (default: 30 min).
-   - **Offline inactivity threshold** (in hours): Inactivity duration before marking a device offline (default: 24h).
-   - **Startup grace period** (in seconds): Time to bypass scanning after Home Assistant boots (default: 2 min).
-   - **Exclusions**: Select entities, add-ons, integrations, automations, scripts, updates, or repairs to ignore.
+    - **Refresh interval** (in seconds): Main data update frequency (default: 2 min).
+    - **Traces scan interval** (in minutes): Analysis interval for automation and script execution traces (default: 30 min).
+    - **Offline inactivity threshold** (in hours): Inactivity duration before marking a device offline (default: 24h).
+    - **Startup grace period** (in seconds): Time to bypass scanning after Home Assistant boots (default: 2 min).
+    - **Exclusions**: Select entities, add-ons, integrations, automations, scripts, updates, or repairs to ignore.
 
 ---
 
@@ -75,6 +77,7 @@ Thresholds and exclusion rules can be updated at any time:
 All entities are linked to the **Home Assistant** system device:
 
 ### Sensors (`sensor.*`)
+
 | Entity | Name | Description / Attributes |
 | :--- | :--- | :--- |
 | `sensor.monitoring_addons` | Monitoring Failed Add-ons | Count of add-ons currently in an error state. |
@@ -89,12 +92,14 @@ All entities are linked to the **Home Assistant** system device:
 > **Note:** Every sensor provides detailed list attributes containing structured data (names, IDs, timestamps) for detected issues.
 
 ### Binary Sensors (`binary_sensor.*`)
+
 | Entity | Device Class | Name | Description |
 | :--- | :--- | :--- | :--- |
 | `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (add-on, integration, automation, or script) is detected. |
 | `binary_sensor.monitoring_backup_status` | - | Monitoring Backup Status | Turns `OFF` if the last backup attempt failed or is missing. |
 
 ### Buttons (`button.*`)
+
 | Entity | Name | Description |
 | :--- | :--- | :--- |
 | `button.monitoring_force_scan` | Monitoring Force Refresh | Instantly triggers a complete system scan across all metrics. |
