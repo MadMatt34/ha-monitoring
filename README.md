@@ -1,4 +1,4 @@
-# HA Monitoring - Custom Component for Home Assistant
+# HA Monitoring - Home Assistant Integration
 
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-monitoring?color=green)](https://github.com/MadMatt34/ha-monitoring/releases)
@@ -7,112 +7,149 @@
 
 [🇫🇷 README en FRANÇAIS 🇫🇷](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
 
-**HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and status in real time. It centralizes the detection of issues across add-ons, integrations, automations, scripts, unavailable or unknown entities, offline devices, pending updates, active repair alerts, and backup statuses.
+**HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across add-ons, integrations, automations, scripts, unavailable entities, offline devices, pending updates, active repairs, and backup statuses.
+
+> [!IMPORTANT]
+> This integration is not intended to automatically fix errors, but rather to centralize information that is often hidden or hard to find. You can then build custom automations based on these metrics.
 
 ---
 
-## 🚀 Main Features
+## ⚡ Main Features
 
-- **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are linked to a single system device displaying the current HA Core version alongside a direct link to your instance.
-- **Comprehensive Monitoring:**
-  - **Applications (Add-ons) & Integrations:** Detection of components in failed/error states.
-  - **Automation & Script Traces:** Detection of execution errors in recent trace logs.
-  - **Entities & Devices:** Tracking of unavailable/unknown (`unavailable` / `unknown`) entities and inactive devices (`offline`).
-  - **Updates & Repairs:** Real-time metrics for pending system updates and repair issues.
-  - **Backups:** Monitoring of the latest backup status with size and timestamp attributes.
+- **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
+- **System Information:** Reports versions and boot timestamps for HAOS and HA, total counts of various elements, database size, and recorder settings.
+- **Global Monitoring:**
+  - **Updates & Repairs:** Real-time tracking of system updates and pending repair issues.
+  - **Backups:** Verification of the latest backup status and associated tracking attributes.
+  - **Add-ons & Integrations:** Detection of failed or errored components.
+  - **Automation & Script Traces:** Detection of recent execution errors.
+  - **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
 - **Startup Grace Period:** Prevents false alarms during Home Assistant's initial boot sequence.
-- **Action Button:** Forces an immediate, on-demand refresh of all metrics.
-- **Fine-grained UI Configuration:** Adjustable scan intervals and granular selection of items to exclude from monitoring.
+- **Action Button:** Trigger an immediate full system refresh on demand.
+- **Fine-grained Customization via UI:** Adjust scan frequencies and granularly exclude specific items from being monitored.
 
 ---
 
 ## 🧩 Installation
 
-### Option 1: Installation via HACS (recommended)
+### Option 1: Installation via HACS (Custom Repository - 📌 Recommended)
 
 1. Open **HACS**.
 2. Click the 3 dots in the top right corner > **Custom repositories**.
-3. Add repository URL: `https://github.com/MadMatt34/ha-monitoring`
-4. Select **Integration** as category and confirm.
+3. Add: `https://github.com/MadMatt34/ha-monitoring`
+4. Select category **Integration** and click **Add**.
 5. Click **Download**, then restart Home Assistant.
 
 ### Option 2: Manual Installation
 
-1. Download the latest release archive from the repository.
-2. Copy the `ha_monitoring` directory into `/config/custom_components/`.
-3. Restart Home Assistant to load the custom component.
+1. Download the latest *Release* from this repository.
+2. Copy the `ha_monitoring` folder into your `/config/custom_components/` directory.
+3. Restart Home Assistant to detect the new integration.
 
 ---
 
-## 🚀 Integration Configuration
+## 🚀 Integration Setup
 
-Setup is **100% UI-based** in Home Assistant.
+Configuration is **100% UI-based** within Home Assistant.
 
-1. Navigate to **Settings** > **Devices & Services**.
+1. Go to **Settings** > **Devices & Services**.
 
-   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)]([https://my.home-assistant.io/redirect/integrations/](https://my.home-assistant.io/redirect/integrations/))
+   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Click **Add Integration** (bottom right).
 3. Search for **HA Monitoring** and select it.
-4. Enter initial configuration parameters (or keep defaults) and submit.
+4. Enter your initial settings (or leave default values) and submit.
 
 ---
 
-## 🛠️ Modifying Settings
+## ⚙️ Modifying Settings
 
-Thresholds and exclusion rules can be updated at any time:
+You can adjust thresholds and exclusion lists at any time:
 
 1. Go to **Settings** > **Devices & Services** > **HA Monitoring**.
-2. Click **CONFIGURE** (gear icon).
-3. Adjust desired parameters:
-    - **Refresh interval** (in seconds): Main data update frequency (default: 2 min).
-    - **Traces scan interval** (in minutes): Analysis interval for automation and script execution traces (default: 30 min).
-    - **Offline inactivity threshold** (in hours): Inactivity duration before marking a device offline (default: 24h).
-    - **Startup grace period** (in seconds): Time to bypass scanning after Home Assistant boots (default: 2 min).
-    - **Exclusions**: Select entities, add-ons, integrations, automations, scripts, updates, or repairs to ignore.
+2. Click the **CONFIGURE** button *(gear icon)*.
+3. Adjust the desired parameters:
+    - **Startup Grace Period** (in seconds): Waiting time upon boot before enabling scans (default: 2 min).
+    - **Refresh Interval** (in seconds): Main data refresh frequency (default: 3 min).
+    - **System Info Scan Interval** (in hours): Refresh frequency for general system stats (default: 24 hours).
+    - **Traces Scan Interval** (in minutes): Frequency for scanning automation and script execution trace errors (default: 30 min).
+    - **Offline Inactivity Threshold** (in hours): Inactivity duration before marking a device as offline (default: 24h).
+    - **Exclusions**: Select add-ons, integrations, repairs, updates, automations, scripts, devices, or entities to ignore.
 
 ---
 
-## 📊 Provided Entities
+## 📡 Provided Entities
 
-All entities are linked to the **Home Assistant** system device:
+All entities are attached to the **Home Assistant** Device:
 
 ### Sensors (`sensor.*`)
 
 | Entity | Name | Description / Attributes |
 | :--- | :--- | :--- |
-| `sensor.monitoring_addons` | Monitoring Failed Add-ons | Count of add-ons currently in an error state. |
-| `sensor.monitoring_integrations` | Monitoring Failed Integrations | Count of failed integrations. |
-| `sensor.monitoring_automations` | Monitoring Failed Automations | Count of automations that raised execution errors. |
-| `sensor.monitoring_scripts` | Monitoring Failed Scripts | Count of scripts that raised execution errors. |
-| `sensor.monitoring_updates` | Monitoring Pending Updates | Count of pending software/component updates. |
-| `sensor.monitoring_repairs` | Monitoring Pending Repairs | Count of active system repair issues. |
-| `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of unavailable or unknown entities. |
+| `sensor.monitoring_addons` | Monitoring Failded Add-ons | Number of failed add-ons. |
+| `sensor.monitoring_integrations` | Monitoring Failded Integrations | Number of failed integrations. |
+| `sensor.monitoring_automations` | Monitoring Failded Automations | Number of automations that threw an error. |
+| `sensor.monitoring_scripts` | Monitoring Failded Scripts | Number of scripts that threw an error. |
+| `sensor.monitoring_updates` | Monitoring Pending Updates | Number of pending updates. |
+| `sensor.monitoring_repairs` | Monitoring Pending Repairs | Number of active repair issues. |
+| `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
 | `sensor.monitoring_offline_devices` | Monitoring Offline Devices | Count and list of inactive devices. |
 
-> **Note:** Every sensor provides detailed list attributes containing structured data (names, IDs, timestamps) for detected issues.
+> [!NOTE]
+> Each sensor contains list attributes detailing the exact items detected.
+> Use **Settings** > **Tools** > **States** to explore all attributes.
+> [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
 
 ### Binary Sensors (`binary_sensor.*`)
 
 | Entity | Device Class | Name | Description |
 | :--- | :--- | :--- | :--- |
-| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (add-on, integration, automation, or script) is detected. |
-| `binary_sensor.monitoring_backup_status` | - | Monitoring Backup Status | Turns `OFF` if the last backup attempt failed or is missing. |
+| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (add-on, integration, automation, or script) is detected. System info are provided in attributes. |
+| `binary_sensor.monitoring_backup_status` | - | Monitoring Backup Status | Turns `OFF` if the last backup failed. Provides backup dates, sizes, and failure reasons as attributes. |
 
 ### Buttons (`button.*`)
 
 | Entity | Name | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Monitoring Force Refresh | Instantly triggers a complete system scan across all metrics. |
+| `button.monitoring_force_scan` | Monitoring Force Refresh | Manually triggers an immediate full system scan. |
 
 ---
 
-## 💡 Automations & Dashboard Examples
+## 💡 Additional Details
+
+### Startup Grace Period Details
+
+The first scan following a Home Assistant boot will wait until the configured grace period expires (default 2 min). This prevents false alerts before all integrations and sensors have finished loading.
+
+> [!NOTE]
+> Use the attribute `in_startup_delay = False` as a condition in your scripts/automations or dashboard view visibility.
+
+### Data Refresh Intervals Details
+
+- **System Info Attributes:** Updated according to the frequency defined in options (default 24 hours).
+- **Backup Sensor:** Updated immediately following the completion of a backup execution event.
+- **All Other Sensors:** Updated according to the main scan interval defined in options (default 3 min).
+
+> [!NOTE]
+> All sensors and attributes are refreshed upon integration startup, when clicking the `Force Refresh` button, or when changing integration settings.
+
+### Specific Sensor & Attribute Notes
+
+- **Automations & Scripts Sensors:** Scans are only performed on in-memory traces. Errors prior to the last Home Assistant restart are not tracked.
+- **Add-ons Sensor:** Only monitors add-ons configured with both `Start on boot` and `Watchdog` enabled.
+- **Global Status System Info Attributes:**
+  - Integrations count: Counts UI-configured integrations (YAML-configured ones cannot be tracked).
+  - Devices count: Disabled devices are excluded.
+  - Entities count: Disabled entities, script entities, and automation entities are excluded.
+
+---
+
+## 🤖 Automations & Dashboard Examples
 
 ### Example 1: Notification on System Issue
 
 ```yaml
 alias: "Alert: System Issue Detected"
-description: "Sends a mobile notification if a system issue occurs"
+description: "Sends a mobile notification if a component enters an error state"
 trigger:
   - platform: state
     entity_id: binary_sensor.monitoring_global_status
@@ -123,10 +160,10 @@ action:
     data:
       title: "⚠️ HA Monitoring - System Alert"
       message: >
-        Issue detected on your Home Assistant system:
-        - Failed Add-ons: {{ states('sensor.monitoring_addons') }}
-        - Failed Integrations: {{ states('sensor.monitoring_integrations') }}
-        - Failed Automations: {{ states('sensor.monitoring_automations') }}
+        Issue detected on your system:
+        - Errored Add-ons: {{ states('sensor.monitoring_applications_in_error') }}
+        - Errored Integrations: {{ states('sensor.monitoring_integrations_in_error') }}
+        - Errored Automations: {{ states('sensor.monitoring_automations_in_error') }}
         - Unavailable Entities: {{ states('sensor.monitoring_unavailable_entities') }}
 mode: single
 ```
@@ -137,7 +174,7 @@ mode: single
 
 ```yaml
 alias: "Alert: Backup Failure"
-description: "Alerts if the latest system backup failed"
+description: "Alerts if the latest backup failed"
 trigger:
   - platform: state
     entity_id: binary_sensor.monitoring_backup_status
@@ -145,46 +182,46 @@ trigger:
 action:
   - action: notify.notify
     data:
-      title: "🚨 Home Assistant Backup Alert"
-      message: "The latest system backup failed or was not found."
+      title: "🚨 Home Assistant Backup Failure"
+      message: "The latest backup failed or no backup was found."
 ```
 
 ---
 
 ### Example 3: Dashboard Markdown Card
 
-Display a dynamic system status overview directly on your dashboard:
+Display a detailed and dynamic system report directly on your dashboard:
 
 ```yaml
 type: markdown
-title: 🛡️ System Health Overview
+title: 🛡️ System Status
 content: >
   {% if is_state('binary_sensor.monitoring_global_status', 'off') %}
-    ✅ **System Healthy** — No critical issues detected.
+    ✅ **System Stable** — No major issues detected.
   {% else %}
     ⚠️ **Anomalies Detected!**
   {% endif %}
 
   ---
 
-  {% if states('sensor.monitoring_addons') | int > 0 %}
-  **Failed Add-ons:**
-  {% for item in state_attr('sensor.monitoring_addons', 'list') %}
-    - {{ item.name if item is mapping else item }}
+  {% if states('sensor.monitoring_applications_in_error') | int > 0 %}
+  **Errored Add-ons:**
+  {% for item in state_attr('sensor.monitoring_applications_in_error', 'list') %}
+    - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations') | int > 0 %}
-  **Failed Integrations:**
-  {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
-    - {{ item.name if item is mapping else item }}
+  {% if states('sensor.monitoring_integrations_in_error') | int > 0 %}
+  **Errored Integrations:**
+  {% for item in state_attr('sensor.monitoring_integrations_in_error', 'list') %}
+    - {{ item }}
   {% endfor %}
   {% endif %}
 
   {% if states('sensor.monitoring_unavailable_entities') | int > 0 %}
   **Unavailable Entities ({{ states('sensor.monitoring_unavailable_entities') }}):**
   {% for item in state_attr('sensor.monitoring_unavailable_entities', 'list')[:5] %}
-    - {{ item.name if item is mapping else item }}
+    - {{ item }}
   {% endfor %}
   {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count > 5 %}
     *...and {{ state_attr('sensor.monitoring_unavailable_entities', 'list') | count - 5 }} more.*
@@ -199,5 +236,11 @@ content: >
 
 ## 🛠️ Troubleshooting
 
-- **Logs:** Go to **Settings → System → Logs** to inspect detailed component logs.
-- **Diagnostics & Privacy:** Export diagnostic files securely when submitting an issue on GitHub; tokens, API keys, and private system details are automatically redacted.
+- Check your logs: **Settings → System → Logs**
+- Diagnostics & Privacy: Safe diagnostic export is supported when opening an issue on GitHub. Access tokens, credentials, and personal data are automatically anonymized.
+
+---
+
+## *Note*
+
+*I am not a developer; I built this integration with the help of AI. Feel free to contribute!*

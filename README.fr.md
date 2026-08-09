@@ -5,7 +5,7 @@
 
 ![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
 
-[🇬🇧 README in ENGLISH 🇬🇧](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)🇫🇷
+[🇬🇧 README in ENGLISH 🇬🇧](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
 
 **HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (add-ons, intégrations, automations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour, des réparations en attente et de l'état des sauvegardes.
 
@@ -32,11 +32,11 @@
 
 ## 🧩 Installation
 
-### Option 1 : Installation via HACS, dépôt personnalisé (recommandée)
+### Option 1 : Installation via HACS (dépôt personnalisé - 📌 recommandée)
 
 1. Ouvrir **HACS**  
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
-3. Ajouter : [https://github.com/MadMatt34/ha-monitoring](https://github.com/MadMatt34/ha-monitoring)
+3. Ajouter : `https://github.com/MadMatt34/ha-monitoring`
 4. Choisir la catégorie **Intégration** et valider
 5. Cliquer sur **Télécharger**, puis redémarrer Home Assistant.
 
@@ -85,30 +85,33 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 
 | Entité | Nom | Description / Attributs |
 | :--- | :--- | :--- |
-| `sensor.monitoring_addons` | Monitoring Applications | Nombre d'addons en erreur. |
-| `sensor.monitoring_integrations` | Monitoring Intégrations | Nombre d'intégrations en échec. |
-| `sensor.monitoring_automations` | Monitoring Automatisations | Nombre d'automatisations ayant levé une erreur. |
-| `sensor.monitoring_scripts` | Monitoring Scripts | Nombre de scripts ayant levé une erreur. |
-| `sensor.monitoring_updates` | Monitoring Mises à jour | Nombre de mises à jour en attente. |
-| `sensor.monitoring_repairs` | Monitoring Réparations | Nombre de problèmes de réparation en attente. |
+| `sensor.monitoring_addons` | Monitoring Applications en erreur | Nombre d'addons en erreur. |
+| `sensor.monitoring_integrations` | Monitoring Intégrations en erreur | Nombre d'intégrations en échec. |
+| `sensor.monitoring_automations` | Monitoring Automatisations en erreur | Nombre d'automatisations ayant levé une erreur. |
+| `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre de scripts ayant levé une erreur. |
+| `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre de mises à jour en attente. |
+| `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre de problèmes de réparation en attente. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
 | `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs. |
 
-> 📌 **Note :**
+> [!NOTE]
 > Chaque capteur contient des attributs de liste listant précisément les éléments détectés.
+> Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
+> [![Ouvrir votre instance Home Assistant et affichier les outils.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
+
 
 ### Capteurs binaires (`binary_sensor.*`)
 
 | Entité | Device Class | Nom | Description |
 | :--- | :--- | :--- | :--- |
-| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Statut Global | Passera à `ON` si au moins un problème critique (addon, intégration, automation ou script) est détecté. Fournit en attributs les informations système. |
+| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Statut Global | Passera à `ON` si au moins un problème critique (addon, intégration, automation ou script) est détecté. Informations système fournies en attributs. |
 | `binary_sensor.monitoring_backup_status` | - | Monitoring État de la sauvegarde | Passe à `off` si la dernière sauvegarde a échoué. Fournit en attributs les dates et la taille de la sauvegarde, la raison de l'éventuel échec. |
 
 ### Boutons (`button.*`)
 
 | Entité | Nom | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Forcer le rafraîchissement | Permet de déclencher manuellement et instantanément un scan complet du système |
+| `button.monitoring_force_scan` | Monitoring Forcer le rafraîchissement | Permet de déclencher manuellement et instantanément un scan complet du système |
 
 ---
 
@@ -119,7 +122,6 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la période de grâce configurée dans les paramètres (par défaut 2 min). Cela évite d'obtenir des valeurs fausses si l'ensemble des intégrations et capteurs n'ont pas été chargés.
 
 > [!NOTE]
-> 📌 **Note :**
 > Utilisez l'attribut `in_startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
 
 ### Précisions sur les délais d'actualisation des données
@@ -128,7 +130,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 - **Capteur backup :** ce capteur et ses attributs sont actualisés après l'exécution d'une sauvegarde.
 - **Tous les autres capteurs :** tous les autres capteurs et leurs attributs sont actualisés puis suivant le fréquence définie dans les paramètres (par défaut 3 min).
 
-> 📌 **Note :**
+> [!NOTE]
 > L'ensemble des capteurs et leurs attributs sont actualisés au démarrage de l'intégration, lors de l'utilisation du bouton `Forcer l'actualisation` ou après la modification de paramètres de l'intégration.
 
 ### Précisions sur certains capteurs et attributs
