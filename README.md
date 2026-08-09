@@ -96,7 +96,9 @@ All entities are attached to the **Home Assistant** Device:
 
 > [!NOTE]
 > Each sensor contains list attributes detailing the exact items detected.
+> 
 > Use **Settings** > **Tools** > **States** to explore all attributes.
+> 
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
 
 ### Binary Sensors (`binary_sensor.*`)
