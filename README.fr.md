@@ -153,7 +153,7 @@ alias: "Alerte : Problème Système Détecté"
 description: "Envoie une notification mobile si un élément tombe en erreur"
 trigger:
   - platform: state
-    entity_id: binary_sensor.ha_monitoring_status
+    entity_id: binary_sensor.monitoring_global_status
     to: "on"
 condition: []
 action:
@@ -162,9 +162,9 @@ action:
       title: "⚠️ HA Monitoring - Alerte Système"
       message: >
         Problème détecté sur votre système :
-        - Add-ons en erreur : {{ states('sensor.monitoring_addons') }}
-        - Intégrations : {{ states('sensor.monitoring_integrations') }}
-        - Automations : {{ states('sensor.monitoring_automations') }}
+        - Add-ons en erreur : {{ states('sensor.monitoring_applications_in_error') }}
+        - Intégrations : {{ states('sensor.monitoring_integrations_in_error') }}
+        - Automations : {{ states('sensor.monitoring_automations_in_error') }}
         - Entités indisponibles : {{ states('sensor.monitoring_unavailable_entities') }}
 mode: single
 ```
@@ -205,16 +205,16 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_addons') | int > 0 %}
+  {% if states('sensor.monitoring_applications_in_error') | int > 0 %}
   **Add-ons en erreur :**
-  {% for item in state_attr('sensor.monitoring_addons', 'list') %}
+  {% for item in state_attr('sensor.monitoring_applications_in_error', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations') | int > 0 %}
+  {% if states('sensor.monitoring_integrations_in_error') | int > 0 %}
   **Intégrations en erreur :**
-  {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
+  {% for item in state_attr('sensor.monitoring_integrations_in_error', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
