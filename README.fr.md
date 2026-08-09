@@ -96,9 +96,9 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 
 > [!NOTE]
 > Chaque capteur contient des attributs de liste listant précisément les éléments détectés.
+>
 > Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
 > [![Ouvrir votre instance Home Assistant et affichier les outils.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
-
 
 ### Capteurs binaires (`binary_sensor.*`)
 
