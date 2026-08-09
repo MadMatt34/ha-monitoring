@@ -5,14 +5,16 @@
 
 ![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
 
-[🏴󠁧󠁢󠁥󠁮󠁧󠁿 README in ENGLISH 🏴󠁧󠁢󠁥󠁮󠁧󠁿](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
+[🇬🇧 README in ENGLISH 🇬🇧](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)🇫🇷
 
 **HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (add-ons, intégrations, automations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour, des réparations en attente et de l'état des sauvegardes.
-Cette intégration n'a pas vocation à corriger les erreurs, uniquement centraliser toutes ces informations souvent invisibles au premier abord. A vous de construire ensuite les automatisations qui vous conviennent.
+
+> [!IMPORTANT]
+> Cette intégration n'a pas vocation à corriger les erreurs, uniquement centraliser toutes ces informations souvent invisibles au premier abord. A vous de construire ensuite les automatisations qui vous conviennent.
 
 ---
 
-## 🚀 Fonctionnalités principales
+## ⚡ Fonctionnalités principales
 
 - **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche dynamiquement la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
 - **Informations système :** Indique les versions et date/heure des démarrages de HAOS et de HA, les quantités des différents éléments, taille de base et paramètres du recorder.
@@ -30,7 +32,7 @@ Cette intégration n'a pas vocation à corriger les erreurs, uniquement centrali
 
 ## 🧩 Installation
 
-### Option 1 : Installation via HACS (recommandée)
+### Option 1 : Installation via HACS, dépôt personnalisé (recommandée)
 
 1. Ouvrir **HACS**  
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
@@ -59,7 +61,7 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ---
 
-## 🛠️ Modification des paramètres
+## ⚙️ Modification des paramètres
 
 Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
 
@@ -75,7 +77,7 @@ Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
 
 ---
 
-## 📊 Entités fournies
+## 📡 Entités fournies
 
 Toutes les entités sont rattachées au Device **Home Assistant** :
 
@@ -92,9 +94,10 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 | `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
 | `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs. |
 
-> 📌 **Note :** Chaque capteur contient des attributs de liste listant précisément les éléments détectés.
+> 📌 **Note :**
+> Chaque capteur contient des attributs de liste listant précisément les éléments détectés.
 
-### Capteurs binaires (`binary_sensor`)
+### Capteurs binaires (`binary_sensor.*`)
 
 | Entité | Device Class | Nom | Description |
 | :--- | :--- | :--- | :--- |
@@ -109,13 +112,15 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 
 ---
 
-## Précisions complémentaires
+## 💡 Précisions complémentaires
 
 ### Précisions sur la période de grâce au démarrage
 
 Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la période de grâce configurée dans les paramètres (par défaut 2 min). Cela évite d'obtenir des valeurs fausses si l'ensemble des intégrations et capteurs n'ont pas été chargés.
 
-> 📌 **Note :** Utilisez l'attribut `in_startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
+> [!NOTE]
+> 📌 **Note :**
+> Utilisez l'attribut `in_startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
 
 ### Précisions sur les délais d'actualisation des données
 
@@ -123,20 +128,21 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 - **Capteur backup :** ce capteur et ses attributs sont actualisés après l'exécution d'une sauvegarde.
 - **Tous les autres capteurs :** tous les autres capteurs et leurs attributs sont actualisés puis suivant le fréquence définie dans les paramètres (par défaut 3 min).
 
-> 📌 **Note :** l'ensemble des capteurs et leurs attributs sont actualisés au démarrage de l'intégration, lors de l'utilisation du bouton `Forcer l'actualisation` ou après la modification de paramètres de l'intégration.
+> 📌 **Note :**
+> L'ensemble des capteurs et leurs attributs sont actualisés au démarrage de l'intégration, lors de l'utilisation du bouton `Forcer l'actualisation` ou après la modification de paramètres de l'intégration.
 
-### Précisions sur les capteurs et attributs
+### Précisions sur certains capteurs et attributs
 
-- automations et scripts : préciser qu'on ne remonte pas si c'est antérieur à un reboot
-- applications : uniquement si démarrage auto + watchdog
-- informations systems en attributs du statut global
-    (comptage intégrations configurées via UI, impossible pour celles conf en yaml)
-    (comptage appareils n'inclus pas les désactivés)
-    (comptage devices n'inclus pas les désactivés ni scripts/automations)
+- **Capteurs Automatisations et Scripts :** le scan n'est réalisé que sur les traces en mémoire. Les erreurs antérieures à un démarrage ne sont donc pas identifiées.
+- **Capteur Applications :** Le scan ne prend en compte que les applications configurées avec les paramètres suivants activés `Lancer au démarrage` et `Chien de garde`.
+- **Attributs Informations système du capteur Statut Global :**
+  - Nombre d'intégrations  : comptabilise les intégrations visibles dans l'interface utilisateur, à l'exeption de celles configurées en yaml (impossible).
+  - Nombre d'appareils : les appareils désactivés ne sont pas comptabilisés.
+  - Nombre d'entités : les entités désactivées ne sont pas comptabilisées, et les entités pour les scripts et automatisations non plus.
 
 ---
 
-## 💡 Exemples d'automatisations & Dashboard
+## 🤖 Exemples d'automatisations & Dashboard
 
 ### Exemple 1 : Notification en cas de problème système
 
@@ -234,6 +240,6 @@ content: >
 
 ---
 
-## Note
+## *Note*
 
-Je ne suis pas un développeur, je me suis aidé de l'IA pour produire cette intégration. N'hésitez pas à contribuer.
+*Je ne suis pas un développeur, je me suis aidé de l'IA pour produire cette intégration. N'hésitez pas à contribuer.*
