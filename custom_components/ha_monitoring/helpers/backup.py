@@ -130,6 +130,7 @@ def _find_scalar_field(
 
     return None
 
+
 def _get_backup_size_bytes(b_obj: Any) -> int | None:
     """Extrait la taille en octets du fichier de sauvegarde sans aditionner les copies d'agents."""
     # 1. Tenter d'abord de lire la taille globale du fichier de backup
@@ -164,6 +165,7 @@ def _get_backup_size_bytes(b_obj: Any) -> int | None:
             return max(agent_sizes)
 
     return None
+
 
 async def async_get_backup_info(
     hass: HomeAssistant, last_failure_reason: str | None = None

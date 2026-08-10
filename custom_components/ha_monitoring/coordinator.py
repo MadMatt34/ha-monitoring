@@ -142,6 +142,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
                 # Temp : Laisser quelques secondes à HA Core pour finaliser l'écriture et rafraîchir son registre
                 import asyncio
+
                 await asyncio.sleep(TEMPO_BACKUP_EVENT)
 
                 # Détection d'un échec

@@ -106,7 +106,7 @@ LOCALIZED_LAST_SEEN_SUFFIX: dict[str, str] = {
 }
 
 # Délai de temporisation après un événement "backup"
-TEMPO_BACKUP_EVENT = 5 # in seconds
+TEMPO_BACKUP_EVENT = 5  # in seconds
 
 # Attributs
 ATTR_STARTUP_DELAY = "startup_delay"
