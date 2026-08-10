@@ -130,35 +130,40 @@ def _find_scalar_field(
 
     return None
 
-
 def _get_backup_size_bytes(b_obj: Any) -> int | None:
-    """Extrait la taille en octets depuis l'attribut agents ou les champs de premier niveau."""
-    agents = getattr(b_obj, "agents", None)
-    if isinstance(agents, dict) and agents:
-        total = 0
-        found = False
-        for agent in agents.values():
-            sz = getattr(agent, "size", None)
-            if sz is None and isinstance(agent, dict):
-                sz = agent.get("size")
-            if sz is not None:
-                try:
-                    total += int(sz)
-                    found = True
-                except (ValueError, TypeError):
-                    pass
-        if found and total > 0:
-            return total
-
+    """Extrait la taille en octets du fichier de sauvegarde sans aditionner les copies d'agents."""
+    # 1. Tenter d'abord de lire la taille globale du fichier de backup
     b_dict = _to_dict(b_obj)
     sz = _find_scalar_field(b_dict, ("size", "bytes", "total_size", "file_size"))
     if sz is not None:
         try:
-            return int(sz)
+            val = int(sz)
+            if val > 0:
+                return val
         except (ValueError, TypeError):
             pass
-    return None
 
+    # 2. Sinon, inspecter les agents.
+    # Chaque agent (Local, Cloud, Samba...) possède une COPIE du fichier.
+    # On prend la taille maximale rapportée par un agent au lieu de les additionner.
+    agents = getattr(b_obj, "agents", None)
+    if isinstance(agents, dict) and agents:
+        agent_sizes = []
+        for agent in agents.values():
+            a_sz = getattr(agent, "size", None)
+            if a_sz is None and isinstance(agent, dict):
+                a_sz = agent.get("size")
+            if a_sz is not None:
+                try:
+                    val = int(a_sz)
+                    if val > 0:
+                        agent_sizes.append(val)
+                except (ValueError, TypeError):
+                    pass
+        if agent_sizes:
+            return max(agent_sizes)
+
+    return None
 
 async def async_get_backup_info(
     hass: HomeAssistant, last_failure_reason: str | None = None
