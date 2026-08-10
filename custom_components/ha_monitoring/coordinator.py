@@ -167,7 +167,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._cached_backup_info = await async_get_backup_info(
                     self.hass, self._last_backup_failure_reason
                 )
-                
+
                 # Notification immédiate de tous les capteurs
                 self.async_update_listeners()
 
