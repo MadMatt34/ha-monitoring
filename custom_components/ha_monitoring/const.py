@@ -105,6 +105,9 @@ LOCALIZED_LAST_SEEN_SUFFIX: dict[str, str] = {
     "de": "letztes_gesehen",
 }
 
+# Délai de temporisation après un événement "backup"
+TEMPO_BACKUP_EVENT = 5 # in seconds
+
 # Attributs
 ATTR_STARTUP_DELAY = "startup_delay"
 ATTR_DATE_LAST_RUN = "date_last_run"

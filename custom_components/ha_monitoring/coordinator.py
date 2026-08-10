@@ -36,6 +36,7 @@ from .const import (
     DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
     LOCALIZED_LAST_SEEN_SUFFIX,
+    TEMPO_BACKUP_EVENT,
 )
 from .helpers.backup import async_get_backup_info
 from .helpers.system import (
@@ -121,7 +122,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 data = event.data or {}
                 event_type = event.event_type.lower()
 
-                # Extraction robuste (gestion des dictionnaires plats ET imbriqués sous 'event')
+                # Extraction robuste (dictionnaires plats ET imbriqués sous 'event')
                 event_sub = data.get("event")
                 sub_type = ""
                 sub_state = ""
@@ -139,7 +140,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if status in ("in_progress", "start", "started") or sub_type == "start":
                     return
 
-                # Détection d'un échec (dans l'événement, le statut ou la présence d'une erreur)
+                # Temp : Laisser quelques secondes à HA Core pour finaliser l'écriture et rafraîchir son registre
+                import asyncio
+                await asyncio.sleep(TEMPO_BACKUP_EVENT)
+
+                # Détection d'un échec
                 is_failed = (
                     "failed" in event_type
                     or status == "failed"
@@ -158,11 +163,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 else:
                     self._last_backup_failure_reason = None
 
-                # Re-lecture ponctuelle des sauvegardes auprès de Home Assistant
+                # Re-lecture des sauvegardes auprès de Home Assistant
                 self._cached_backup_info = await async_get_backup_info(
                     self.hass, self._last_backup_failure_reason
                 )
-                # Notification immédiate de tous les capteurs dépendants du Coordinator
+                
+                # Notification immédiate de tous les capteurs
                 self.async_update_listeners()
 
             except Exception as err:
