@@ -1,7 +1,6 @@
 """Capteurs HA Monitoring alimentés par le Coordinator central."""
 
 from collections.abc import Callable
-import logging
 from typing import Any, override
 
 from homeassistant.components.sensor import SensorEntity
@@ -52,8 +51,6 @@ from .types import (
     MonitoringUpdateData,
 )
 
-_LOGGER = logging.getLogger(__name__)
-
 type SensorData = (
     MonitoringAddonData
     | MonitoringIntegrationData
@@ -63,6 +60,7 @@ type SensorData = (
     | MonitoringUnavailableData
     | MonitoringOfflineData
 )
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -155,11 +153,11 @@ class HAMonitoringGenericSensor[T: SensorData](
         self,
         coordinator: HAMonitoringCoordinator,
         entry: ConfigEntry,
-        data_getter: Callable[[HAMonitoringData], SensorDataT],
+        data_getter: Callable[[HAMonitoringData], T],
         unique_key: str,
         translation_key: str,
         icon: str,
-        extra_attributes: Callable[[SensorDataT], dict[str, object]]
+        extra_attributes: Callable[[T], dict[str, object]]
         | None = None,
     ) -> None:
         """Initialise le capteur générique."""
@@ -176,7 +174,7 @@ class HAMonitoringGenericSensor[T: SensorData](
         self.entity_id = f"sensor.{unique_key}"
 
     @property
-    def _sensor_data(self) -> SensorDataT:
+    def _sensor_data(self) -> T:
         """Retourne le bloc de données typé du capteur."""
         return self._data_getter(self.coordinator.data)
 
