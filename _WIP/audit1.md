@@ -439,6 +439,7 @@ alors que le Coordinator retourne :
 
 ```python
 "system_stats"
+
 "monitoring_backup"
 "monitoring_updates"
 "monitoring_unavailable"
@@ -1120,7 +1121,7 @@ Je maintiens cette recommandation du premier audit.
 Le Coordinator pourrait utiliser :
 
 ```python
-always_update=False
+always_update = False
 ```
 
 si le type de données est correctement défini et comparable.
@@ -1180,7 +1181,7 @@ obj.__dict__
 ```
 
 ```python
-to_dict/as_dict/dataclasses.asdict
+to_dict / as_dict / dataclasses.asdict
 ```
 
 pour découvrir dynamiquement la structure d'un objet HA.
@@ -1442,7 +1443,7 @@ entry.runtime_data
 Une fois le typage stabilisé :
 
 ```python
-always_update=False
+always_update = False
 ```
 
 puis revue des allocations/copies inutiles.

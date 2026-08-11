@@ -28,9 +28,7 @@ async def async_setup_entry(
     """Configure la plateforme button à partir d'une ConfigEntry."""
     coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
 
-    async_add_entities(
-        [HAMonitoringForceScanButton(coordinator, entry)]
-    )
+    async_add_entities([HAMonitoringForceScanButton(coordinator, entry)])
 
 
 class HAMonitoringForceScanButton(
@@ -58,9 +56,6 @@ class HAMonitoringForceScanButton(
     @override
     async def async_press(self) -> None:
         """Force un rafraîchissement complet du Coordinator."""
-        _LOGGER.info(
-            "[HA Monitoring] Bouton appuyé : "
-            "rafraîchissement forcé en cours."
-        )
+        _LOGGER.info("[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours.")
 
         await self.coordinator.async_force_refresh()

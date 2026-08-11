@@ -157,8 +157,7 @@ class HAMonitoringGenericSensor[T: SensorData](
         unique_key: str,
         translation_key: str,
         icon: str,
-        extra_attributes: Callable[[T], dict[str, object]]
-        | None = None,
+        extra_attributes: Callable[[T], dict[str, object]] | None = None,
     ) -> None:
         """Initialise le capteur générique."""
         super().__init__(coordinator)
@@ -200,8 +199,6 @@ class HAMonitoringGenericSensor[T: SensorData](
         }
 
         if self._extra_attributes_getter is not None:
-            attributes.update(
-                self._extra_attributes_getter(data)
-            )
+            attributes.update(self._extra_attributes_getter(data))
 
         return attributes

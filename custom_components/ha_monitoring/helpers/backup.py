@@ -21,11 +21,7 @@ def _format_dt(raw_dt: datetime | str | None) -> str | None:
     if raw_dt is None:
         return None
 
-    dt_obj = (
-        raw_dt
-        if isinstance(raw_dt, datetime)
-        else dt_util.parse_datetime(raw_dt)
-    )
+    dt_obj = raw_dt if isinstance(raw_dt, datetime) else dt_util.parse_datetime(raw_dt)
 
     if dt_obj is None:
         return None
@@ -93,9 +89,7 @@ def _update_from_latest_backup(
     """Met à jour les informations avec le dernier backup connu."""
     info["date_last_run"] = _format_dt(backup.date)
     info["date_last_success"] = _format_dt(backup.date)
-    info["size"] = _format_size_bytes(
-        _get_backup_size_bytes(backup)
-    )
+    info["size"] = _format_size_bytes(_get_backup_size_bytes(backup))
 
 
 async def async_get_backup_info(
@@ -113,16 +107,12 @@ async def async_get_backup_info(
         backups, agent_errors = await manager.async_get_backups()
 
     except HomeAssistantError:
-        _LOGGER.debug(
-            "[HA Monitoring Backup] Le composant Backup "
-            "n'est pas disponible."
-        )
+        _LOGGER.debug("[HA Monitoring Backup] Le composant Backup n'est pas disponible.")
         return info
 
     except Exception as err:
         _LOGGER.warning(
-            "[HA Monitoring Backup] Impossible de récupérer "
-            "les sauvegardes : %s",
+            "[HA Monitoring Backup] Impossible de récupérer les sauvegardes : %s",
             err,
         )
         return info
@@ -136,9 +126,7 @@ async def async_get_backup_info(
     if latest_backup is not None:
         info["date_last_run"] = _format_dt(latest_backup.date)
         info["date_last_success"] = _format_dt(latest_backup.date)
-        info["size"] = _format_size_bytes(
-            _get_backup_size_bytes(latest_backup)
-        )
+        info["size"] = _format_size_bytes(_get_backup_size_bytes(latest_backup))
 
     # ------------------------------------------------------------------
     # Événement de création de backup
@@ -154,31 +142,23 @@ async def async_get_backup_info(
                     latest_backup,
                 )
             elif backup_event_time is not None:
-                info["date_last_run"] = _format_dt(
-                    backup_event_time
-                )
+                info["date_last_run"] = _format_dt(backup_event_time)
                 info["date_last_success"] = info["date_last_run"]
 
         elif backup_event.state is CreateBackupState.FAILED:
             info["is_ok"] = False
 
             if backup_event_time is not None:
-                info["date_last_run"] = _format_dt(
-                    backup_event_time
-                )
+                info["date_last_run"] = _format_dt(backup_event_time)
 
             # Le reason est conservé tel que fourni par l'API Backup.
             # Aucune traduction ou interprétation locale n'est effectuée.
-            info["failure"] = (
-                backup_event.reason or "backup_failed"
-            )
+            info["failure"] = backup_event.reason or "backup_failed"
 
             # Un backup échoué ne doit pas écraser les informations
             # du dernier backup réussi.
             if previous_info is not None:
-                info["date_last_success"] = previous_info.get(
-                    "date_last_success"
-                )
+                info["date_last_success"] = previous_info.get("date_last_success")
                 info["size"] = previous_info.get("size")
 
                 info["failed_agents"] = previous_info.get(
@@ -206,8 +186,7 @@ async def async_get_backup_info(
     # Erreurs des agents
     # ------------------------------------------------------------------
     info["current_agent_errors"] = {
-        agent_id: str(error)
-        for agent_id, error in agent_errors.items()
+        agent_id: str(error) for agent_id, error in agent_errors.items()
     }
 
     # ------------------------------------------------------------------
@@ -215,28 +194,20 @@ async def async_get_backup_info(
     # ------------------------------------------------------------------
     if latest_backup is not None:
         if latest_backup.failed_agent_ids:
-            info["failed_agents"] = list(
-                latest_backup.failed_agent_ids
-            )
+            info["failed_agents"] = list(latest_backup.failed_agent_ids)
 
         if latest_backup.failed_addons:
             info["failed_addons"] = [
-                addon.name or addon.slug
-                for addon in latest_backup.failed_addons
+                addon.name or addon.slug for addon in latest_backup.failed_addons
             ]
 
         if latest_backup.failed_folders:
-            info["failed_folders"] = [
-                folder.value
-                for folder in latest_backup.failed_folders
-            ]
+            info["failed_folders"] = [folder.value for folder in latest_backup.failed_folders]
 
     # ------------------------------------------------------------------
     # Prochaine sauvegarde automatique
     # ------------------------------------------------------------------
-    info["date_next_schedule"] = _format_dt(
-        manager.config.data.schedule.next_automatic_backup
-    )
+    info["date_next_schedule"] = _format_dt(manager.config.data.schedule.next_automatic_backup)
 
     _LOGGER.debug(
         "[HA Monitoring Backup] "

@@ -109,21 +109,11 @@ class GlobalStatusBinarySensor(
                 "custom_integrations_count",
                 0,
             ),
-            "recorder_commit_interval": stats.get(
-                "recorder_commit_interval"
-            ),
-            "recorder_keep_days": stats.get(
-                "recorder_keep_days"
-            ),
-            "recorder_auto_purge": stats.get(
-                "recorder_auto_purge"
-            ),
-            "recorder_auto_repack": stats.get(
-                "recorder_auto_repack"
-            ),
-            "database_size_mb": stats.get(
-                "database_size_mb"
-            ),
+            "recorder_commit_interval": stats.get("recorder_commit_interval"),
+            "recorder_keep_days": stats.get("recorder_keep_days"),
+            "recorder_auto_purge": stats.get("recorder_auto_purge"),
+            "recorder_auto_repack": stats.get("recorder_auto_repack"),
+            "database_size_mb": stats.get("database_size_mb"),
         }
 
 
