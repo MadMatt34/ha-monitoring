@@ -12,6 +12,7 @@
 - publication hacs
 - readme :
   - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur
+  - corriger attribut startup_delay
 
 ## TOTEST
 

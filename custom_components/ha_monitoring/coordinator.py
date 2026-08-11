@@ -6,7 +6,8 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CoreState, HomeAssistant, callback
+from homeassistant.const import EVENT_HOMEASSISTANT_STARTED
+from homeassistant.core import CoreState, Event, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -64,11 +65,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass.data[DOMAIN]["ha_start_time"] = dt_util.utcnow()
 
         self._ha_start_time = hass.data[DOMAIN]["ha_start_time"]
-        self._skip_startup_delay = False
         self._cached_backup_info: dict[str, Any] | None = None
         self._last_backup_event: Any | None = None
         self._last_backup_event_time: Any = None
         self._backup_event_unsub: Callable[[], None] | None = None
+        self._unsub_ha_started: Callable[[], None] | None = None
         self._startup_timer_unsub: Callable[[], None] | None = None
 
         self._last_trace_check_time: Any = None
@@ -78,6 +79,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Cache et temporisation pour System Info
         self._last_system_stats_check_time: Any = None
         self._cached_system_stats: dict[str, Any] | None = None
+
+        # --- Initialisation de la temporisation de démarrage ---
+        self._setup_startup_delay(hass, entry)
 
         scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
@@ -93,6 +97,61 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if backup_manager and hasattr(backup_manager, "async_subscribe_events"):
             self._backup_event_unsub = backup_manager.async_subscribe_events(
                 self._async_backup_event
+            )
+
+    def _setup_startup_delay(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+        """Gère la temporisation post-démarrage (EVENT_HOMEASSISTANT_STARTED + CONF_STARTUP_DELAY)."""
+        startup_delay = float(entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
+        now = dt_util.utcnow()
+        elapsed = (now - self._ha_start_time).total_seconds()
+
+        # Cas 1 : HA tourne déjà et le délai post-boot est déjà dépassé (ex: rechargement à chaud)
+        if hass.state == CoreState.running and elapsed >= startup_delay:
+            self._is_ready = True
+            return
+
+        self._is_ready = False
+
+        @callback
+        def _start_delay_timer(delay: float) -> None:
+            if delay <= 0:
+                self._is_ready = True
+                _LOGGER.info("[HA Monitoring] Démarrage terminé. Lancement immédiat du premier scan.")
+                self.entry.async_create_background_task(
+                    self.hass, self.async_refresh(), "ha_monitoring_startup_refresh"
+                )
+                return
+
+            _LOGGER.info(
+                "[HA Monitoring] Home Assistant est démarré. Attente de %ss (CONF_STARTUP_DELAY) avant premier scan...",
+                delay,
+            )
+
+            @callback
+            def _on_timer_complete(_: Any) -> None:
+                self._startup_timer_unsub = None
+                self._is_ready = True
+                _LOGGER.info("[HA Monitoring] Fin du temporisateur de démarrage. Lancement du premier scan.")
+                self.entry.async_create_background_task(
+                    self.hass, self.async_refresh(), "ha_monitoring_startup_refresh"
+                )
+
+            self._startup_timer_unsub = async_call_later(self.hass, delay, _on_timer_complete)
+
+        # Cas 2 : HA tourne déjà mais le délai post-boot n'est pas encore écoulé
+        if hass.state == CoreState.running:
+            remaining = max(0.1, startup_delay - elapsed)
+            _start_delay_timer(remaining)
+        # Cas 3 : HA est en cours de boot -> On attend la fin du boot puis on arme le temporisateur
+        else:
+            @callback
+            def _on_ha_started(_: Event) -> None:
+                self._unsub_ha_started = None
+                delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
+                _start_delay_timer(delay)
+
+            self._unsub_ha_started = hass.bus.async_listen_once(
+                EVENT_HOMEASSISTANT_STARTED, _on_ha_started
             )
 
     @callback
@@ -122,7 +181,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return tuple(suffixes)
 
     async def async_on_backup_completed(self) -> None:
-        """Appelé par backup.py lorsqu'une sauvegarde vient de se terminer."""
+        """Appelé lorsqu'une sauvegarde vient de se terminer."""
         _LOGGER.debug(
             "[HA Monitoring] Invalidation du cache de sauvegarde suite au signal post-backup."
         )
@@ -130,10 +189,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self.async_refresh()
 
     async def async_shutdown(self) -> None:
-        """Détruit proprement les temporisateurs lors de la fermeture."""
+        """Détruit proprement les écouteurs et temporisateurs lors de la fermeture."""
+        if self._unsub_ha_started:
+            self._unsub_ha_started()
+            self._unsub_ha_started = None
+
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
+
         if self._backup_event_unsub:
             self._backup_event_unsub()
             self._backup_event_unsub = None
@@ -142,11 +206,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_force_refresh(self) -> None:
         """Force un rafraîchissement immédiat de toutes les données sans temporisation."""
+        if self._unsub_ha_started:
+            self._unsub_ha_started()
+            self._unsub_ha_started = None
+
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
 
-        self._skip_startup_delay = True
+        self._is_ready = True
         self._last_trace_check_time = None
         self._cached_backup_info = None
         self._last_system_stats_check_time = None
@@ -156,13 +224,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Récupère l'ensemble des métriques d'état du système."""
-        startup_delay = float(self.entry.options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY))
         now = dt_util.utcnow()
-        elapsed_seconds = (now - self._ha_start_time).total_seconds()
-
-        in_startup_phase = not self._skip_startup_delay and (
-            self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
-        )
 
         fetched_info = None
         if self._cached_backup_info is None:
@@ -173,7 +235,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 backup_event_time=self._last_backup_event_time,
                 previous_info=self._cached_backup_info,
             )
-            if not in_startup_phase or fetched_info.get("date_last_run") is not None:
+            if self._is_ready or fetched_info.get("date_last_run") is not None:
                 self._cached_backup_info = fetched_info
             self._last_backup_event = None
             self._last_backup_event_time = None
@@ -184,31 +246,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or self._empty_results(False)["monitoring_backup"]
         )
 
-        if in_startup_phase:
-            remaining = max(0.0, startup_delay - elapsed_seconds)
-
-            if not self._startup_timer_unsub and remaining > 0:
-
-                @callback
-                def _force_refresh_after_delay(_: Any) -> None:
-                    self._startup_timer_unsub = None
-                    self.entry.async_create_background_task(
-                        self.hass,
-                        self.async_refresh(),
-                        "ha_monitoring_startup_refresh",
-                    )
-
-                self._startup_timer_unsub = async_call_later(
-                    self.hass, remaining + 0.1, _force_refresh_after_delay
-                )
-
+        # Tant que la temporisation post-boot (CONF_STARTUP_DELAY) n'est pas écoulée : zéro scan
+        if not self._is_ready:
             results = self._empty_results(in_startup_delay=True)
             results["monitoring_backup"] = current_backup_info
             return results
-
-        if self._startup_timer_unsub:
-            self._startup_timer_unsub()
-            self._startup_timer_unsub = None
 
         options = self.entry.options
         offline_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
