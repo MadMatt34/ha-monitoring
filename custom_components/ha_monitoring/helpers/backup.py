@@ -21,10 +21,11 @@ def _format_dt(raw_dt: datetime | str | None) -> str | None:
     if raw_dt is None:
         return None
 
-    if isinstance(raw_dt, datetime):
-        dt_obj = raw_dt
-    else:
-        dt_obj = dt_util.parse_datetime(raw_dt)
+    dt_obj = (
+        raw_dt
+        if isinstance(raw_dt, datetime)
+        else dt_util.parse_datetime(raw_dt)
+    )
 
     if dt_obj is None:
         return None

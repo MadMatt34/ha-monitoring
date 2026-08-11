@@ -2,7 +2,7 @@
 
 from collections.abc import Callable
 import logging
-from typing import Any, Generic, TypeAlias, TypeVar, override
+from typing import Any, override
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -54,7 +54,7 @@ from .types import (
 
 _LOGGER = logging.getLogger(__name__)
 
-SensorData: TypeAlias = (
+type SensorData = (
     MonitoringAddonData
     | MonitoringIntegrationData
     | MonitoringTraceData
@@ -63,9 +63,6 @@ SensorData: TypeAlias = (
     | MonitoringUnavailableData
     | MonitoringOfflineData
 )
-
-SensorDataT = TypeVar("SensorDataT", bound=SensorData)
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -148,10 +145,9 @@ async def async_setup_entry(
     async_add_entities(sensors)
 
 
-class HAMonitoringGenericSensor(
+class HAMonitoringGenericSensor[T: SensorData](
     HAMonitoringBaseEntity,
     SensorEntity,
-    Generic[SensorDataT],
 ):
     """Capteur générique lié au DataUpdateCoordinator."""
 
