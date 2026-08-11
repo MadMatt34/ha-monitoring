@@ -12,6 +12,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
 
 from .const import (
+    ATTR_STARTUP_DELAY,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_AUTOMATIONS,
     CONF_EXCLUDED_INTEGRATIONS,
@@ -271,7 +272,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         repairs = await async_get_pending_repairs(self.hass, options.get(CONF_EXCLUDED_REPAIRS, []))
 
         return {
-            "in_startup_delay": False,
+            ATTR_STARTUP_DELAY: False,
             "system_stats": self._cached_system_stats,
             "monitoring_addons": {"items": addons, "total": len(addons)},
             "monitoring_integrations": {
@@ -304,7 +305,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Génère la structure par défaut pendant le délai de démarrage."""
         timeout = self.entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
         return {
-            "in_startup_delay": in_startup_delay,
+            ATTR_STARTUP_DELAY: in_startup_delay,
             "system_stats": {},
             "monitoring_addons": {"items": [], "total": 0},
             "monitoring_integrations": {"items": [], "total": 0},

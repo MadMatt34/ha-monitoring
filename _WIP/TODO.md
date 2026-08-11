@@ -2,6 +2,7 @@
 
 ## TODO
 
+- implémenter les tests unitaires
 - tout texte d'interface dans translations
 - dans le code commentaires et logger en anglais
 - capteur batteries faibles seuil 15% modifiable
@@ -40,6 +41,7 @@
 
 ## TOCORRECT
 
+- Pour le dépot https://github.com/MadMatt34/ha-monitoring/tree/main. Individuellement et globalement : vérifier la structure, la cohérence, la qualité ; s'assurer de l'optimisation, de l'utilisation des API natives HA, de ne pas avoir de mécanisme empirique
 - pour repairs_pending, nom plus convivial (translation system)
 - pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire

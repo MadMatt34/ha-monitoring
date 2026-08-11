@@ -17,6 +17,7 @@ from .const import (
     ATTR_DATE_NEXT_SCHEDULE,
     ATTR_FAILURE,
     ATTR_SIZE,
+    ATTR_STARTUP_DELAY,
     DOMAIN,
     ICON_BACKUP,
     ICON_STATUS,
@@ -63,7 +64,7 @@ class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Renvoie True s'il y a un problème détecté sur le système."""
-        if not self.coordinator.data or self.coordinator.data.get("in_startup_delay", False):
+        if not self.coordinator.data or self.coordinator.data.get(ATTR_STARTUP_DELAY, False):
             return False
 
         keys_to_check = (
@@ -88,7 +89,7 @@ class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
         stats = self.coordinator.data.get("system_stats", {})
 
         return {
-            "in_startup_delay": self.coordinator.data.get("in_startup_delay", False),
+            ATTR_STARTUP_DELAY: self.coordinator.data.get(ATTR_STARTUP_DELAY, False),
             # HA / OS : versions et démarrages
             "ha_version": stats.get("ha_version"),
             "ha_last_boot": stats.get("ha_last_boot"),
@@ -125,7 +126,7 @@ class BackupStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
     @property
     def is_on(self) -> bool:
         """Renvoie True si la dernière sauvegarde a réussi, False sinon."""
-        if not self.coordinator.data or self.coordinator.data.get("in_startup_delay", False):
+        if not self.coordinator.data or self.coordinator.data.get(ATTR_STARTUP_DELAY, False):
             return True
 
         backup_info = self.coordinator.data.get("monitoring_backup", {})

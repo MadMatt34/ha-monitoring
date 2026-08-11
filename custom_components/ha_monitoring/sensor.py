@@ -175,7 +175,7 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         attrs: dict[str, Any] = {
             self._list_attr: items,
             self._total_attr: total,
-            ATTR_STARTUP_DELAY: self.coordinator.data.get("in_startup_delay", False),
+            ATTR_STARTUP_DELAY: self.coordinator.data.get(ATTR_STARTUP_DELAY, False),
         }
 
         for key in self._extra_keys:
