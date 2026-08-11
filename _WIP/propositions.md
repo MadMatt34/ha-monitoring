@@ -48,6 +48,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
 ---
 
+<<<<<<< HEAD
+=======
 ## 3. Ajout du composant natif de Diagnostics (`diagnostics.py`)
 
 Les intégrations modernes de Home Assistant proposent un bouton **"Télécharger les diagnostics"** directement depuis l'interface (**Paramètres $\rightarrow$ Intégrations $\rightarrow$ HA Monitoring**).
@@ -90,6 +92,7 @@ async def async_get_config_entry_diagnostics(
 
 ---
 
+>>>>>>> d020727b7063df789d663e11e0c0c6ea4f2981ca
 ## 4. Isolation du scan d'états synchrone (`async_add_executor_job`)
 
 La fonction `scan_all_states()` dans ton helper effectue un balayage de tous les états du registre (`hass.states.async_all()`) et exécute des calculs de dates/suffixes. Si le système contient plus de 1000 entités, cette opération synchrone peut bloquer brièvement la boucles d'événements de HA.
