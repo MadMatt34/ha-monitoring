@@ -49,6 +49,7 @@ from .helpers.trace import get_trace_errors
 
 _LOGGER = logging.getLogger(__name__)
 
+
 class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator principal gérant les collectes et la temporisation."""
 
@@ -121,7 +122,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_on_backup_completed(self) -> None:
         """Appelé par backup.py lorsqu'une sauvegarde vient de se terminer."""
-        _LOGGER.debug("[HA Monitoring] Invalidation du cache de sauvegarde suite au signal post-backup.")
+        _LOGGER.debug(
+            "[HA Monitoring] Invalidation du cache de sauvegarde suite au signal post-backup."
+        )
         self._cached_backup_info = None
         await self.async_refresh()
 

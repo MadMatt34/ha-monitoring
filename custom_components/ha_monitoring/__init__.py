@@ -23,9 +23,11 @@ PLATFORMS: list[Platform | str] = [
     Platform.BUTTON,
 ]
 
+
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     """Configuration initiale via YAML (non supportée / legacy)."""
     return True
+
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Initialisation de l'intégration depuis une ConfigEntry UI."""
@@ -47,17 +49,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Déchargement des plateformes et nettoyage des ressources."""
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        coordinator: HAMonitoringCoordinator | None = hass.data[DOMAIN].pop(
-            entry.entry_id, None
-        )
+        coordinator: HAMonitoringCoordinator | None = hass.data[DOMAIN].pop(entry.entry_id, None)
         if coordinator:
             await coordinator.async_shutdown()
 
     return unload_ok
+
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Recharge l'intégration lors d'un changement de configuration."""

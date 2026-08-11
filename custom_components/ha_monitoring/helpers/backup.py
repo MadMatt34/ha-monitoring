@@ -13,6 +13,7 @@ from homeassistant.util import dt as dt_util
 
 _LOGGER = logging.getLogger(__name__)
 
+
 def _to_dict(obj: Any) -> dict[str, Any]:
     """Convertit de manière ultra-robuste tout objet/dataclass HA en dictionnaire."""
     if obj is None:
@@ -34,6 +35,7 @@ def _to_dict(obj: Any) -> dict[str, Any]:
         res = vars(obj)
 
     return {k: v for k, v in res.items() if not str(k).startswith("_")}
+
 
 def _format_dt(raw_dt: Any) -> str | None:
     """Formate une date au format ISO 8601 en heure locale avec fuseau horaire."""
@@ -63,6 +65,7 @@ def _format_dt(raw_dt: Any) -> str | None:
 
     return s_val if len(s_val) >= 8 else None
 
+
 def _format_size_bytes(bytes_val: Any) -> str | None:
     """Formate la taille en octets vers une chaîne lisible (KB, MB, GB)."""
     if bytes_val is None:
@@ -80,6 +83,7 @@ def _format_size_bytes(bytes_val: Any) -> str | None:
     except (ValueError, TypeError):
         pass
     return str(bytes_val)
+
 
 def _extract_backup_objects(raw: Any) -> list[Any]:
     """Aplatit et extrait la liste de tous les objets ManagerBackup indifféremment de la structure."""
@@ -99,6 +103,7 @@ def _extract_backup_objects(raw: Any) -> list[Any]:
         return res
 
     return [raw]
+
 
 def _find_scalar_field(
     data: dict[str, Any], candidate_keys: tuple[str, ...], depth: int = 0
@@ -136,6 +141,7 @@ def _find_collection_field(data: dict[str, Any], candidate_keys: tuple[str, ...]
             return list(value)
     return []
 
+
 def _get_backup_size_bytes(b_obj: Any) -> int | None:
     """Extrait la taille en octets du fichier de sauvegarde sans additionner les copies d'agents."""
     b_dict = _to_dict(b_obj)
@@ -167,6 +173,7 @@ def _get_backup_size_bytes(b_obj: Any) -> int | None:
 
     return None
 
+
 def _get_failure_translation_key(reason: str) -> str:
     """Construit la clé de traduction d'une cause de sauvegarde."""
     return reason
@@ -183,9 +190,7 @@ def _load_failure_translation(hass: HomeAssistant, reason: str) -> str | None:
     try:
         data = json.loads(translations_path.read_text(encoding="utf-8"))
         return (
-            data.get("exceptions", {})
-            .get(_get_failure_translation_key(reason), {})
-            .get("message")
+            data.get("exceptions", {}).get(_get_failure_translation_key(reason), {}).get("message")
         )
     except (OSError, json.JSONDecodeError, AttributeError):
         _LOGGER.warning(
@@ -239,7 +244,11 @@ async def async_get_backup_info(
                     "[HA Monitoring Backup] Appel async_get_backups() échoué: %s", err_m
                 )
 
-        backup_list = list(backups_raw.values()) if isinstance(backups_raw, dict) else _extract_backup_objects(backups_raw)
+        backup_list = (
+            list(backups_raw.values())
+            if isinstance(backups_raw, dict)
+            else _extract_backup_objects(backups_raw)
+        )
 
         valid_backups: list[tuple[str, Any, int | None, Any]] = []
         for backup_obj in backup_list:
@@ -285,7 +294,8 @@ async def async_get_backup_info(
             if latest_backup:
                 latest_backup_obj = next(
                     (
-                        obj for obj in backup_list
+                        obj
+                        for obj in backup_list
                         if _find_scalar_field(_to_dict(obj), ("backup_id", "slug", "id"))
                         == latest_backup[3]
                     ),
@@ -351,7 +361,13 @@ async def async_get_backup_info(
             else:
                 next_schedule = _find_scalar_field(
                     _to_dict(config_raw),
-                    ("next_automatic_backup", "next_backup", "next_run", "next_scheduled", "next_execution"),
+                    (
+                        "next_automatic_backup",
+                        "next_backup",
+                        "next_run",
+                        "next_scheduled",
+                        "next_execution",
+                    ),
                 )
                 if next_schedule:
                     info["date_next_schedule"] = _format_dt(next_schedule)
@@ -365,12 +381,18 @@ async def async_get_backup_info(
         info["failure"] = previous_info["failure"]
         info["is_ok"] = previous_info.get("is_ok", False)
         info["date_last_run"] = previous_info.get("date_last_run") or info["date_last_run"]
-        info["date_last_success"] = previous_info.get("date_last_success") or info["date_last_success"]
+        info["date_last_success"] = (
+            previous_info.get("date_last_success") or info["date_last_success"]
+        )
 
     _LOGGER.debug(
         "[HA Monitoring Backup] RÉSULTAT API NATIVE -> last_run=%s | last_success=%s | "
         "next_schedule=%s | size=%s | is_ok=%s | failure=%s",
-        info["date_last_run"], info["date_last_success"], info["date_next_schedule"],
-        info["size"], info["is_ok"], info["failure"],
+        info["date_last_run"],
+        info["date_last_success"],
+        info["date_next_schedule"],
+        info["size"],
+        info["is_ok"],
+        info["failure"],
     )
     return info
