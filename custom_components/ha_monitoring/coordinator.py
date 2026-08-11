@@ -6,7 +6,7 @@ import logging
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import CoreState, Event, HomeAssistant, callback
+from homeassistant.core import CoreState, HomeAssistant, callback
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
 from homeassistant.util import dt as dt_util
@@ -36,7 +36,6 @@ from .const import (
     DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
     LOCALIZED_LAST_SEEN_SUFFIX,
-    TEMPO_BACKUP_EVENT,
 )
 from .helpers.backup import async_get_backup_info
 from .helpers.system import (
@@ -48,8 +47,7 @@ from .helpers.system import (
 from .helpers.system_info import async_get_system_stats
 from .helpers.trace import get_trace_errors
 
-_LOGGER = logging.getLogger("custom_components.ha_monitoring.coordinator")
-
+_LOGGER = logging.getLogger(__name__)
 
 class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator principal gérant les collectes et la temporisation."""
@@ -66,9 +64,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._ha_start_time = hass.data[DOMAIN]["ha_start_time"]
         self._skip_startup_delay = False
         self._cached_backup_info: dict[str, Any] | None = None
-        self._last_backup_failure_reason: str | None = None
+        self._last_backup_event: Any | None = None
+        self._last_backup_event_time: Any = None
+        self._backup_event_unsub: Callable[[], None] | None = None
         self._startup_timer_unsub: Callable[[], None] | None = None
-        self._bus_listeners_unsub: list[Callable[[], None]] = []
 
         self._last_trace_check_time: Any = None
         self._cached_automations: list[dict[str, Any]] = []
@@ -87,7 +86,28 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             update_interval=timedelta(seconds=int(scan_interval)),
         )
 
-        self._setup_backup_listeners()
+        backup_data = hass.data.get("backup")
+        backup_manager = getattr(backup_data, "manager", backup_data)
+        if backup_manager and hasattr(backup_manager, "async_subscribe_events"):
+            self._backup_event_unsub = backup_manager.async_subscribe_events(
+                self._async_backup_event
+            )
+
+    @callback
+    def _async_backup_event(self, event: Any) -> None:
+        """Observe le résultat final des sauvegardes gérées par HA."""
+        state = getattr(event, "state", None)
+        state_value = getattr(state, "value", state)
+        if state_value not in ("completed", "failed"):
+            return
+        self._last_backup_event = event
+        self._last_backup_event_time = dt_util.now()
+        self._cached_backup_info = None
+        self.entry.async_create_background_task(
+            self.hass,
+            self.async_refresh(),
+            "ha_monitoring_backup_refresh",
+        )
 
     def _get_last_seen_suffixes(self) -> tuple[str, ...]:
         """Retourne la liste des suffixes/attributs 'last_seen' applicables."""
@@ -99,105 +119,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return tuple(suffixes)
 
-    def _unsubscribe_backup_listeners(self) -> None:
-        """Désabonne proprement tous les écouteurs du bus d'événements."""
-        while self._bus_listeners_unsub:
-            unsub = self._bus_listeners_unsub.pop()
-            try:
-                unsub()
-            except Exception as err:
-                _LOGGER.debug("[HA Monitoring] Erreur désabonnement : %s", err)
-
-    def _setup_backup_listeners(self) -> None:
-        """Écoute les événements du bus déclenchés lors de la fin d'une sauvegarde (succès ou échec)."""
-        self._unsubscribe_backup_listeners()
-
-        async def _async_on_backup_event(event: Event) -> None:
-            _LOGGER.debug(
-                "[HA Monitoring] Événement de sauvegarde détecté : %s (data: %s)",
-                event.event_type,
-                event.data,
-            )
-            try:
-                data = event.data or {}
-                event_type = event.event_type.lower()
-
-                # Extraction robuste (dictionnaires plats ET imbriqués sous 'event')
-                event_sub = data.get("event")
-                sub_type = ""
-                sub_state = ""
-                if isinstance(event_sub, dict):
-                    sub_type = str(event_sub.get("type", "")).lower()
-                    sub_state = str(event_sub.get("state") or event_sub.get("status") or "").lower()
-                elif isinstance(event_sub, str):
-                    sub_type = event_sub.lower()
-
-                status = str(
-                    data.get("status") or data.get("state") or sub_state or sub_type
-                ).lower()
-
-                # On ignore uniquement si la sauvegarde vient de DÉBARRER ou est EN COURS
-                if status in ("in_progress", "start", "started") or sub_type == "start":
-                    return
-
-                # Temp : Laisser quelques secondes à HA Core pour finaliser l'écriture et rafraîchir son registre
-                import asyncio
-
-                await asyncio.sleep(TEMPO_BACKUP_EVENT)
-
-                # Détection d'un échec
-                is_failed = (
-                    "failed" in event_type
-                    or status == "failed"
-                    or "error" in data
-                    or (isinstance(event_sub, dict) and "error" in event_sub)
-                )
-
-                if is_failed:
-                    err_source = event_sub if isinstance(event_sub, dict) else data
-                    self._last_backup_failure_reason = (
-                        err_source.get("reason")
-                        or err_source.get("error")
-                        or err_source.get("message")
-                        or "Échec de sauvegarde signalé par événement"
-                    )
-                else:
-                    self._last_backup_failure_reason = None
-
-                # Re-lecture des sauvegardes auprès de Home Assistant
-                self._cached_backup_info = await async_get_backup_info(
-                    self.hass, self._last_backup_failure_reason
-                )
-
-                # Notification immédiate de tous les capteurs
-                self.async_update_listeners()
-
-            except Exception as err:
-                _LOGGER.error("[HA Monitoring] Erreur traitement événement backup : %s", err)
-
-        backup_events = (
-            "backup_event",  # Événement officiel nativement émis par HA Backup
-            "backup_completed",
-            "backup_successful",
-            "backup_failed",
-            "backup_end",
-            "hassio_backup_completed",
-            "hassio_backup_failed",
-            "auto_backup_complete",
-            "auto_backup_failed",
-        )
-
-        for event_type in backup_events:
-            unsub = self.hass.bus.async_listen(event_type, _async_on_backup_event)
-            self._bus_listeners_unsub.append(unsub)
+    async def async_on_backup_completed(self) -> None:
+        """Appelé par backup.py lorsqu'une sauvegarde vient de se terminer."""
+        _LOGGER.debug("[HA Monitoring] Invalidation du cache de sauvegarde suite au signal post-backup.")
+        self._cached_backup_info = None
+        await self.async_refresh()
 
     async def async_shutdown(self) -> None:
-        """Détruit proprement les écouteurs et temporisateurs lors de la fermeture."""
+        """Détruit proprement les temporisateurs lors de la fermeture."""
         if self._startup_timer_unsub:
             self._startup_timer_unsub()
             self._startup_timer_unsub = None
+        if self._backup_event_unsub:
+            self._backup_event_unsub()
+            self._backup_event_unsub = None
 
-        self._unsubscribe_backup_listeners()
         await super().async_shutdown()
 
     async def async_force_refresh(self) -> None:
@@ -224,12 +160,19 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self.hass.state != CoreState.running or elapsed_seconds < (startup_delay - 0.5)
         )
 
-        # Récupération uniquement si le cache est vide (premier démarrage)
         fetched_info = None
         if self._cached_backup_info is None:
-            fetched_info = await async_get_backup_info(self.hass, self._last_backup_failure_reason)
+            _LOGGER.debug("[HA Monitoring] Interrogation des infos de sauvegarde...")
+            fetched_info = await async_get_backup_info(
+                self.hass,
+                backup_event=self._last_backup_event,
+                backup_event_time=self._last_backup_event_time,
+                previous_info=self._cached_backup_info,
+            )
             if not in_startup_phase or fetched_info.get("date_last_run") is not None:
                 self._cached_backup_info = fetched_info
+            self._last_backup_event = None
+            self._last_backup_event_time = None
 
         current_backup_info = (
             self._cached_backup_info
@@ -303,7 +246,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             self._last_trace_check_time = now
 
-        # Collecte de System Info basée sur la durée configurée (en heures, convertie en secondes)
+        # Collecte de System Info
         system_info_scan_interval_hours = options.get(
             CONF_SYSTEM_INFO_SCAN_INTERVAL, DEFAULT_SYSTEM_INFO_SCAN_INTERVAL
         )

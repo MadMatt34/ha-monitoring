@@ -178,5 +178,10 @@
       "title": "État anormal ({state})",
       "description": "Un problème inattendu est survenu (état : {state})."
     }
+  },
+  "exceptions": {
+    "backup_manager_error": {
+      "message": "Une erreur est survenue lors de la gestion de la sauvegarde."
+    }
   }
 }

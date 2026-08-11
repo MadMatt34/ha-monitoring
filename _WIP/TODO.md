@@ -9,6 +9,8 @@
 - event pour notifier d'une nouvelle erreur + options (pour quels monitoring, et activé ou non pour compteur moins)
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
+- readme :
+  - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur
 
 ## TOTEST
 

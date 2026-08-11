@@ -178,5 +178,10 @@
       "title": "Abnormal status ({state})",
       "description": "An unexpected issue has occurred with state: {state}."
     }
-  }
+  },
+  "exceptions": {
+    "backup_manager_error": {
+      "message": "An error as occured during backup management."
+    }
+    }
 }
