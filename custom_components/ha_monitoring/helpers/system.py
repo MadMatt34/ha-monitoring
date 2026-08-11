@@ -87,9 +87,7 @@ def scan_all_states(
     excluded_offline_set = set(excluded_offline)
 
     excluded_unavailable_globs_normalized = [
-        pattern.lower().strip()
-        for pattern in (excluded_unavailable_globs or [])
-        if pattern
+        pattern.lower().strip() for pattern in (excluded_unavailable_globs or []) if pattern
     ]
 
     updates: list[UpdateEntityData] = []
@@ -108,8 +106,7 @@ def scan_all_states(
         text_lower = text.lower()
 
         return any(
-            fnmatch(text_lower, pattern)
-            for pattern in excluded_unavailable_globs_normalized
+            fnmatch(text_lower, pattern) for pattern in excluded_unavailable_globs_normalized
         )
 
     for state_obj in hass.states.async_all():
@@ -151,12 +148,10 @@ def scan_all_states(
                         "entity_id": entity_id,
                         "name": friendly_name,
                         "installed_version": (
-                            state_obj.attributes.get("installed_version")
-                            or "Inconnue"
+                            state_obj.attributes.get("installed_version") or "Inconnue"
                         ),
                         "latest_version": (
-                            state_obj.attributes.get("latest_version")
-                            or "Inconnue"
+                            state_obj.attributes.get("latest_version") or "Inconnue"
                         ),
                     }
                 )
@@ -170,8 +165,7 @@ def scan_all_states(
         device_id = entity_entry.device_id if entity_entry else None
 
         if (
-            device_id is not None
-            and device_id in excluded_offline_set
+            device_id is not None and device_id in excluded_offline_set
         ) or entity_id in excluded_offline_set:
             continue
 
@@ -185,10 +179,7 @@ def scan_all_states(
                 device_entry = device_registry.async_get(device_id)
 
                 if device_entry:
-                    device_name = (
-                        device_entry.name_by_user
-                        or device_entry.name
-                    )
+                    device_name = device_entry.name_by_user or device_entry.name
 
         display_name = device_name or friendly_name
 
@@ -314,54 +305,36 @@ async def async_get_failed_integrations(
         translation_key = entry.error_reason_translation_key
 
         if translation_key:
-            error_key = (
-                f"component.{entry.domain}.config.error."
-                f"{translation_key}"
-            )
-            abort_key = (
-                f"component.{entry.domain}.config.abort."
-                f"{translation_key}"
-            )
+            error_key = f"component.{entry.domain}.config.error.{translation_key}"
+            abort_key = f"component.{entry.domain}.config.abort.{translation_key}"
 
-            friendly_reason = (
-                config_translations.get(error_key)
-                or config_translations.get(abort_key)
+            friendly_reason = config_translations.get(error_key) or config_translations.get(
+                abort_key
             )
 
         if friendly_reason is not None:
-            placeholders = (
-                entry.error_reason_translation_placeholders or {}
-            )
+            placeholders = entry.error_reason_translation_placeholders or {}
 
             try:
-                friendly_reason = friendly_reason.format(
-                    **placeholders
-                )
+                friendly_reason = friendly_reason.format(**placeholders)
             except (KeyError, IndexError):
                 _LOGGER.debug(
-                    "Translation placeholders missing for "
-                    "%s config entry %s",
+                    "Translation placeholders missing for %s config entry %s",
                     entry.domain,
                     entry.entry_id,
                 )
 
         if friendly_reason is None:
             state_issue_key = {
-                ConfigEntryState.SETUP_RETRY: (
-                    f"component.{DOMAIN}.issues.setup_retry.title"
-                ),
-                ConfigEntryState.SETUP_ERROR: (
-                    f"component.{DOMAIN}.issues.setup_error.title"
-                ),
+                ConfigEntryState.SETUP_RETRY: (f"component.{DOMAIN}.issues.setup_retry.title"),
+                ConfigEntryState.SETUP_ERROR: (f"component.{DOMAIN}.issues.setup_error.title"),
                 ConfigEntryState.MIGRATION_ERROR: (
                     f"component.{DOMAIN}.issues.migration_error.title"
                 ),
             }.get(entry.state)
 
             if state_issue_key:
-                friendly_reason = issue_translations.get(
-                    state_issue_key
-                )
+                friendly_reason = issue_translations.get(state_issue_key)
 
         if friendly_reason is None:
             friendly_reason = entry.reason or entry.state.value
@@ -421,10 +394,7 @@ async def async_get_pending_repairs(
         friendly_name: str | None = None
 
         if issue.translation_key:
-            translation_id = (
-                f"component.{issue.domain}.issues."
-                f"{issue.translation_key}.title"
-            )
+            translation_id = f"component.{issue.domain}.issues.{issue.translation_key}.title"
 
             raw_title = translations.get(translation_id)
 
@@ -432,13 +402,10 @@ async def async_get_pending_repairs(
                 placeholders = issue.translation_placeholders or {}
 
                 try:
-                    friendly_name = raw_title.format(
-                        **placeholders
-                    )
+                    friendly_name = raw_title.format(**placeholders)
                 except (KeyError, IndexError):
                     _LOGGER.debug(
-                        "Translation placeholders missing for "
-                        "repair %s:%s",
+                        "Translation placeholders missing for repair %s:%s",
                         issue.domain,
                         issue.issue_id,
                     )
