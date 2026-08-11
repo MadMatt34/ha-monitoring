@@ -13,9 +13,11 @@
 - readme :
   - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur
   - corriger attribut startup_delay
+  - Addons en erreur uniquement watchdog == True + boot == "auto" + n'est pas started.
 
 ## TOTEST
 
+- Addons en erreur
 - tout suppr et réinstall
 - actualisation après backup
 - backup en erreur
