@@ -152,11 +152,16 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         self.entity_id = f"sensor.{unique_key}"
 
     @property
+    def coordinator_data(self) -> HAMonitoringData | None:
+        """Retourne les données typées du coordinateur."""
+        return self.coordinator.data
+
+    @property
     def native_value(self) -> int:
         """Retourne le nombre total d'éléments détectés."""
-        if not self.coordinator.data:
+        if not self.coordinator_data:
             return 0
-        data = self.coordinator.data.get(self._data_key)  # type: ignore[call-overload]
+        data = self.coordinator_data.get(self._data_key)  # type: ignore[call-overload]
         if isinstance(data, dict):
             return data.get("total", 0)
         return 0
@@ -164,21 +169,21 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
         """Retourne la liste détaillée et les métadonnées."""
-        if not self.coordinator.data:
+        if not self.coordinator_data:
             return {
                 self._list_attr: [],
                 self._total_attr: 0,
                 ATTR_STARTUP_DELAY: True,
             }
 
-        data = self.coordinator.data.get(self._data_key)  # type: ignore[call-overload]
+        data = self.coordinator_data.get(self._data_key)  # type: ignore[call-overload]
         items = data.get("items", []) if isinstance(data, dict) else []
         total = data.get("total", 0) if isinstance(data, dict) else 0
 
         attrs: dict[str, Any] = {
             self._list_attr: items,
             self._total_attr: total,
-            ATTR_STARTUP_DELAY: self.coordinator.data.get(ATTR_STARTUP_DELAY, False),
+            ATTR_STARTUP_DELAY: self.coordinator_data.get(ATTR_STARTUP_DELAY, False),  # type: ignore[call-overload]
         }
 
         if isinstance(data, dict):
