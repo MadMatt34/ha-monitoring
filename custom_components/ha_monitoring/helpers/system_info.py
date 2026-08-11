@@ -85,9 +85,8 @@ async def async_get_recorder_info(
         instance = get_instance(hass)
 
         if instance:
-            info["recorder_keep_days"] = (
-                getattr(instance, "keep_days", None)
-                or getattr(instance, "purge_keep_days", None)
+            info["recorder_keep_days"] = getattr(instance, "keep_days", None) or getattr(
+                instance, "purge_keep_days", None
             )
             info["recorder_auto_purge"] = getattr(
                 instance,
@@ -111,11 +110,7 @@ async def async_get_recorder_info(
 
                 if db_url and "sqlite" in db_url:
                     path_part = db_url.split(":///")[-1]
-                    db_path = (
-                        path_part
-                        if os.path.isabs(path_part)
-                        else hass.config.path(path_part)
-                    )
+                    db_path = path_part if os.path.isabs(path_part) else hass.config.path(path_part)
 
                 if not db_path or not os.path.exists(db_path):
                     db_path = hass.config.path("home-assistant_v2.db")
@@ -126,9 +121,7 @@ async def async_get_recorder_info(
 
                 return None
 
-            info["database_size_mb"] = await hass.async_add_executor_job(
-                _get_db_size
-            )
+            info["database_size_mb"] = await hass.async_add_executor_job(_get_db_size)
 
     except Exception as err:
         _LOGGER.debug(
@@ -154,45 +147,28 @@ async def async_get_system_stats(
             os_info = get_os_info(hass)
             os_version = os_info.get("version")
         except HassioNotReadyError:
-            _LOGGER.debug(
-                "[HA Monitoring] Informations Home Assistant OS "
-                "indisponibles."
-            )
+            _LOGGER.debug("[HA Monitoring] Informations Home Assistant OS indisponibles.")
 
         try:
             host_info = get_host_info(hass)
             boot_timestamp = host_info.get("boot_timestamp")
 
             if isinstance(boot_timestamp, int):
-                os_boot_dt = dt_util.utc_from_timestamp(
-                    boot_timestamp / 1_000_000
-                )
+                os_boot_dt = dt_util.utc_from_timestamp(boot_timestamp / 1_000_000)
         except HassioNotReadyError:
-            _LOGGER.debug(
-                "[HA Monitoring] Informations de l'hôte Supervisor "
-                "indisponibles."
-            )
+            _LOGGER.debug("[HA Monitoring] Informations de l'hôte Supervisor indisponibles.")
 
-    os_last_boot = (
-        format_date_local(os_boot_dt)
-        if os_boot_dt is not None
-        else "Inconnu"
-    )
+    os_last_boot = format_date_local(os_boot_dt) if os_boot_dt is not None else "Inconnu"
 
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
 
-    devices_count = sum(
-        1
-        for device in dev_reg.devices.values()
-        if device.disabled_by is None
-    )
+    devices_count = sum(1 for device in dev_reg.devices.values() if device.disabled_by is None)
 
     entities_count = sum(
         1
         for entry in ent_reg.entities.values()
-        if entry.disabled_by is None
-        and entry.domain not in ("script", "automation")
+        if entry.disabled_by is None and entry.domain not in ("script", "automation")
     )
 
     automations_count = len(hass.states.async_all("automation"))
@@ -208,9 +184,7 @@ async def async_get_system_stats(
         )
     ]
 
-    active_integration_domains = sorted(
-        {entry.domain for entry in active_entries}
-    )
+    active_integration_domains = sorted({entry.domain for entry in active_entries})
     integrations_count = len(active_integration_domains)
 
     _LOGGER.debug(
@@ -223,9 +197,7 @@ async def async_get_system_stats(
         custom_components = await async_get_custom_components(hass)
 
         active_custom_domains = sorted(
-            domain
-            for domain in custom_components
-            if domain in hass.config.components
+            domain for domain in custom_components if domain in hass.config.components
         )
         custom_integrations_count = len(active_custom_domains)
 
