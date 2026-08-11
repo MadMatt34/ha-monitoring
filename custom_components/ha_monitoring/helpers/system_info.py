@@ -117,9 +117,7 @@ async def async_get_recorder_info(hass: HomeAssistant) -> RecorderData:
     return info
 
 
-async def async_get_system_stats(
-    hass: HomeAssistant, ha_start_time: datetime
-) -> SystemStatsData:
+async def async_get_system_stats(hass: HomeAssistant, ha_start_time: datetime) -> SystemStatsData:
     """Collecte l'ensemble des métriques d'inventaire et du système."""
     ha_last_boot = format_date_local(ha_start_time)
 
