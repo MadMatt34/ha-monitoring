@@ -42,7 +42,7 @@
 
 ## TOCORRECT
 
-- Pour le dépot https://github.com/MadMatt34/ha-monitoring/tree/main. Individuellement et globalement : vérifier la structure, la cohérence, la qualité ; s'assurer de l'optimisation, de l'utilisation des API natives HA, de ne pas avoir de mécanisme empirique
+- Backup failed : texte convivial
 - pour repairs_pending, nom plus convivial (translation system)
 - pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
@@ -82,3 +82,11 @@
 
 - debug : custom_components.ha_monitoring: debug
 - system ligne 256 : pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.
+
+### PROMPT AUDIT
+
+Faire un audit approfondi pour le dépot https://github.com/MadMatt34/ha-monitoring/tree/main. Individuellement et globalement : vérifier la structure, la cohérence, la qualité ; s'assurer de l'optimisation, de l'utilisation des API natives HA, de ne pas avoir de mécanisme empirique et on conserve un fallback que s'il correspond lui-même à une API HA identifiée.
+A noter, pour offline_devices on s'appuie sur des entités ayant un suffixe last_seen ou la version localisée ; donc je pense qu'il est inutile de remettre en question ce mécanisme.
+Attention, il est important de conserver le délai d'attente au démarrage de HA, et de conserver les fréquences de scan différentes pour backup, system_info, et tous les autres capteurs.
+Je veux conserver un nommage des ID des entités défini de façon statique. Le cache de DeviceInfo n'a pas besoin d'être dynamique. Un typage strict est nécessaire. On verra plus tard pour implémenter les tests unitaires.
+On part du principe qu'on ne tient compte que d'une base de données sous SQLLite.

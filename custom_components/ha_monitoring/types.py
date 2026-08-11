@@ -3,7 +3,7 @@
 from typing import TypedDict
 
 
-class MonitoringBackupData(TypedDict, total=False):
+class MonitoringBackupData(TypedDict):
     """Structure des données pour l'état des sauvegardes."""
 
     is_ok: bool
@@ -19,7 +19,7 @@ class MonitoringBackupData(TypedDict, total=False):
 
 
 class RecorderData(TypedDict, total=False):
-    """Structure des métriques associées au Recorder/Base de données."""
+    """Structure des métriques associées au Recorder/base de données."""
 
     recorder_keep_days: int | None
     recorder_auto_purge: bool | None
@@ -98,16 +98,73 @@ class TraceErrorData(TypedDict):
     error: str
 
 
-class HAMonitoringData(TypedDict, total=False):
-    """Structure globale des données consolidées par le DataUpdateCoordinator."""
+class MonitoringCountData(TypedDict):
+    """Structure commune aux métriques comptabilisées."""
 
-    system: SystemStatsData
-    backup: MonitoringBackupData
-    updates: list[UpdateEntityData]
-    unavailable: list[UnavailableEntityData]
-    offline: list[OfflineDeviceData]
-    failed_integrations: list[FailedIntegrationData]
-    failed_addons: list[str]
-    repairs: list[PendingRepairData]
-    automation_errors: list[TraceErrorData]
-    script_errors: list[TraceErrorData]
+    items: list[str]
+
+
+class MonitoringAddonData(TypedDict):
+    """Structure des add-ons en erreur."""
+
+    items: list[str]
+    total: int
+
+
+class MonitoringIntegrationData(TypedDict):
+    """Structure des intégrations en erreur."""
+
+    items: list[FailedIntegrationData]
+    total: int
+
+
+class MonitoringTraceData(TypedDict):
+    """Structure des erreurs de traces."""
+
+    items: list[TraceErrorData]
+    total: int
+
+
+class MonitoringUpdateData(TypedDict):
+    """Structure des mises à jour disponibles."""
+
+    items: list[UpdateEntityData]
+    total: int
+
+
+class MonitoringRepairData(TypedDict):
+    """Structure des réparations en attente."""
+
+    items: list[PendingRepairData]
+    total: int
+
+
+class MonitoringUnavailableData(TypedDict):
+    """Structure des entités indisponibles."""
+
+    items: list[UnavailableEntityData]
+    total: int
+
+
+class MonitoringOfflineData(TypedDict):
+    """Structure des appareils hors-ligne."""
+
+    items: list[OfflineDeviceData]
+    total: int
+    timeout: float
+
+
+class HAMonitoringData(TypedDict):
+    """Données consolidées produites par le DataUpdateCoordinator."""
+
+    startup_delay: bool
+    system_stats: SystemStatsData
+    monitoring_addons: MonitoringAddonData
+    monitoring_integrations: MonitoringIntegrationData
+    monitoring_automations: MonitoringTraceData
+    monitoring_scripts: MonitoringTraceData
+    monitoring_updates: MonitoringUpdateData
+    monitoring_repairs: MonitoringRepairData
+    monitoring_unavailable: MonitoringUnavailableData
+    monitoring_offline: MonitoringOfflineData
+    monitoring_backup: MonitoringBackupData
