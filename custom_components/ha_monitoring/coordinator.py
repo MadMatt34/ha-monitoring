@@ -116,7 +116,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         def _start_delay_timer(delay: float) -> None:
             if delay <= 0:
                 self._is_ready = True
-                _LOGGER.info("[HA Monitoring] Démarrage terminé. Lancement immédiat du premier scan.")
+                _LOGGER.info(
+                    "[HA Monitoring] Démarrage terminé. Lancement immédiat du premier scan."
+                )
                 self.entry.async_create_background_task(
                     self.hass, self.async_refresh(), "ha_monitoring_startup_refresh"
                 )
@@ -131,7 +133,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             def _on_timer_complete(_: Any) -> None:
                 self._startup_timer_unsub = None
                 self._is_ready = True
-                _LOGGER.info("[HA Monitoring] Fin du temporisateur de démarrage. Lancement du premier scan.")
+                _LOGGER.info(
+                    "[HA Monitoring] Fin du temporisateur de démarrage. Lancement du premier scan."
+                )
                 self.entry.async_create_background_task(
                     self.hass, self.async_refresh(), "ha_monitoring_startup_refresh"
                 )
@@ -144,6 +148,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             _start_delay_timer(remaining)
         # Cas 3 : HA est en cours de boot -> On attend la fin du boot puis on arme le temporisateur
         else:
+
             @callback
             def _on_ha_started(_: Event) -> None:
                 self._unsub_ha_started = None

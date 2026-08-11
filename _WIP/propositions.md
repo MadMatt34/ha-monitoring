@@ -13,6 +13,7 @@ Définir une structure de données typée pour le résultat du Coordinator :
 ```python
 from typing import TypedDict
 
+
 class MonitoringBackupData(TypedDict):
     is_ok: bool
     date_last_run: str | None
@@ -20,6 +21,7 @@ class MonitoringBackupData(TypedDict):
     date_next_schedule: str | None
     size: str | None
     failure: str | None
+
 
 class HAMonitoringData(TypedDict):
     in_startup_delay: bool
@@ -33,7 +35,6 @@ class HAMonitoringData(TypedDict):
     monitoring_unavailable: dict[str, Any]
     monitoring_offline: dict[str, Any]
     monitoring_backup: MonitoringBackupData
-
 ```
 
 Puis déclarer ton coordinator ainsi :
@@ -72,6 +73,7 @@ from .coordinator import HAMonitoringCoordinator
 # Champs à masquer automatiquement (sécurité)
 TO_REDACT = {"password", "token", "api_key", "secret"}
 
+
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
@@ -82,7 +84,6 @@ async def async_get_config_entry_diagnostics(
         "entry_options": async_redact_data(dict(entry.options), TO_REDACT),
         "coordinator_data": async_redact_data(coordinator.data or {}, TO_REDACT),
     }
-
 ```
 
 > **Bénéfice :** En cas de bug ou d'issue GitHub, les utilisateurs peuvent télécharger un export JSON anonymisé de l'état de l'intégration.
@@ -104,7 +105,6 @@ updates, unavailable, offline = await self.hass.async_add_executor_job(
     options.get(CONF_EXCLUDED_UPDATES, []),
     # ... autres arguments
 )
-
 ```
 
 > **Bénéfice :** Zéro warning `Blocking call in event loop` dans les logs, fluidité parfaite de l'IHM pendant les scans.
@@ -130,12 +130,12 @@ from homeassistant.core import HomeAssistant, callback
 
 from .const import DOMAIN
 
+
 @callback
-def async_register(
-    hass: HomeAssistant, register: SystemHealthRegistration
-) -> None:
+def async_register(hass: HomeAssistant, register: SystemHealthRegistration) -> None:
     """Enregistre les informations de santé de l'intégration."""
     register.async_register_info(system_health_info)
+
 
 async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
     """Retourne les métriques clés de l'intégration."""
@@ -144,7 +144,6 @@ async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
         "coordinators_actifs": coordinator_count,
         "api_backup_accessible": "backup" in hass.data,
     }
-
 ```
 
 ---
