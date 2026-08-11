@@ -2,6 +2,7 @@
 
 from collections.abc import Callable
 from datetime import timedelta
+from functools import partial
 import logging
 from typing import Any
 
@@ -268,16 +269,19 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         last_seen_suffixes = self._get_last_seen_suffixes()
 
-        # Balayage complet des états
-        updates, unavailable, offline = scan_all_states(
-            self.hass,
-            excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
-            excluded_unavailable_entities=excluded_unavailable_entities,
-            excluded_unavailable_domains=excluded_unavailable_domains,
-            excluded_unavailable_globs=excluded_unavailable_globs,
-            excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
-            timeout_hours=offline_timeout,
-            last_seen_suffixes=last_seen_suffixes,
+        # Balayage complet des états (isolé dans un thread pour éviter de bloquer la boucle d'événements)
+        updates, unavailable, offline = await self.hass.async_add_executor_job(
+            partial(
+                scan_all_states,
+                self.hass,
+                excluded_updates=options.get(CONF_EXCLUDED_UPDATES, []),
+                excluded_unavailable_entities=excluded_unavailable_entities,
+                excluded_unavailable_domains=excluded_unavailable_domains,
+                excluded_unavailable_globs=excluded_unavailable_globs,
+                excluded_offline=options.get(CONF_EXCLUDED_OFFLINE, []),
+                timeout_hours=offline_timeout,
+                last_seen_suffixes=last_seen_suffixes,
+            )
         )
 
         traces_scan_interval_min = options.get(
@@ -289,11 +293,18 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_trace_check_time is None
             or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
         ):
-            self._cached_automations = get_trace_errors(
-                self.hass, "automation", options.get(CONF_EXCLUDED_AUTOMATIONS, [])
+            # Analyse des traces d'erreurs déportée également dans l'executor
+            self._cached_automations = await self.hass.async_add_executor_job(
+                get_trace_errors,
+                self.hass,
+                "automation",
+                options.get(CONF_EXCLUDED_AUTOMATIONS, []),
             )
-            self._cached_scripts = get_trace_errors(
-                self.hass, "script", options.get(CONF_EXCLUDED_SCRIPTS, [])
+            self._cached_scripts = await self.hass.async_add_executor_job(
+                get_trace_errors,
+                self.hass,
+                "script",
+                options.get(CONF_EXCLUDED_SCRIPTS, []),
             )
             self._last_trace_check_time = now
 
@@ -309,14 +320,18 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or (now - self._last_system_stats_check_time).total_seconds()
             >= system_info_scan_interval_sec
         ):
-            self._cached_system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
+            self._cached_system_stats = await async_get_system_stats(
+                self.hass, self._ha_start_time
+            )
             self._last_system_stats_check_time = now
 
         addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
         )
-        repairs = await async_get_pending_repairs(self.hass, options.get(CONF_EXCLUDED_REPAIRS, []))
+        repairs = await async_get_pending_repairs(
+            self.hass, options.get(CONF_EXCLUDED_REPAIRS, [])
+        )
 
         return {
             ATTR_STARTUP_DELAY: False,

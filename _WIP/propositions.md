@@ -1,7 +1,3 @@
-Absolument ! En conservant ce même principe — **utiliser les APIs natives de Home Assistant Core plutôt que de recréer du code ad hoc ou du polling lourd** —, voici 5 axes d'amélioration clés pour ton intégration `ha_monitoring`.
-
----
-
 ## 1. Typage fort des données avec `TypedDict` ou `@dataclass`
 
 Actuellement, ton `DataUpdateCoordinator` retourne un dictionnaire générique `dict[str, Any]`. Les clés sont manipulées sous forme de chaînes de caractères (`"monitoring_backup"`, `"monitoring_updates"`...), ce qui expose le code aux fautes de frappe et manque d'autocomplétion.
@@ -48,51 +44,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
 ---
 
-<<<<<<< HEAD
-=======
-## 3. Ajout du composant natif de Diagnostics (`diagnostics.py`)
-
-Les intégrations modernes de Home Assistant proposent un bouton **"Télécharger les diagnostics"** directement depuis l'interface (**Paramètres $\rightarrow$ Intégrations $\rightarrow$ HA Monitoring**).
-
-### 🛠️ L'amélioration
-
-Créer un fichier `diagnostics.py` à la racine de l'intégration :
-
-```python
-"""Support des diagnostics natifs pour HA Monitoring."""
-
-from __future__ import annotations
-
-from typing import Any
-
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
-from homeassistant.components.diagnostics import async_redact_data
-
-from .const import DOMAIN
-from .coordinator import HAMonitoringCoordinator
-
-# Champs à masquer automatiquement (sécurité)
-TO_REDACT = {"password", "token", "api_key", "secret"}
-
-
-async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> dict[str, Any]:
-    """Retourne les données de diagnostic pour l'assistance / debug."""
-    coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
-
-    return {
-        "entry_options": async_redact_data(dict(entry.options), TO_REDACT),
-        "coordinator_data": async_redact_data(coordinator.data or {}, TO_REDACT),
-    }
-```
-
-> **Bénéfice :** En cas de bug ou d'issue GitHub, les utilisateurs peuvent télécharger un export JSON anonymisé de l'état de l'intégration.
-
----
-
->>>>>>> d020727b7063df789d663e11e0c0c6ea4f2981ca
 ## 4. Isolation du scan d'états synchrone (`async_add_executor_job`)
 
 La fonction `scan_all_states()` dans ton helper effectue un balayage de tous les états du registre (`hass.states.async_all()`) et exécute des calculs de dates/suffixes. Si le système contient plus de 1000 entités, cette opération synchrone peut bloquer brièvement la boucles d'événements de HA.
@@ -148,7 +99,3 @@ async def system_health_info(hass: HomeAssistant) -> dict[str, Any]:
         "api_backup_accessible": "backup" in hass.data,
     }
 ```
-
----
-
-Parmi ces 5 propositions, y en a-t-il une que tu souhaiterais mettre en place en priorité sur ton projet ?
