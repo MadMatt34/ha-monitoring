@@ -11,6 +11,8 @@ from typing import Any
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
+from ..types import MonitoringBackupData
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -206,10 +208,10 @@ async def async_get_backup_info(
     *,
     backup_event: Any | None = None,
     backup_event_time: datetime | None = None,
-    previous_info: dict[str, Any] | None = None,
-) -> dict[str, Any]:
+    previous_info: MonitoringBackupData | None = None,
+) -> MonitoringBackupData:
     """Récupère les informations de sauvegarde via les APIs natives de Home Assistant."""
-    info: dict[str, Any] = {
+    info: MonitoringBackupData = {
         "is_ok": True,
         "date_last_run": None,
         "date_last_success": None,
@@ -376,8 +378,6 @@ async def async_get_backup_info(
         _LOGGER.warning("[HA Monitoring Backup] Erreur HA Core Manager: %s", err)
 
     if backup_event is None and previous_info and previous_info.get("failure"):
-        # Un rafraîchissement périodique ne doit pas effacer immédiatement le
-        # résultat final de la dernière tentative observée.
         info["failure"] = previous_info["failure"]
         info["is_ok"] = previous_info.get("is_ok", False)
         info["date_last_run"] = previous_info.get("date_last_run") or info["date_last_run"]

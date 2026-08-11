@@ -3,7 +3,6 @@
 from datetime import datetime, timedelta
 import logging
 import os
-from typing import Any
 
 from homeassistant.components.recorder import get_instance
 from homeassistant.config_entries import ConfigEntryState
@@ -13,6 +12,7 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.loader import async_get_custom_components
 from homeassistant.util import dt as dt_util
 
+from ..types import RecorderData, SystemStatsData
 from .utils import format_date_local, is_hassio_running
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.system_info")
@@ -74,9 +74,9 @@ def _get_host_boot_from_uptime() -> datetime | None:
     return None
 
 
-async def async_get_recorder_info(hass: HomeAssistant) -> dict[str, Any]:
+async def async_get_recorder_info(hass: HomeAssistant) -> RecorderData:
     """Récupère la configuration du Recorder et la taille de la base de données."""
-    info = {
+    info: RecorderData = {
         "recorder_keep_days": None,
         "recorder_auto_purge": None,
         "recorder_auto_repack": None,
@@ -117,7 +117,9 @@ async def async_get_recorder_info(hass: HomeAssistant) -> dict[str, Any]:
     return info
 
 
-async def async_get_system_stats(hass: HomeAssistant, ha_start_time: datetime) -> dict[str, Any]:
+async def async_get_system_stats(
+    hass: HomeAssistant, ha_start_time: datetime
+) -> SystemStatsData:
     """Collecte l'ensemble des métriques d'inventaire et du système."""
     ha_last_boot = format_date_local(ha_start_time)
 

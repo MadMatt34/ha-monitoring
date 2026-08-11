@@ -9,6 +9,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import entity_registry as er
 from homeassistant.util import dt as dt_util
 
+from ..types import TraceErrorData
 from .utils import format_date_local
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.trace")
@@ -249,7 +250,7 @@ def _flatten_trace_data(trace_data: Any) -> list[tuple[str, str, Any]]:
 
 def get_trace_errors(
     hass: HomeAssistant, domain: str, excluded: list[str] | None = None
-) -> list[dict[str, Any]]:
+) -> list[TraceErrorData]:
     """Récupère les erreurs dans les traces d'automatisations ou de scripts."""
     excluded_list = excluded or []
     trace_data = hass.data.get("trace", {})
@@ -268,7 +269,7 @@ def get_trace_errors(
             domain_traces.setdefault(item_id, []).append(trace_obj)
 
     ent_reg = er.async_get(hass)
-    failed = []
+    failed: list[TraceErrorData] = []
 
     for item_id, trace_list in domain_traces.items():
 

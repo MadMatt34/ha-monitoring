@@ -74,8 +74,8 @@ class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
             "monitoring_scripts",
         )
         for key in keys_to_check:
-            data = self.coordinator.data.get(key, {})
-            if data.get("total", 0) > 0:
+            item_data = self.coordinator.data.get(key)
+            if item_data and item_data.get("total", 0) > 0:
                 return True
 
         return False
@@ -86,7 +86,7 @@ class GlobalStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
         if not self.coordinator.data:
             return {}
 
-        stats = self.coordinator.data.get("system_stats", {})
+        stats = self.coordinator.data.get("system_stats") or {}
 
         return {
             ATTR_STARTUP_DELAY: self.coordinator.data.get(ATTR_STARTUP_DELAY, False),
@@ -129,8 +129,8 @@ class BackupStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
         if not self.coordinator.data or self.coordinator.data.get(ATTR_STARTUP_DELAY, False):
             return True
 
-        backup_info = self.coordinator.data.get("monitoring_backup", {})
-        return backup_info.get("is_ok", True)
+        backup_info = self.coordinator.data.get("monitoring_backup")
+        return backup_info.get("is_ok", True) if backup_info else True
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -144,7 +144,7 @@ class BackupStatusBinarySensor(HAMonitoringBaseEntity, BinarySensorEntity):
                 ATTR_FAILURE: None,
             }
 
-        backup_info = self.coordinator.data.get("monitoring_backup", {})
+        backup_info = self.coordinator.data.get("monitoring_backup") or {}
         return {
             ATTR_DATE_LAST_RUN: backup_info.get("date_last_run"),
             ATTR_DATE_LAST_SUCCESS: backup_info.get("date_last_success"),

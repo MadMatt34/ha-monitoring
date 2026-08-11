@@ -49,11 +49,12 @@ from .helpers.system import (
 )
 from .helpers.system_info import async_get_system_stats
 from .helpers.trace import get_trace_errors
+from .types import HAMonitoringData, MonitoringBackupData
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
+class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     """Coordinator principal gérant les collectes et la temporisation."""
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -66,7 +67,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             hass.data[DOMAIN]["ha_start_time"] = dt_util.utcnow()
 
         self._ha_start_time = hass.data[DOMAIN]["ha_start_time"]
-        self._cached_backup_info: dict[str, Any] | None = None
+        self._cached_backup_info: MonitoringBackupData | None = None
         self._last_backup_event: Any | None = None
         self._last_backup_event_time: Any = None
         self._backup_event_unsub: Callable[[], None] | None = None
@@ -228,7 +229,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         await self.async_refresh()
 
-    async def _async_update_data(self) -> dict[str, Any]:
+    async def _async_update_data(self) -> HAMonitoringData:
         """Récupère l'ensemble des métriques d'état du système."""
         now = dt_util.utcnow()
 
@@ -246,7 +247,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_backup_event = None
             self._last_backup_event_time = None
 
-        current_backup_info = (
+        current_backup_info: MonitoringBackupData = (
             self._cached_backup_info
             or fetched_info
             or self._empty_results(False)["monitoring_backup"]
@@ -269,7 +270,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         last_seen_suffixes = self._get_last_seen_suffixes()
 
-        # Balayage complet des états (isolé dans un thread pour éviter de bloquer la boucle d'événements)
+        # Balayage complet des états
         updates, unavailable, offline = await self.hass.async_add_executor_job(
             partial(
                 scan_all_states,
@@ -293,7 +294,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_trace_check_time is None
             or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
         ):
-            # Analyse des traces d'erreurs déportée également dans l'executor
             self._cached_automations = await self.hass.async_add_executor_job(
                 get_trace_errors,
                 self.hass,
@@ -356,10 +356,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 "total": len(offline),
                 "timeout": offline_timeout,
             },
-            "monitoring_backup": self._cached_backup_info,
+            "monitoring_backup": current_backup_info,
         }
 
-    def _empty_results(self, in_startup_delay: bool) -> dict[str, Any]:
+    def _empty_results(self, in_startup_delay: bool) -> HAMonitoringData:
         """Génère la structure par défaut pendant le délai de démarrage."""
         timeout = self.entry.options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
         return {

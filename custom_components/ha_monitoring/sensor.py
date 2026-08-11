@@ -40,6 +40,7 @@ from .const import (
 )
 from .coordinator import HAMonitoringCoordinator
 from .entity import HAMonitoringBaseEntity
+from .types import HAMonitoringData
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.sensor")
 
@@ -155,8 +156,10 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
         """Retourne le nombre total d'éléments détectés."""
         if not self.coordinator.data:
             return 0
-        data = self.coordinator.data.get(self._data_key, {})
-        return data.get("total", 0)
+        data = self.coordinator.data.get(self._data_key)  # type: ignore[call-overload]
+        if isinstance(data, dict):
+            return data.get("total", 0)
+        return 0
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -168,9 +171,9 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
                 ATTR_STARTUP_DELAY: True,
             }
 
-        data = self.coordinator.data.get(self._data_key, {})
-        items = data.get("items", [])
-        total = data.get("total", 0)
+        data = self.coordinator.data.get(self._data_key)  # type: ignore[call-overload]
+        items = data.get("items", []) if isinstance(data, dict) else []
+        total = data.get("total", 0) if isinstance(data, dict) else 0
 
         attrs: dict[str, Any] = {
             self._list_attr: items,
@@ -178,8 +181,9 @@ class HAMonitoringGenericSensor(HAMonitoringBaseEntity, SensorEntity):
             ATTR_STARTUP_DELAY: self.coordinator.data.get(ATTR_STARTUP_DELAY, False),
         }
 
-        for key in self._extra_keys:
-            if key in data:
-                attrs[f"seuil_{key}"] = data[key]
+        if isinstance(data, dict):
+            for key in self._extra_keys:
+                if key in data:
+                    attrs[f"seuil_{key}"] = data[key]
 
         return attrs

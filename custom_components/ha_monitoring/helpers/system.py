@@ -17,6 +17,13 @@ from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
 from ..const import DEFAULT_LAST_SEEN_SUFFIX, DOMAIN
+from ..types import (
+    FailedIntegrationData,
+    OfflineDeviceData,
+    PendingRepairData,
+    UnavailableEntityData,
+    UpdateEntityData,
+)
 from .utils import format_date_local, is_hassio_running
 
 _LOGGER = logging.getLogger("custom_components.ha_monitoring.system")
@@ -59,7 +66,11 @@ def scan_all_states(
     timeout_hours: float,
     last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_SUFFIX,
     excluded_unavailable_globs: list[str] | None = None,
-) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+) -> tuple[
+    list[UpdateEntityData],
+    list[UnavailableEntityData],
+    list[OfflineDeviceData],
+]:
     """Parcourt TOUS les états de Home Assistant en une seule passe."""
     now = dt_util.utcnow()
     cutoff = now - timedelta(hours=float(timeout_hours))
@@ -70,7 +81,9 @@ def scan_all_states(
     excl_unavail_globs = [g.lower().strip() for g in (excluded_unavailable_globs or []) if g]
     excl_offline = set(excluded_offline)
 
-    updates, unavailable, offline = [], [], []
+    updates: list[UpdateEntityData] = []
+    unavailable: list[UnavailableEntityData] = []
+    offline: list[OfflineDeviceData] = []
 
     ent_reg = er.async_get(hass)
     dev_reg = dr.async_get(hass)
@@ -196,7 +209,7 @@ async def async_get_addons(hass: HomeAssistant, excluded: list[str]) -> list[str
 
 async def async_get_failed_integrations(
     hass: HomeAssistant, excluded: list[str]
-) -> list[dict[str, Any]]:
+) -> list[FailedIntegrationData]:
     """Récupère les intégrations en erreur avec traductions officielles."""
     error_states = {
         ConfigEntryState.SETUP_ERROR,
@@ -230,7 +243,7 @@ async def async_get_failed_integrations(
     config_translations = await _safe_get_translations("config", domains)
     issue_translations = await _safe_get_translations("issues", domains | {DOMAIN})
 
-    failed_entries = []
+    failed_entries: list[FailedIntegrationData] = []
 
     for entry in entries:
         title_key = f"component.{entry.domain}.title"
@@ -284,7 +297,7 @@ async def async_get_failed_integrations(
 
 async def async_get_pending_repairs(
     hass: HomeAssistant, excluded: list[str]
-) -> list[dict[str, Any]]:
+) -> list[PendingRepairData]:
     """Récupère les réparations (issues) en attente."""
     issue_registry = ir.async_get(hass)
     active_issues = [
@@ -294,7 +307,7 @@ async def async_get_pending_repairs(
     ]
 
     domains = {issue.domain for issue in active_issues}
-    translations = {}
+    translations: dict[str, str] = {}
     if domains:
         try:
             translations = await async_get_translations(
@@ -304,7 +317,7 @@ async def async_get_pending_repairs(
             translations = {}
 
     excl_set = set(excluded)
-    pending = []
+    pending: list[PendingRepairData] = []
 
     for issue in active_issues:
         issue_identifier = f"{issue.domain}: {issue.issue_id}"
@@ -331,7 +344,7 @@ async def async_get_pending_repairs(
             issue_friendly = key_name.replace("_", " ").capitalize()
             friendly_name = f"{domain_friendly} — {issue_friendly}"
 
-        repair_item = {
+        repair_item: PendingRepairData = {
             "name": friendly_name,
             "domain": issue.domain,
             "date": format_date_local(getattr(issue, "created", None)),
