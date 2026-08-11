@@ -320,18 +320,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             or (now - self._last_system_stats_check_time).total_seconds()
             >= system_info_scan_interval_sec
         ):
-            self._cached_system_stats = await async_get_system_stats(
-                self.hass, self._ha_start_time
-            )
+            self._cached_system_stats = await async_get_system_stats(self.hass, self._ha_start_time)
             self._last_system_stats_check_time = now
 
         addons = await async_get_addons(self.hass, options.get(CONF_EXCLUDED_ADDONS, []))
         integrations = await async_get_failed_integrations(
             self.hass, options.get(CONF_EXCLUDED_INTEGRATIONS, [])
         )
-        repairs = await async_get_pending_repairs(
-            self.hass, options.get(CONF_EXCLUDED_REPAIRS, [])
-        )
+        repairs = await async_get_pending_repairs(self.hass, options.get(CONF_EXCLUDED_REPAIRS, []))
 
         return {
             ATTR_STARTUP_DELAY: False,
