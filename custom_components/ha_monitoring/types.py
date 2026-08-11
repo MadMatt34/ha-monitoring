@@ -19,7 +19,7 @@ class MonitoringBackupData(TypedDict):
 
 
 class RecorderData(TypedDict, total=False):
-    """Structure des métriques associées au Recorder/base de données."""
+    """Structure des métriques Recorder/base de données."""
 
     recorder_keep_days: int | None
     recorder_auto_purge: bool | None
@@ -29,7 +29,7 @@ class RecorderData(TypedDict, total=False):
 
 
 class SystemStatsData(RecorderData, total=False):
-    """Structure générale des statistiques système et inventaires."""
+    """Structure des statistiques système."""
 
     ha_version: str
     ha_last_boot: str
@@ -44,7 +44,7 @@ class SystemStatsData(RecorderData, total=False):
 
 
 class UpdateEntityData(TypedDict):
-    """Structure pour une mise à jour en attente."""
+    """Structure d'une mise à jour disponible."""
 
     entity_id: str
     name: str
@@ -53,7 +53,7 @@ class UpdateEntityData(TypedDict):
 
 
 class UnavailableEntityData(TypedDict):
-    """Structure pour une entité indisponible."""
+    """Structure d'une entité indisponible."""
 
     entity_id: str
     name: str
@@ -62,7 +62,7 @@ class UnavailableEntityData(TypedDict):
 
 
 class OfflineDeviceData(TypedDict):
-    """Structure pour un appareil hors-ligne."""
+    """Structure d'un appareil hors ligne."""
 
     device: str
     date: str
@@ -70,7 +70,7 @@ class OfflineDeviceData(TypedDict):
 
 
 class FailedIntegrationData(TypedDict):
-    """Structure pour une intégration en erreur."""
+    """Structure d'une intégration en erreur."""
 
     name: str
     entry_name: str
@@ -81,7 +81,7 @@ class FailedIntegrationData(TypedDict):
 
 
 class PendingRepairData(TypedDict):
-    """Structure pour une réparation (issue) en attente."""
+    """Structure d'une réparation en attente."""
 
     name: str
     domain: str
@@ -90,7 +90,7 @@ class PendingRepairData(TypedDict):
 
 
 class TraceErrorData(TypedDict):
-    """Structure pour une erreur d'automatisation ou de script."""
+    """Structure d'une erreur de trace."""
 
     name: str
     entity_id: str
@@ -98,56 +98,50 @@ class TraceErrorData(TypedDict):
     error: str
 
 
-class MonitoringCountData(TypedDict):
-    """Structure commune aux métriques comptabilisées."""
-
-    items: list[str]
-
-
 class MonitoringAddonData(TypedDict):
-    """Structure des add-ons en erreur."""
+    """Données du capteur Add-ons."""
 
     items: list[str]
     total: int
 
 
 class MonitoringIntegrationData(TypedDict):
-    """Structure des intégrations en erreur."""
+    """Données du capteur Intégrations."""
 
     items: list[FailedIntegrationData]
     total: int
 
 
 class MonitoringTraceData(TypedDict):
-    """Structure des erreurs de traces."""
+    """Données d'un capteur de traces."""
 
     items: list[TraceErrorData]
     total: int
 
 
 class MonitoringUpdateData(TypedDict):
-    """Structure des mises à jour disponibles."""
+    """Données du capteur des mises à jour."""
 
     items: list[UpdateEntityData]
     total: int
 
 
 class MonitoringRepairData(TypedDict):
-    """Structure des réparations en attente."""
+    """Données du capteur des réparations."""
 
     items: list[PendingRepairData]
     total: int
 
 
 class MonitoringUnavailableData(TypedDict):
-    """Structure des entités indisponibles."""
+    """Données du capteur des entités indisponibles."""
 
     items: list[UnavailableEntityData]
     total: int
 
 
 class MonitoringOfflineData(TypedDict):
-    """Structure des appareils hors-ligne."""
+    """Données du capteur des appareils hors ligne."""
 
     items: list[OfflineDeviceData]
     total: int
@@ -155,7 +149,7 @@ class MonitoringOfflineData(TypedDict):
 
 
 class HAMonitoringData(TypedDict):
-    """Données consolidées produites par le DataUpdateCoordinator."""
+    """Structure complète produite par le Coordinator."""
 
     startup_delay: bool
     system_stats: SystemStatsData

@@ -1502,8 +1502,11 @@ Et surtout, **je ne toucherais pas encore aux entités, aux IDs statiques, au De
 ## DONE
 
  - Backup
- - types.py
-    - pour backup
-    - pour coordinator
+ - types.py pour :
+    - backup
+    - coordinator
+    - binary_sensor
+    - button
+    - sensor
  - always_update=False
  - EVENT_HOMEASSISTANT_STARTED
