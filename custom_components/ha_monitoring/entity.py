@@ -9,9 +9,7 @@ from .const import DEVICE_MANUFACTURER, DEVICE_NAME, DOMAIN
 from .coordinator import HAMonitoringCoordinator
 
 
-class HAMonitoringBaseEntity(
-    CoordinatorEntity[HAMonitoringCoordinator]
-):
+class HAMonitoringBaseEntity(CoordinatorEntity[HAMonitoringCoordinator]):
     """Classe de base pour toutes les entités de HA Monitoring."""
 
     _attr_has_entity_name = True
