@@ -89,11 +89,7 @@ def _normalize_exclusions(
     excluded: Iterable[str] | None,
 ) -> set[str]:
     """Normalise les exclusions."""
-    return {
-        value.strip()
-        for value in (excluded or ())
-        if value and value.strip()
-    }
+    return {value.strip() for value in (excluded or ()) if value and value.strip()}
 
 
 async def get_trace_errors(
@@ -124,11 +120,7 @@ async def get_trace_errors(
     # BaseTrace.as_short_dict(). Le contrat de cette API interne HA est
     # précisément documenté par le modèle TraceShort. On convertit ici
     # uniquement à la frontière avec l'API interne.
-    traces = [
-        cast(TraceShortData, trace)
-        for trace in traces_raw
-        if isinstance(trace, dict)
-    ]
+    traces = [cast(TraceShortData, trace) for trace in traces_raw if isinstance(trace, dict)]
 
     # On conserve uniquement la dernière exécution réelle de chaque
     # automation/script. Les traces "not_triggered" sont explicitement
@@ -174,11 +166,7 @@ async def get_trace_errors(
         state = hass.states.get(entity_id)
 
         if state is not None:
-            friendly_name = (
-                state.attributes.get("friendly_name")
-                or state.name
-                or entity_id
-            )
+            friendly_name = state.attributes.get("friendly_name") or state.name or entity_id
         else:
             friendly_name = entity_id
 
