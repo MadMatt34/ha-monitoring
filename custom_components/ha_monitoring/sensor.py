@@ -1,7 +1,7 @@
 """Capteurs HA Monitoring alimentés par le Coordinator central."""
 
 from collections.abc import Callable
-from typing import Any, override
+from typing import override
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.core import HomeAssistant
@@ -162,7 +162,6 @@ class HAMonitoringGenericSensor[T: SensorData](
     ) -> None:
         """Initialise le capteur générique."""
         super().__init__(coordinator)
-
         self._data_getter = data_getter
         self._extra_attributes_getter = extra_attributes
 
@@ -189,17 +188,19 @@ class HAMonitoringGenericSensor[T: SensorData](
 
     @override
     @property
-    def extra_state_attributes(self) -> dict[str, Any]:
+    def extra_state_attributes(self) -> dict[str, object]:
         """Retourne les détails et métadonnées du capteur."""
         data = self._sensor_data
 
-        attributes: dict[str, Any] = {
+        attributes: dict[str, object] = {
             ATTR_LIST: data["items"],
             ATTR_TOTAL: data["total"],
             ATTR_STARTUP_DELAY: self.coordinator.data["startup_delay"],
         }
 
         if self._extra_attributes_getter is not None:
-            attributes.update(self._extra_attributes_getter(data))
+            attributes.update(
+                self._extra_attributes_getter(data)
+            )
 
         return attributes
