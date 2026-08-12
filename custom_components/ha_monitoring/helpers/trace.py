@@ -146,7 +146,11 @@ def _normalize_exclusions(
     excluded: Iterable[str] | None,
 ) -> set[str]:
     """Normalise les exclusions."""
-    return {value.strip() for value in (excluded or ()) if value and value.strip()}
+    return {
+        value.strip()
+        for value in (excluded or ())
+        if value and value.strip()
+    }
 
 
 def _get_trace_entity_id(
@@ -165,7 +169,9 @@ def _get_trace_entity_id(
         return fallback_entity_id
 
     for trigger_entry in trigger_entries:
-        changed_variables = trigger_entry.get("changed_variables")
+        changed_variables = trigger_entry.get(
+            "changed_variables"
+        )
 
         if not changed_variables:
             continue
@@ -199,6 +205,44 @@ def _get_trace_alias(
     return fallback_entity_id
 
 
+def _format_template_errors(
+    template_errors: list[str],
+) -> str:
+    """Formate les erreurs de template enregistrées dans une étape."""
+    return " | ".join(
+        error.strip()
+        for error in template_errors
+        if error and error.strip()
+    )
+
+
+def _get_element_error(
+    element: TraceElementData,
+) -> str | None:
+    """Retourne l'erreur d'une étape, y compris les erreurs de template."""
+    errors: list[str] = []
+
+    error = element.get("error")
+
+    if isinstance(error, str) and error.strip():
+        errors.append(error.strip())
+
+    template_errors = element.get("template_errors")
+
+    if isinstance(template_errors, list):
+        template_error = _format_template_errors(
+            template_errors
+        )
+
+        if template_error:
+            errors.append(template_error)
+
+    if not errors:
+        return None
+
+    return " | ".join(errors)
+
+
 def _get_latest_trace_error(
     trace: TraceExtendedData,
 ) -> tuple[str, datetime | None] | None:
@@ -209,7 +253,9 @@ def _get_latest_trace_error(
     global_error = trace.get("error")
 
     if isinstance(global_error, str) and global_error.strip():
-        timestamp = _get_trace_timestamp(cast(TraceShortData, trace))
+        timestamp = _get_trace_timestamp(
+            cast(TraceShortData, trace)
+        )
 
         if timestamp is not None:
             errors.append(
@@ -225,9 +271,9 @@ def _get_latest_trace_error(
     if trace_data:
         for elements in trace_data.values():
             for element in elements:
-                error = element.get("error")
+                error = _get_element_error(element)
 
-                if not isinstance(error, str) or not error.strip():
+                if error is None:
                     continue
 
                 timestamp = _get_element_timestamp(element)
@@ -238,7 +284,7 @@ def _get_latest_trace_error(
                 errors.append(
                     (
                         timestamp,
-                        error.strip(),
+                        error,
                     )
                 )
 
@@ -283,7 +329,8 @@ async def _get_error_trace_details(
         )
     except (KeyError, HomeAssistantError):
         _LOGGER.debug(
-            "[HA Monitoring] Trace %s / %s indisponible lors de la récupération détaillée.",
+            "[HA Monitoring] Trace %s / %s indisponible "
+            "lors de la récupération détaillée.",
             fallback_entity_id,
             run_id,
         )
@@ -294,7 +341,9 @@ async def _get_error_trace_details(
         extended_raw,
     )
 
-    error_details = _get_latest_trace_error(extended_trace)
+    error_details = _get_latest_trace_error(
+        extended_trace
+    )
 
     if error_details is None:
         return None
@@ -343,7 +392,11 @@ async def get_trace_errors(
     if not traces_raw:
         return []
 
-    traces = [cast(TraceShortData, trace) for trace in traces_raw if isinstance(trace, Mapping)]
+    traces = [
+        cast(TraceShortData, trace)
+        for trace in traces_raw
+        if isinstance(trace, Mapping)
+    ]
 
     # Dernière exécution réelle de chaque automation/script.
     latest_traces: dict[str, TraceShortData] = {}
@@ -358,7 +411,6 @@ async def get_trace_errors(
             continue
 
         entity_id = f"{domain}.{item_id}"
-
         current = latest_traces.get(entity_id)
 
         if current is None or _is_latest_trace(
@@ -369,15 +421,18 @@ async def get_trace_errors(
 
     errors: list[TraceErrorData] = []
 
-    # On doit charger l'extended trace de CHAQUE dernière exécution :
-    # une erreur continue_on_error n'est pas présente dans le short_dict.
+    # L'extended trace est nécessaire pour détecter les erreurs
+    # sur les étapes, notamment continue_on_error et template_errors.
     for fallback_entity_id, trace in latest_traces.items():
         item_id = trace.get("item_id")
 
         if not item_id:
             continue
 
-        if fallback_entity_id in excluded_set or item_id in excluded_set:
+        if (
+            fallback_entity_id in excluded_set
+            or item_id in excluded_set
+        ):
             continue
 
         details = await _get_error_trace_details(
@@ -397,13 +452,17 @@ async def get_trace_errors(
             error_timestamp,
         ) = details
 
-        if entity_id in excluded_set or name in excluded_set:
+        if (
+            entity_id in excluded_set
+            or name in excluded_set
+        ):
             continue
 
-        if error_timestamp is None:
-            formatted_date = "Inconnu"
-        else:
-            formatted_date = format_date_local(error_timestamp)
+        formatted_date = (
+            format_date_local(error_timestamp)
+            if error_timestamp is not None
+            else "Inconnu"
+        )
 
         errors.append(
             {
@@ -415,7 +474,7 @@ async def get_trace_errors(
         )
 
         _LOGGER.debug(
-            "[HA Monitoring] Erreur détectée sur %s (%s) : %s",
+            "[HA Monitoring] Erreur détectée sur %s (%s): %s",
             name,
             formatted_date,
             error,
