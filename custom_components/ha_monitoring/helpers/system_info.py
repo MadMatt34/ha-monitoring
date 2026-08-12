@@ -14,8 +14,7 @@ from homeassistant.components.recorder.util import dburl_to_path
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import device_registry as dr
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.hassio import is_hassio
 from homeassistant.loader import async_get_custom_components
 from homeassistant.util import dt as dt_util
