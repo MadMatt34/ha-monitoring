@@ -14,6 +14,7 @@
   - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur
   - corriger attribut startup_delay
   - Addons en erreur uniquement watchdog == True + boot == "auto" + n'est pas started.
+  - traces : également les traces sauvegardées donc résiste au reboot
 
 ## TOTEST
 
