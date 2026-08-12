@@ -14,7 +14,7 @@
   - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur, pas de persistance au redémarrage
   - infos backup uniquement avec l'intégration officielle
   - taille db remontée uniquement avec la config standard sqllite
-  - offline basé sur suffixe last_seen ou localisé. Date format datetime ou str ISO
+  - offline basé sur sensor avec suffixe last_seen ou localisé. Etat est date format ISO
 
 
 ## TOTEST
