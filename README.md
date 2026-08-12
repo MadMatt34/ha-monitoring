@@ -81,7 +81,7 @@ You can adjust thresholds and exclusion lists at any time:
 
 All entities are attached to the **Home Assistant** Device:
 
-> [!NOTE]
+> [!TIP]
 > Each entity contains a list attribute detailing the items detected.
 >
 > Use **Settings** > **Tools** > **States** to explore all attributes.
@@ -122,8 +122,8 @@ All entities are attached to the **Home Assistant** Device:
 
 The first scan following a Home Assistant boot will wait until the configured grace period expires (default 2 min). This prevents false alerts before all integrations and sensors have finished loading.
 
-> [!NOTE]
-> Use the attribute `in_startup_delay = False` as a condition in your scripts/automations or dashboard view visibility.
+> [!TIP]
+> Use the attribute `startup_delay = False` as a condition in your scripts/automations or dashboard view visibility.
 
 ### Data Refresh Intervals Details
 
@@ -136,8 +136,7 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 ### Specific Sensor & Attribute Notes
 
-- **Automations & Scripts Sensors:** Scans are only performed on in-memory traces. Errors prior to the last Home Assistant restart are not tracked.
-- **Add-ons Sensor:** Only monitors add-ons configured with both `Start on boot` and `Watchdog` enabled.
+- **Add-ons Sensor:** Only returns add-ons configured with both `Start on boot` and `Watchdog` enabled, and not started.
 - **Global Status System Info Attributes:**
   - Integrations count: Counts UI-configured integrations (YAML-configured ones cannot be tracked).
   - Devices count: Disabled devices are excluded.

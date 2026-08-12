@@ -81,7 +81,7 @@ Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
 
 Toutes les entités sont rattachées au Device **Home Assistant** :
 
-> [!NOTE]
+> [!TIP]
 > Chaque entité contient des attributs listant les éléments détectés.
 >
 > Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
@@ -122,8 +122,8 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 
 Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la période de grâce configurée dans les paramètres (par défaut 2 min). Cela évite d'obtenir des valeurs fausses si l'ensemble des intégrations et capteurs n'ont pas été chargés.
 
-> [!NOTE]
-> Utilisez l'attribut `in_startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
+> [!TIP]
+> Utilisez l'attribut `startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
 
 ### Précisions sur les délais d'actualisation des données
 
@@ -136,8 +136,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 
 ### Précisions sur certains capteurs et attributs
 
-- **Capteurs Automatisations et Scripts :** le scan n'est réalisé que sur les traces en mémoire. Les erreurs antérieures à un démarrage ne sont donc pas identifiées.
-- **Capteur Applications :** Le scan ne prend en compte que les applications configurées avec les paramètres suivants activés `Lancer au démarrage` et `Chien de garde`.
+- **Capteur Applications :** Le scan remonte les applications configurées avec les paramètres `Lancer au démarrage` et `Chien de garde` activés, et qui ne seraient pas démarrées.
 - **Attributs Informations système du capteur Statut Global :**
   - Nombre d'intégrations  : comptabilise les intégrations visibles dans l'interface utilisateur, à l'exeption de celles configurées en yaml (impossible).
   - Nombre d'appareils : les appareils désactivés ne sont pas comptabilisés.
