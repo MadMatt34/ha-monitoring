@@ -70,9 +70,7 @@ class GlobalStatusBinarySensor(
         """Initialise le capteur binaire de statut global."""
         super().__init__(coordinator)
 
-        self._attr_unique_id = (
-            f"{entry.entry_id}_{UNIQUE_ID_STATUS}"
-        )
+        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_STATUS}"
 
         # Entity ID volontairement statique.
         self.entity_id = f"binary_sensor.{UNIQUE_ID_STATUS}"
@@ -127,21 +125,11 @@ class GlobalStatusBinarySensor(
                 "custom_integrations_count",
                 0,
             ),
-            "recorder_commit_interval": stats.get(
-                "recorder_commit_interval"
-            ),
-            "recorder_keep_days": stats.get(
-                "recorder_keep_days"
-            ),
-            "recorder_auto_purge": stats.get(
-                "recorder_auto_purge"
-            ),
-            "recorder_auto_repack": stats.get(
-                "recorder_auto_repack"
-            ),
-            "database_size_mb": stats.get(
-                "database_size_mb"
-            ),
+            "recorder_commit_interval": stats.get("recorder_commit_interval"),
+            "recorder_keep_days": stats.get("recorder_keep_days"),
+            "recorder_auto_purge": stats.get("recorder_auto_purge"),
+            "recorder_auto_repack": stats.get("recorder_auto_repack"),
+            "database_size_mb": stats.get("database_size_mb"),
         }
 
 
@@ -162,9 +150,7 @@ class BackupStatusBinarySensor(
         """Initialise le capteur binaire d'état de la sauvegarde."""
         super().__init__(coordinator)
 
-        self._attr_unique_id = (
-            f"{entry.entry_id}_{UNIQUE_ID_BACKUP}"
-        )
+        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_BACKUP}"
 
         # Entity ID volontairement statique.
         self.entity_id = f"binary_sensor.{UNIQUE_ID_BACKUP}"

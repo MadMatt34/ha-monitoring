@@ -199,8 +199,6 @@ class HAMonitoringGenericSensor[T: SensorData](
         }
 
         if self._extra_attributes_getter is not None:
-            attributes.update(
-                self._extra_attributes_getter(data)
-            )
+            attributes.update(self._extra_attributes_getter(data))
 
         return attributes
