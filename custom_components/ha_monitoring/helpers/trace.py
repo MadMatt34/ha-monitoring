@@ -122,9 +122,7 @@ def _get_element_timestamp(
     element: TraceElementData,
 ) -> datetime | None:
     """Retourne le timestamp d'une étape de trace."""
-    return _parse_trace_datetime(
-        element.get("timestamp")
-    )
+    return _parse_trace_datetime(element.get("timestamp"))
 
 
 def _is_latest_trace(
@@ -148,11 +146,7 @@ def _normalize_exclusions(
     excluded: Iterable[str] | None,
 ) -> set[str]:
     """Normalise les exclusions."""
-    return {
-        value.strip()
-        for value in (excluded or ())
-        if value and value.strip()
-    }
+    return {value.strip() for value in (excluded or ()) if value and value.strip()}
 
 
 def _get_trace_entity_id(
@@ -171,9 +165,7 @@ def _get_trace_entity_id(
         return fallback_entity_id
 
     for trigger_entry in trigger_entries:
-        changed_variables = trigger_entry.get(
-            "changed_variables"
-        )
+        changed_variables = trigger_entry.get("changed_variables")
 
         if not changed_variables:
             continue
@@ -217,9 +209,7 @@ def _get_latest_trace_error(
     global_error = trace.get("error")
 
     if isinstance(global_error, str) and global_error.strip():
-        timestamp = _get_trace_timestamp(
-            cast(TraceShortData, trace)
-        )
+        timestamp = _get_trace_timestamp(cast(TraceShortData, trace))
 
         if timestamp is not None:
             errors.append(
@@ -266,12 +256,15 @@ def _get_latest_trace_error(
 async def _get_error_trace_details(
     hass: HomeAssistant,
     trace: TraceShortData,
-) -> tuple[
-    str,
-    str,
-    str,
-    datetime | None,
-] | None:
+) -> (
+    tuple[
+        str,
+        str,
+        str,
+        datetime | None,
+    ]
+    | None
+):
     """Récupère les détails complets d'une exécution en erreur."""
     domain = trace.get("domain")
     item_id = trace.get("item_id")
@@ -290,8 +283,7 @@ async def _get_error_trace_details(
         )
     except (KeyError, HomeAssistantError):
         _LOGGER.debug(
-            "[HA Monitoring] Trace %s / %s indisponible "
-            "lors de la récupération détaillée.",
+            "[HA Monitoring] Trace %s / %s indisponible lors de la récupération détaillée.",
             fallback_entity_id,
             run_id,
         )
@@ -302,9 +294,7 @@ async def _get_error_trace_details(
         extended_raw,
     )
 
-    error_details = _get_latest_trace_error(
-        extended_trace
-    )
+    error_details = _get_latest_trace_error(extended_trace)
 
     if error_details is None:
         return None
@@ -342,9 +332,7 @@ async def get_trace_errors(
         )
         return []
 
-    excluded_set = _normalize_exclusions(
-        excluded
-    )
+    excluded_set = _normalize_exclusions(excluded)
 
     traces_raw = await async_list_traces(
         hass,
@@ -355,11 +343,7 @@ async def get_trace_errors(
     if not traces_raw:
         return []
 
-    traces = [
-        cast(TraceShortData, trace)
-        for trace in traces_raw
-        if isinstance(trace, Mapping)
-    ]
+    traces = [cast(TraceShortData, trace) for trace in traces_raw if isinstance(trace, Mapping)]
 
     # Dernière exécution réelle de chaque automation/script.
     latest_traces: dict[str, TraceShortData] = {}
@@ -393,10 +377,7 @@ async def get_trace_errors(
         if not item_id:
             continue
 
-        if (
-            fallback_entity_id in excluded_set
-            or item_id in excluded_set
-        ):
+        if fallback_entity_id in excluded_set or item_id in excluded_set:
             continue
 
         details = await _get_error_trace_details(
@@ -416,18 +397,13 @@ async def get_trace_errors(
             error_timestamp,
         ) = details
 
-        if (
-            entity_id in excluded_set
-            or name in excluded_set
-        ):
+        if entity_id in excluded_set or name in excluded_set:
             continue
 
         if error_timestamp is None:
             formatted_date = "Inconnu"
         else:
-            formatted_date = format_date_local(
-                error_timestamp
-            )
+            formatted_date = format_date_local(error_timestamp)
 
         errors.append(
             {
