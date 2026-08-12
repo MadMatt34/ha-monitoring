@@ -90,4 +90,4 @@ Faire un audit approfondi pour le dépot https://github.com/MadMatt34/ha-monitor
 A noter, pour offline_devices on s'appuie sur des entités ayant un suffixe last_seen ou la version localisée ; donc je pense qu'il est inutile de remettre en question ce mécanisme.
 Attention, il est important de conserver le délai d'attente au démarrage de HA, et de conserver les fréquences de scan différentes pour backup, system_info, et tous les autres capteurs.
 Je veux conserver un nommage des ID des entités défini de façon statique. Le cache de DeviceInfo n'a pas besoin d'être dynamique. Un typage strict est nécessaire. On verra plus tard pour implémenter les tests unitaires.
-On part du principe qu'on ne tient compte que d'une base de données sous SQLLite.
+On part du principe qu'on ne tient compte que d'une base de données sous SQLLite. Le cache backup est conservé lors d'un refresh forcé ou reload de l'intégration.
