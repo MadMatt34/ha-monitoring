@@ -7,7 +7,7 @@
 
 [🇬🇧 README in ENGLISH 🇬🇧](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
 
-**HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (add-ons, intégrations, automations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour, des réparations en attente et de l'état des sauvegardes.
+**HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (applications, intégrations, automations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour, des réparations en attente et de l'état des sauvegardes.
 
 > [!IMPORTANT]
 > Cette intégration n'a pas vocation à corriger les erreurs, uniquement centraliser toutes ces informations souvent invisibles au premier abord. A vous de construire ensuite les automatisations qui vous conviennent.
@@ -170,7 +170,7 @@ action:
       title: "⚠️ HA Monitoring - Alerte Système"
       message: >
         Problème détecté sur votre système :
-        - Add-ons en erreur : {{ states('sensor.monitoring_applications') }}
+        - Applications en erreur : {{ states('sensor.monitoring_applications') }}
         - Intégrations : {{ states('sensor.monitoring_integrations') }}
         - Automations : {{ states('sensor.monitoring_automations') }}
         - Entités indisponibles : {{ states('sensor.monitoring_unavailable_entities') }}
@@ -214,7 +214,7 @@ content: >
   ---
 
   {% if states('sensor.monitoring_applications') | int > 0 %}
-  **Add-ons en erreur :**
+  **Applications en erreur :**
   {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}

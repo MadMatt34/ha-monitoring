@@ -7,7 +7,7 @@
 
 [🇫🇷 README en FRANÇAIS 🇫🇷](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
 
-**HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across add-ons, integrations, automations, scripts, unavailable entities, offline devices, pending updates, active repairs, and backup statuses.
+**HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across applications, integrations, automations, scripts, unavailable entities, offline devices, pending updates, active repairs, and backup statuses.
 
 > [!IMPORTANT]
 > This integration is not intended to automatically fix errors, but rather to centralize information that is often hidden or hard to find. You can then build custom automations based on these metrics.
@@ -21,7 +21,7 @@
 - **Global Monitoring:**
   - **Updates & Repairs:** Real-time tracking of system updates and pending repair issues.
   - **Backups:** Verification of the latest backup status and associated tracking attributes.
-  - **Add-ons & Integrations:** Detection of failed or errored components.
+  - **Applications & Integrations:** Detection of failed or errored components.
   - **Automation & Script Traces:** Detection of recent execution errors.
   - **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
 - **Startup Grace Period:** Prevents false alarms during Home Assistant's initial boot sequence.
@@ -73,7 +73,7 @@ You can adjust thresholds and exclusion lists at any time:
     - **System Info Scan Interval** (in hours): Refresh frequency for general system stats (default: 24 hours).
     - **Traces Scan Interval** (in minutes): Frequency for scanning automation and script execution trace errors (default: 30 min).
     - **Offline Inactivity Threshold** (in hours): Inactivity duration before marking a device as offline (default: 24h).
-    - **Exclusions**: Select add-ons, integrations, repairs, updates, automations, scripts, devices, or entities to ignore.
+    - **Exclusions**: Select applications, integrations, repairs, updates, automations, scripts, devices, or entities to ignore.
 
 ---
 
@@ -92,10 +92,10 @@ All entities are attached to the **Home Assistant** Device:
 
 | Entity | Name | Description / Attributes |
 | :--- | :--- | :--- |
-| `sensor.monitoring_applications` | Monitoring Failded Applications | Number of failed applications. |
-| `sensor.monitoring_integrations` | Monitoring Failded Integrations | Number of failed integrations. |
-| `sensor.monitoring_automations` | Monitoring Failded Automations | Number of automations that threw an error. |
-| `sensor.monitoring_scripts` | Monitoring Failded Scripts | Number of scripts that threw an error. |
+| `sensor.monitoring_applications` | Monitoring Failed Applications | Number of failed applications. |
+| `sensor.monitoring_integrations` | Monitoring Failed Integrations | Number of failed integrations. |
+| `sensor.monitoring_automations` | Monitoring Failed Automations | Number of automations that threw an error. |
+| `sensor.monitoring_scripts` | Monitoring Failed Scripts | Number of scripts that threw an error. |
 | `sensor.monitoring_updates` | Monitoring Pending Updates | Number of pending updates. |
 | `sensor.monitoring_repairs` | Monitoring Pending Repairs | Number of active repair issues. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
@@ -105,7 +105,7 @@ All entities are attached to the **Home Assistant** Device:
 
 | Entity | Device Class | Name | Description |
 | :--- | :--- | :--- | :--- |
-| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (add-on, integration, automation, or script) is detected. System info are provided in attributes. |
+| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (application, integration, automation, or script) is detected. System info are provided in attributes. |
 | `binary_sensor.monitoring_backup` | - | Monitoring Backup Status | Turns `OFF` if the last backup failed. Provides backup dates, sizes, and failure reasons as attributes. |
 
 ### Buttons (`button.*`)
@@ -171,7 +171,7 @@ action:
       title: "⚠️ HA Monitoring - System Alert"
       message: >
         Issue detected on your system:
-        - Errored Add-ons: {{ states('sensor.monitoring_applications') }}
+        - Errored Applications: {{ states('sensor.monitoring_applications') }}
         - Errored Integrations: {{ states('sensor.monitoring_integrations') }}
         - Errored Automations: {{ states('sensor.monitoring_automations') }}
         - Unavailable Entities: {{ states('sensor.monitoring_unavailable_entities') }}
@@ -215,7 +215,7 @@ content: >
   ---
 
   {% if states('sensor.monitoring_applications') | int > 0 %}
-  **Errored Add-ons:**
+  **Errored Applications:**
   {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
