@@ -17,6 +17,17 @@
   - offline basé sur sensor de class timestamp avec suffixe last_seen ou localisé. Etat est date format ISO
 
 
+gestion d'erreur partielle du Coordinator
+
+une collecte secondaire échoue
+        ↓
+tout HAMonitoringData échoue
+        ↓
+toutes les entités du coordinator deviennent indisponibles
+
+Mais je ne le modifierais pas maintenant : le faire proprement nécessite de décider comment représenter l'indisponibilité individuelle de chaque sous-collecte dans HAMonitoringData. Ce serait une évolution du contrat des plateformes, pas une simple correction.
+
+
 ## TOTEST
 
 - Addons en erreur
