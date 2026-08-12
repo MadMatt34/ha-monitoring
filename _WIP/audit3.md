@@ -413,7 +413,7 @@ Ce n'est pas un problème fonctionnel aujourd'hui, mais c'est encore une incohé
 `sensor.py` est maintenant fortement typé et générique. Le type paramétré :
 
 ```python
-HAMonitoringGenericSensor[T: SensorData]
+HAMonitoringGenericSensor[T:SensorData]
 ```
 
 est propre. 
