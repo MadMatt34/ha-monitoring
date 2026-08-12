@@ -273,14 +273,16 @@ async def async_get_backup_info(
     # ------------------------------------------------------------------
     # Backup en cours.
     # ------------------------------------------------------------------
-    elif backup_event.state is CreateBackupState.IN_PROGRESS:
-        if previous_info is not None:
-            info = dict(previous_info)
+    elif (
+        backup_event.state is CreateBackupState.IN_PROGRESS
+        and previous_info is not None
+    ):
+        info = dict(previous_info)
 
-            _apply_current_agent_errors(
-                info,
-                agent_errors,
-            )
+        _apply_current_agent_errors(
+            info,
+            agent_errors,
+        )
 
     # ------------------------------------------------------------------
     # Planning automatique.
