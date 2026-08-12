@@ -50,9 +50,7 @@ async def async_setup_entry(
 
     # Recharge automatiquement l'intégration lorsque les options
     # de la ConfigEntry sont modifiées.
-    entry.async_on_unload(
-        entry.add_update_listener(async_reload_entry)
-    )
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     # Les plateformes ne sont créées qu'après le premier refresh réussi.
     await hass.config_entries.async_forward_entry_setups(
