@@ -1,7 +1,11 @@
 """Intégration HA Monitoring pour la surveillance système."""
 
+from __future__ import annotations
+
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -10,10 +14,10 @@ from .coordinator import HAMonitoringConfigEntry, HAMonitoringCoordinator
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-PLATFORMS = [
-    "sensor",
-    "binary_sensor",
-    "button",
+PLATFORMS: list[Platform] = [
+    Platform.SENSOR,
+    Platform.BINARY_SENSOR,
+    Platform.BUTTON,
 ]
 
 
@@ -21,7 +25,7 @@ async def async_setup(
     hass: HomeAssistant,
     config: dict[str, Any],
 ) -> bool:
-    """Configure l'intégration."""
+    """Configuration initiale via YAML."""
     return True
 
 
@@ -37,12 +41,13 @@ async def async_setup_entry(
         entry,
     )
 
-    # Le coordinator est une donnée runtime de cette ConfigEntry.
+    # Le coordinator appartient au runtime de cette ConfigEntry.
     entry.runtime_data = coordinator
 
     # Le cleanup doit être enregistré AVANT le first_refresh().
-    # Cela garantit le nettoyage du coordinator si le premier refresh
-    # échoue avec ConfigEntryNotReady ou une autre exception.
+    #
+    # Ainsi, si async_config_entry_first_refresh() échoue, les listeners
+    # et temporisateurs créés par le coordinator seront quand même nettoyés.
     entry.async_on_unload(coordinator.async_shutdown)
 
     # Premier chargement des données.
@@ -50,7 +55,9 @@ async def async_setup_entry(
 
     # Recharge automatiquement l'intégration lorsque les options
     # de la ConfigEntry sont modifiées.
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    entry.async_on_unload(
+        entry.add_update_listener(async_reload_entry)
+    )
 
     # Les plateformes ne sont créées qu'après le premier refresh réussi.
     await hass.config_entries.async_forward_entry_setups(
@@ -76,7 +83,7 @@ async def async_remove_entry(
     hass: HomeAssistant,
     entry: HAMonitoringConfigEntry,
 ) -> None:
-    """Supprime les données runtime globales associées à la ConfigEntry."""
+    """Supprime les données globales associées à la ConfigEntry."""
     domain_data = hass.data.get(DOMAIN)
 
     if domain_data is None:
