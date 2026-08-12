@@ -77,9 +77,7 @@ entry.async_on_unload(coordinator.async_shutdown)
 
 await coordinator.async_config_entry_first_refresh()
 
-entry.async_on_unload(
-    entry.add_update_listener(async_reload_entry)
-)
+entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 ```
 
 Puis `async_unload_entry()` ne doit plus appeler directement `async_shutdown()` : le callback `async_on_unload` s'en charge après un unload réussi.
@@ -177,9 +175,7 @@ backup événementiel
 Le coordinator fait :
 
 ```python
-await self.hass.async_add_executor_job(
-    partial(scan_all_states, self.hass, ...)
-)
+await self.hass.async_add_executor_job(partial(scan_all_states, self.hass, ...))
 ```
 
 
