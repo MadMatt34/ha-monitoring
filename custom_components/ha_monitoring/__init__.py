@@ -1,12 +1,7 @@
 """Intégration HA Monitoring pour la surveillance système."""
 
-from __future__ import annotations
-
-import logging
 from typing import Any
 
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
@@ -15,12 +10,10 @@ from .coordinator import HAMonitoringConfigEntry, HAMonitoringCoordinator
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
-_LOGGER = logging.getLogger(__name__)
-
-PLATFORMS: list[Platform | str] = [
-    Platform.SENSOR,
-    Platform.BINARY_SENSOR,
-    Platform.BUTTON,
+PLATFORMS = [
+    "sensor",
+    "binary_sensor",
+    "button",
 ]
 
 
@@ -28,7 +21,7 @@ async def async_setup(
     hass: HomeAssistant,
     config: dict[str, Any],
 ) -> bool:
-    """Configuration initiale via YAML (non supportée / legacy)."""
+    """Configure l'intégration."""
     return True
 
 
@@ -36,7 +29,7 @@ async def async_setup_entry(
     hass: HomeAssistant,
     entry: HAMonitoringConfigEntry,
 ) -> bool:
-    """Initialise l'intégration depuis une ConfigEntry UI."""
+    """Initialise l'intégration depuis une ConfigEntry."""
     hass.data.setdefault(DOMAIN, {})
 
     coordinator = HAMonitoringCoordinator(
@@ -44,16 +37,24 @@ async def async_setup_entry(
         entry,
     )
 
-    # Le coordinator appartient au runtime de cette ConfigEntry.
+    # Le coordinator est une donnée runtime de cette ConfigEntry.
     entry.runtime_data = coordinator
 
-    # Premier rafraîchissement des données au chargement.
+    # Le cleanup doit être enregistré AVANT le first_refresh().
+    # Cela garantit le nettoyage du coordinator si le premier refresh
+    # échoue avec ConfigEntryNotReady ou une autre exception.
+    entry.async_on_unload(coordinator.async_shutdown)
+
+    # Premier chargement des données.
     await coordinator.async_config_entry_first_refresh()
 
-    # Rechargement automatique lors de la modification des options dans l'UI.
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    # Recharge automatiquement l'intégration lorsque les options
+    # de la ConfigEntry sont modifiées.
+    entry.async_on_unload(
+        entry.add_update_listener(async_reload_entry)
+    )
 
-    # Chargement des plateformes.
+    # Les plateformes ne sont créées qu'après le premier refresh réussi.
     await hass.config_entries.async_forward_entry_setups(
         entry,
         PLATFORMS,
@@ -66,23 +67,18 @@ async def async_unload_entry(
     hass: HomeAssistant,
     entry: HAMonitoringConfigEntry,
 ) -> bool:
-    """Décharge les plateformes et nettoie les ressources."""
-    unload_ok = await hass.config_entries.async_unload_platforms(
+    """Décharge les plateformes de l'intégration."""
+    return await hass.config_entries.async_unload_platforms(
         entry,
         PLATFORMS,
     )
 
-    if unload_ok:
-        await entry.runtime_data.async_shutdown()
-
-    return unload_ok
-
 
 async def async_remove_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HAMonitoringConfigEntry,
 ) -> None:
-    """Nettoie les données runtime globales lors de la suppression."""
+    """Supprime les données runtime globales associées à la ConfigEntry."""
     domain_data = hass.data.get(DOMAIN)
 
     if domain_data is None:
@@ -99,7 +95,7 @@ async def async_remove_entry(
 
 async def async_reload_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HAMonitoringConfigEntry,
 ) -> None:
-    """Recharge l'intégration lors d'un changement de configuration."""
+    """Recharge l'intégration."""
     await hass.config_entries.async_reload(entry.entry_id)
