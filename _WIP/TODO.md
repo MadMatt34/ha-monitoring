@@ -12,6 +12,8 @@
 - publication hacs
 - readme :
   - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur, pas de persistance au redémarrage
+  - infos backup uniquement avec l'intégration officielle
+  - taille db remontée uniquement avec la config standard sqllite
 
 
 ## TOTEST
