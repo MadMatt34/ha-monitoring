@@ -59,7 +59,7 @@ class GlobalStatusBinarySensor(
     def __init__(
         self,
         coordinator: HAMonitoringCoordinator,
-        entry: ConfigEntry,
+        entry: HAMonitoringConfigEntry,
     ) -> None:
         """Initialise le capteur binaire de statut global."""
         super().__init__(coordinator)
@@ -130,7 +130,7 @@ class BackupStatusBinarySensor(
     def __init__(
         self,
         coordinator: HAMonitoringCoordinator,
-        entry: ConfigEntry,
+        entry: HAMonitoringConfigEntry,
     ) -> None:
         """Initialise le capteur binaire d'état de la sauvegarde."""
         super().__init__(coordinator)

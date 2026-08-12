@@ -44,7 +44,7 @@ class HAMonitoringForceScanButton(
     def __init__(
         self,
         coordinator: HAMonitoringCoordinator,
-        entry: ConfigEntry,
+        entry: HAMonitoringConfigEntry,
     ) -> None:
         """Initialise le bouton."""
         super().__init__(coordinator)

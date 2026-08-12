@@ -153,7 +153,7 @@ class HAMonitoringGenericSensor[T: SensorData](
     def __init__(
         self,
         coordinator: HAMonitoringCoordinator,
-        entry: ConfigEntry,
+        entry: HAMonitoringConfigEntry,
         data_getter: Callable[[HAMonitoringData], T],
         unique_key: str,
         translation_key: str,
