@@ -47,6 +47,7 @@ from .const import (
 )
 from .helpers.backup import async_get_backup_info
 from .helpers.system import (
+    _snapshot_states,
     async_get_addons,
     async_get_failed_integrations,
     async_get_pending_repairs,
@@ -429,23 +430,36 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # scan_all_states est synchrone : il est donc exécuté dans
         # l'executor afin de ne jamais bloquer la boucle événementielle.
         # ------------------------------------------------------------------
-        updates, unavailable, offline = await self.hass.async_add_executor_job(
-            partial(
-                scan_all_states,
-                self.hass,
-                excluded_updates=options.get(
-                    CONF_EXCLUDED_UPDATES,
-                    [],
-                ),
-                excluded_unavailable_entities=(excluded_unavailable_entities),
-                excluded_unavailable_domains=(excluded_unavailable_domains),
-                excluded_unavailable_globs=(excluded_unavailable_globs),
-                excluded_offline=options.get(
-                    CONF_EXCLUDED_OFFLINE,
-                    [],
-                ),
-                timeout_hours=offline_timeout,
-                last_seen_suffixes=last_seen_suffixes,
+        state_snapshot = _snapshot_states(
+            self.hass,
+            last_seen_suffixes,
+        )
+
+        updates, unavailable, offline = (
+            await self.hass.async_add_executor_job(
+                partial(
+                    scan_all_states,
+                    state_snapshot,
+                    excluded_updates=options.get(
+                        CONF_EXCLUDED_UPDATES,
+                        [],
+                    ),
+                    excluded_unavailable_entities=(
+                        excluded_unavailable_entities
+                    ),
+                    excluded_unavailable_domains=(
+                        excluded_unavailable_domains
+                    ),
+                    excluded_unavailable_globs=(
+                        excluded_unavailable_globs
+                    ),
+                    excluded_offline=options.get(
+                        CONF_EXCLUDED_OFFLINE,
+                        [],
+                    ),
+                    timeout_hours=offline_timeout,
+                    last_seen_suffixes=last_seen_suffixes,
+                )
             )
         )
 
