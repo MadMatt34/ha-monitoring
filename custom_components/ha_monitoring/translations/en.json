@@ -144,21 +144,21 @@
   },
   "entity": {
     "sensor": {
-      "addons_in_error": { "name": "Monitoring Failed Add-ons" },
-      "integrations_in_error": { "name": "Monitoring Failed Integrations" },
-      "automations_in_error": { "name": "Monitoring Failed Automations" },
-      "scripts_in_error": { "name": "Monitoring Failed Scripts" },
-      "updates_pending": { "name": "Monitoring Pending Updates" },
-      "repairs_pending": { "name": "Monitoring Pending Repairs" },
+      "applications": { "name": "Monitoring Applications" },
+      "integrations": { "name": "Monitoring Integrations" },
+      "automations": { "name": "Monitoring Automations" },
+      "scripts": { "name": "Monitoring Scripts" },
+      "updates": { "name": "Monitoring Updates" },
+      "repairs": { "name": "Monitoring Repairs" },
       "unavailable_entities": { "name": "Monitoring Unavailable Entities" },
       "offline_devices": { "name": "Monitoring Offline Devices" }
     },
     "binary_sensor": {
       "global_status": { "name": "Monitoring Global Status" },
-      "backup_status": { "name": "Monitoring Backup Status" }
+      "backup_status": { "name": "Monitoring Backup" }
     },
     "button": {
-      "force_scan": { "name": "Monitoring Force Refresh" }
+      "force_scan": { "name": "Monitoring Force Scan" }
     }
   },
   "issues": {

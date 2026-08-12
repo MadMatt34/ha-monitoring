@@ -92,7 +92,7 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 
 | Entité | Nom | Description / Attributs |
 | :--- | :--- | :--- |
-| `sensor.monitoring_addons` | Monitoring Applications en erreur | Nombre d'addons en erreur. |
+| `sensor.monitoring_applications` | Monitoring Applications en erreur | Nombre d'addons en erreur. |
 | `sensor.monitoring_integrations` | Monitoring Intégrations en erreur | Nombre d'intégrations en échec. |
 | `sensor.monitoring_automations` | Monitoring Automatisations en erreur | Nombre d'automatisations ayant levé une erreur. |
 | `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre de scripts ayant levé une erreur. |
@@ -106,7 +106,7 @@ Toutes les entités sont rattachées au Device **Home Assistant** :
 | Entité | Device Class | Nom | Description |
 | :--- | :--- | :--- | :--- |
 | `binary_sensor.monitoring_global_status` | `problem` | Monitoring Statut Global | Passera à `ON` si au moins un problème critique (addon, intégration, automation ou script) est détecté. Informations système fournies en attributs. |
-| `binary_sensor.monitoring_backup_status` | - | Monitoring État de la sauvegarde | Passe à `off` si la dernière sauvegarde a échoué. Fournit en attributs les dates et la taille de la sauvegarde, la raison de l'éventuel échec. |
+| `binary_sensor.monitoring_backup` | - | Monitoring État de la sauvegarde | Passe à `off` si la dernière sauvegarde a échoué. Fournit en attributs les dates et la taille de la sauvegarde, la raison de l'éventuel échec. |
 
 ### Boutons (`button.*`)
 
@@ -128,7 +128,9 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 ### Précisions sur les délais d'actualisation des données
 
 - **Attributs informations système :** ces attributs sont actualisés suivant le fréquence définie dans les paramètres (par défaut 24 heures).
+
 - **Capteur backup :** ce capteur et ses attributs sont actualisés après l'exécution d'une sauvegarde.
+
 - **Tous les autres capteurs :** tous les autres capteurs et leurs attributs sont actualisés puis suivant le fréquence définie dans les paramètres (par défaut 3 min).
 
 > [!NOTE]
@@ -136,11 +138,17 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 
 ### Précisions sur certains capteurs et attributs
 
+- **Capteur Sauvegarde :** Seule l'intégration Backup officielle est prise en compte ; son fonctionnement actuel ne permet d'avoir des messages d'échec explicites. L'état sauvegarde en échec est perdu au redémarrage.
+
+- **Capteur Appareils hors ligne :** Le scan se base sur une entité de l'appareil, de type `sensor`, de classe `timestamp` avec un suffixe `last_seen` ou localisé, et son état est une date au format ISO.
+
 - **Capteur Applications :** Le scan remonte les applications configurées avec les paramètres `Lancer au démarrage` et `Chien de garde` activés, et qui ne seraient pas démarrées.
+
 - **Attributs Informations système du capteur Statut Global :**
   - Nombre d'intégrations  : comptabilise les intégrations visibles dans l'interface utilisateur, à l'exeption de celles configurées en yaml (impossible).
   - Nombre d'appareils : les appareils désactivés ne sont pas comptabilisés.
   - Nombre d'entités : les entités désactivées ne sont pas comptabilisées, et les entités pour les scripts et automatisations non plus.
+  - Taille de la base de donnée : uniquement l'installation standard est considérée (SQLLite)
 
 ---
 
@@ -162,9 +170,9 @@ action:
       title: "⚠️ HA Monitoring - Alerte Système"
       message: >
         Problème détecté sur votre système :
-        - Add-ons en erreur : {{ states('sensor.monitoring_applications_in_error') }}
-        - Intégrations : {{ states('sensor.monitoring_integrations_in_error') }}
-        - Automations : {{ states('sensor.monitoring_automations_in_error') }}
+        - Add-ons en erreur : {{ states('sensor.monitoring_applications') }}
+        - Intégrations : {{ states('sensor.monitoring_integrations') }}
+        - Automations : {{ states('sensor.monitoring_automations') }}
         - Entités indisponibles : {{ states('sensor.monitoring_unavailable_entities') }}
 mode: single
 ```
@@ -178,7 +186,7 @@ alias: "Alerte : Échec Sauvegarde"
 description: "Alerte si la dernière sauvegarde a échoué"
 trigger:
   - platform: state
-    entity_id: binary_sensor.monitoring_backup_status
+    entity_id: binary_sensor.monitoring_backup
     to: "off"
 action:
   - service: notify.notify
@@ -205,16 +213,16 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_applications_in_error') | int > 0 %}
+  {% if states('sensor.monitoring_applications') | int > 0 %}
   **Add-ons en erreur :**
-  {% for item in state_attr('sensor.monitoring_applications_in_error', 'list') %}
+  {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations_in_error') | int > 0 %}
+  {% if states('sensor.monitoring_integrations') | int > 0 %}
   **Intégrations en erreur :**
-  {% for item in state_attr('sensor.monitoring_integrations_in_error', 'list') %}
+  {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
@@ -230,7 +238,7 @@ content: >
   {% endif %}
 
   ---
-  💾 **Dernière sauvegarde :** {{ state_attr('binary_sensor.monitoring_backup_status', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup_status', 'size') }})
+  💾 **Dernière sauvegarde :** {{ state_attr('binary_sensor.monitoring_backup', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup', 'size') }})
 ```
 
 ---

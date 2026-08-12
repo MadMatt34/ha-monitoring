@@ -92,7 +92,7 @@ All entities are attached to the **Home Assistant** Device:
 
 | Entity | Name | Description / Attributes |
 | :--- | :--- | :--- |
-| `sensor.monitoring_addons` | Monitoring Failded Add-ons | Number of failed add-ons. |
+| `sensor.monitoring_applications` | Monitoring Failded Applications | Number of failed applications. |
 | `sensor.monitoring_integrations` | Monitoring Failded Integrations | Number of failed integrations. |
 | `sensor.monitoring_automations` | Monitoring Failded Automations | Number of automations that threw an error. |
 | `sensor.monitoring_scripts` | Monitoring Failded Scripts | Number of scripts that threw an error. |
@@ -106,7 +106,7 @@ All entities are attached to the **Home Assistant** Device:
 | Entity | Device Class | Name | Description |
 | :--- | :--- | :--- | :--- |
 | `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (add-on, integration, automation, or script) is detected. System info are provided in attributes. |
-| `binary_sensor.monitoring_backup_status` | - | Monitoring Backup Status | Turns `OFF` if the last backup failed. Provides backup dates, sizes, and failure reasons as attributes. |
+| `binary_sensor.monitoring_backup` | - | Monitoring Backup Status | Turns `OFF` if the last backup failed. Provides backup dates, sizes, and failure reasons as attributes. |
 
 ### Buttons (`button.*`)
 
@@ -128,7 +128,9 @@ The first scan following a Home Assistant boot will wait until the configured gr
 ### Data Refresh Intervals Details
 
 - **System Info Attributes:** Updated according to the frequency defined in options (default 24 hours).
+
 - **Backup Sensor:** Updated immediately following the completion of a backup execution event.
+
 - **All Other Sensors:** Updated according to the main scan interval defined in options (default 3 min).
 
 > [!NOTE]
@@ -136,11 +138,18 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 ### Specific Sensor & Attribute Notes
 
-- **Add-ons Sensor:** Only returns add-ons configured with both `Start on boot` and `Watchdog` enabled, and not started.
-- **Global Status System Info Attributes:**
+* **Backup Sensor:** Only the official Backup integration is taken into account; its current implementation does not provide explicit failure messages. The backup failure state is lost after a restart.
+
+* **Offline Devices Sensor:** The scan relies on a device entity of type `sensor`, with the `timestamp` device class, an `last_seen` or localized suffix, and whose state is an ISO-formatted date.
+
+* **Applications Sensor:** The scan reports applications configured with both `Start on boot` and `Watchdog` enabled that are not currently started.
+
+* **Global Status System Info Attributes:**
   - Integrations count: Counts UI-configured integrations (YAML-configured ones cannot be tracked).
   - Devices count: Disabled devices are excluded.
   - Entities count: Disabled entities, script entities, and automation entities are excluded.
+  - Database Size: Only the standard installation using SQLite is supported.
+
 
 ---
 
@@ -162,9 +171,9 @@ action:
       title: "⚠️ HA Monitoring - System Alert"
       message: >
         Issue detected on your system:
-        - Errored Add-ons: {{ states('sensor.monitoring_applications_in_error') }}
-        - Errored Integrations: {{ states('sensor.monitoring_integrations_in_error') }}
-        - Errored Automations: {{ states('sensor.monitoring_automations_in_error') }}
+        - Errored Add-ons: {{ states('sensor.monitoring_applications') }}
+        - Errored Integrations: {{ states('sensor.monitoring_integrations') }}
+        - Errored Automations: {{ states('sensor.monitoring_automations') }}
         - Unavailable Entities: {{ states('sensor.monitoring_unavailable_entities') }}
 mode: single
 ```
@@ -178,7 +187,7 @@ alias: "Alert: Backup Failure"
 description: "Alerts if the latest backup failed"
 trigger:
   - platform: state
-    entity_id: binary_sensor.monitoring_backup_status
+    entity_id: binary_sensor.monitoring_backup
     to: "off"
 action:
   - action: notify.notify
@@ -205,16 +214,16 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_applications_in_error') | int > 0 %}
+  {% if states('sensor.monitoring_applications') | int > 0 %}
   **Errored Add-ons:**
-  {% for item in state_attr('sensor.monitoring_applications_in_error', 'list') %}
+  {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations_in_error') | int > 0 %}
+  {% if states('sensor.monitoring_integrations') | int > 0 %}
   **Errored Integrations:**
-  {% for item in state_attr('sensor.monitoring_integrations_in_error', 'list') %}
+  {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
@@ -230,7 +239,7 @@ content: >
   {% endif %}
 
   ---
-  💾 **Last Backup:** {{ state_attr('binary_sensor.monitoring_backup_status', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup_status', 'size') }})
+  💾 **Last Backup:** {{ state_attr('binary_sensor.monitoring_backup', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup', 'size') }})
 ```
 
 ---
