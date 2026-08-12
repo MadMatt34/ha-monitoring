@@ -248,9 +248,3 @@ content: >
 
 - Check your logs: **Settings → System → Logs**
 - Diagnostics & Privacy: Safe diagnostic export is supported when opening an issue on GitHub. Access tokens, credentials, and personal data are automatically anonymized.
-
----
-
-## *Note*
-
-*I am not a developer; I built this integration with the help of AI. Feel free to contribute!*
