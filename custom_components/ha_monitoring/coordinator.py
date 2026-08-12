@@ -649,4 +649,5 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             },
         }
 
+
 type HAMonitoringConfigEntry = ConfigEntry[HAMonitoringCoordinator]

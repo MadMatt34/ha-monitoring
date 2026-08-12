@@ -51,9 +51,7 @@ async def async_setup_entry(
     await coordinator.async_config_entry_first_refresh()
 
     # Rechargement automatique lors de la modification des options dans l'UI.
-    entry.async_on_unload(
-        entry.add_update_listener(async_reload_entry)
-    )
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     # Chargement des plateformes.
     await hass.config_entries.async_forward_entry_setups(
