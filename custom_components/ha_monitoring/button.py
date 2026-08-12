@@ -4,17 +4,18 @@ import logging
 from typing import override
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
-    DOMAIN,
     ICON_REFRESH,
     TRANSLATION_KEY_REFRESH,
     UNIQUE_ID_REFRESH,
 )
-from .coordinator import HAMonitoringCoordinator
+from .coordinator import (
+    HAMonitoringConfigEntry,
+    HAMonitoringCoordinator,
+)
 from .entity import HAMonitoringBaseEntity
 
 _LOGGER = logging.getLogger(__name__)
@@ -22,11 +23,11 @@ _LOGGER = logging.getLogger(__name__)
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HAMonitoringConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Configure la plateforme button à partir d'une ConfigEntry."""
-    coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     async_add_entities([HAMonitoringForceScanButton(coordinator, entry)])
 

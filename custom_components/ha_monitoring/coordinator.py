@@ -648,3 +648,5 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "current_agent_errors": {},
             },
         }
+
+type HAMonitoringConfigEntry = ConfigEntry[HAMonitoringCoordinator]

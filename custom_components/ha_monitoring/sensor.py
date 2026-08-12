@@ -4,7 +4,6 @@ from collections.abc import Callable
 from typing import Any, override
 
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -12,7 +11,6 @@ from .const import (
     ATTR_LIST,
     ATTR_STARTUP_DELAY,
     ATTR_TOTAL,
-    DOMAIN,
     ICON_ADDONS,
     ICON_AUTOMATIONS,
     ICON_INTEGRATIONS,
@@ -38,7 +36,10 @@ from .const import (
     UNIQUE_ID_UNAVAILABLE,
     UNIQUE_ID_UPDATES,
 )
-from .coordinator import HAMonitoringCoordinator
+from .coordinator import (
+    HAMonitoringConfigEntry,
+    HAMonitoringCoordinator,
+)
 from .entity import HAMonitoringBaseEntity
 from .types import (
     HAMonitoringData,
@@ -64,11 +65,11 @@ type SensorData = (
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HAMonitoringConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Ajoute l'ensemble des capteurs de surveillance."""
-    coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     sensors: list[HAMonitoringGenericSensor[SensorData]] = [
         HAMonitoringGenericSensor(

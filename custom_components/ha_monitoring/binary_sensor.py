@@ -6,7 +6,6 @@ from homeassistant.components.binary_sensor import (
     BinarySensorDeviceClass,
     BinarySensorEntity,
 )
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -17,7 +16,6 @@ from .const import (
     ATTR_FAILURE,
     ATTR_SIZE,
     ATTR_STARTUP_DELAY,
-    DOMAIN,
     ICON_BACKUP,
     ICON_STATUS,
     TRANSLATION_KEY_BACKUP,
@@ -25,17 +23,20 @@ from .const import (
     UNIQUE_ID_BACKUP,
     UNIQUE_ID_STATUS,
 )
-from .coordinator import HAMonitoringCoordinator
+from .coordinator import (
+    HAMonitoringConfigEntry,
+    HAMonitoringCoordinator,
+)
 from .entity import HAMonitoringBaseEntity
 
 
 async def async_setup_entry(
     hass: HomeAssistant,
-    entry: ConfigEntry,
+    entry: HAMonitoringConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Configure les capteurs binaires via Config Entry."""
-    coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator = entry.runtime_data
 
     async_add_entities(
         [

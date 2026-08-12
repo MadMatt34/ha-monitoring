@@ -5,13 +5,13 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.diagnostics import async_redact_data
-from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
-from .coordinator import HAMonitoringCoordinator
+from .coordinator import (
+    HAMonitoringConfigEntry,
+    HAMonitoringCoordinator,
+)
 
-# Liste élargie des clés sensibles à anonymiser dans les rapports de diagnostic
 TO_REDACT: set[str] = {
     "unique_id",
     "mac",
@@ -34,10 +34,11 @@ TO_REDACT: set[str] = {
 
 
 async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
+    hass: HomeAssistant,
+    entry: HAMonitoringConfigEntry,
 ) -> dict[str, Any]:
     """Retourne les données de diagnostic pour une ConfigEntry donnée."""
-    coordinator: HAMonitoringCoordinator = hass.data[DOMAIN][entry.entry_id]
+    coordinator: HAMonitoringCoordinator = entry.runtime_data
 
     return {
         "config_entry": {
@@ -45,17 +46,34 @@ async def async_get_config_entry_diagnostics(
             "version": entry.version,
             "domain": entry.domain,
             "title": entry.title,
-            "data": async_redact_data(dict(entry.data), TO_REDACT),
-            "options": async_redact_data(dict(entry.options), TO_REDACT),
+            "data": async_redact_data(
+                dict(entry.data),
+                TO_REDACT,
+            ),
+            "options": async_redact_data(
+                dict(entry.options),
+                TO_REDACT,
+            ),
         },
         "coordinator": {
-            "is_ready": getattr(coordinator, "_is_ready", True),
+            "is_ready": getattr(
+                coordinator,
+                "_is_ready",
+                True,
+            ),
             "last_update_success": coordinator.last_update_success,
             "last_exception": (
-                str(coordinator.last_exception) if coordinator.last_exception else None
+                str(coordinator.last_exception)
+                if coordinator.last_exception
+                else None
             ),
             "data": (
-                async_redact_data(dict(coordinator.data), TO_REDACT) if coordinator.data else {}
+                async_redact_data(
+                    dict(coordinator.data),
+                    TO_REDACT,
+                )
+                if coordinator.data
+                else {}
             ),
         },
     }
