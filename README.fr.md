@@ -247,9 +247,3 @@ content: >
 
 - Consultez les logs : **Paramètres → Système → Journaux**
 - Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
-
----
-
-## *Note*
-
-*Je ne suis pas un développeur, je me suis aidé de l'IA pour produire cette intégration. N'hésitez pas à contribuer.*
