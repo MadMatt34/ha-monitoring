@@ -3,7 +3,7 @@
 from collections.abc import Iterable
 from datetime import datetime
 import logging
-from typing import Any, TypedDict, cast
+from typing import TypedDict, cast
 
 from homeassistant.components.trace.util import async_list_traces
 from homeassistant.core import HomeAssistant
@@ -13,6 +13,13 @@ from ..types import TraceErrorData
 from .utils import format_date_local
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class TraceTimestampData(TypedDict):
+    """Timestamp d'une trace HA."""
+
+    start: datetime | str | None
+    finish: datetime | str | None
 
 
 class TraceShortData(TypedDict, total=False):
@@ -26,13 +33,6 @@ class TraceShortData(TypedDict, total=False):
     item_id: str
     not_triggered: bool
     error: str
-
-
-class TraceTimestampData(TypedDict):
-    """Timestamp d'une trace HA."""
-
-    start: datetime | str | None
-    finish: datetime | str | None
 
 
 def _parse_trace_datetime(
