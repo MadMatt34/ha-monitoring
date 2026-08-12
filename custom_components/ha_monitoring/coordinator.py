@@ -64,40 +64,72 @@ from .types import (
 _LOGGER = logging.getLogger(__name__)
 
 _HA_START_TIME_KEY = "ha_start_time"
+_BACKUP_CACHE_KEY = "backup_cache"
 
 
 class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     """Coordinator principal de HA Monitoring."""
 
-    def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        entry: ConfigEntry,
+    ) -> None:
         """Initialise le coordinator."""
         self.entry = entry
 
         hass.data.setdefault(DOMAIN, {})
 
-        self._ha_start_time: datetime | None = hass.data[DOMAIN].get(_HA_START_TIME_KEY)
+        self._ha_start_time: datetime | None = hass.data[DOMAIN].get(
+            _HA_START_TIME_KEY
+        )
 
         self._is_ready = False
 
-        # Backup :
-        # - lecture initiale ;
-        # - invalidation uniquement après COMPLETED/FAILED ;
-        # - aucune lecture pendant les scans normaux si le cache est valide.
-        self._cached_backup_info: MonitoringBackupData | None = None
+        # ------------------------------------------------------------------
+        # Backup
+        # ------------------------------------------------------------------
+        # Ce cache appartient à l'instance Home Assistant et non au
+        # coordinator. Il survit donc à un reload de l'intégration.
+        #
+        # Il n'est volontairement PAS persisté : un redémarrage complet
+        # de Home Assistant recrée hass.data.
+        self._backup_cache: dict[str, MonitoringBackupData] = (
+            hass.data[DOMAIN].setdefault(
+                _BACKUP_CACHE_KEY,
+                {},
+            )
+        )
+
+        self._cached_backup_info: MonitoringBackupData | None = (
+            self._backup_cache.get(entry.entry_id)
+        )
+
+        # État précédent utilisé lorsqu'un nouvel événement Backup
+        # arrive. Il permet au helper de conserver le dernier succès
+        # connu lorsqu'une tentative échoue.
+        self._previous_backup_info: MonitoringBackupData | None = None
+
         self._last_backup_event: CreateBackupEvent | None = None
         self._last_backup_event_time: datetime | None = None
         self._backup_event_unsub: Callable[[], None] | None = None
 
-        # Démarrage HA.
+        # ------------------------------------------------------------------
+        # Démarrage HA
+        # ------------------------------------------------------------------
         self._unsub_ha_started: Callable[[], None] | None = None
         self._startup_timer_unsub: Callable[[], None] | None = None
 
-        # Cache traces.
+        # ------------------------------------------------------------------
+        # Cache traces
+        # ------------------------------------------------------------------
         self._last_trace_check_time: datetime | None = None
         self._cached_automations: list[TraceErrorData] = []
         self._cached_scripts: list[TraceErrorData] = []
 
-        # Cache System Info.
+        # ------------------------------------------------------------------
+        # Cache System Info
+        # ------------------------------------------------------------------
         self._last_system_stats_check_time: datetime | None = None
         self._cached_system_stats: SystemStatsData | None = None
 
@@ -122,10 +154,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         try:
             backup_manager = async_get_manager(hass)
         except HomeAssistantError:
-            _LOGGER.debug("[HA Monitoring] Le composant Backup n'est pas disponible.")
+            _LOGGER.debug(
+                "[HA Monitoring] Le composant Backup n'est pas disponible."
+            )
         else:
-            self._backup_event_unsub = backup_manager.async_subscribe_events(
-                self._async_backup_event
+            self._backup_event_unsub = (
+                backup_manager.async_subscribe_events(
+                    self._async_backup_event
+                )
             )
 
     def _setup_startup_delay(self) -> None:
@@ -147,15 +183,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 # Il n'existe pas d'API publique HA permettant de récupérer
                 # rétroactivement time_fired de EVENT_HOMEASSISTANT_STARTED.
                 self._ha_start_time = dt_util.utcnow()
-                self.hass.data[DOMAIN][_HA_START_TIME_KEY] = self._ha_start_time
+                self.hass.data[DOMAIN][_HA_START_TIME_KEY] = (
+                    self._ha_start_time
+                )
 
-            elapsed = (dt_util.utcnow() - self._ha_start_time).total_seconds()
+            elapsed = (
+                dt_util.utcnow() - self._ha_start_time
+            ).total_seconds()
 
             if elapsed >= startup_delay:
                 self._is_ready = True
                 return
 
-            self._schedule_startup_timer(startup_delay - elapsed)
+            self._schedule_startup_timer(
+                startup_delay - elapsed
+            )
             return
 
         # HA n'est pas encore démarré : nous attendons l'événement officiel.
@@ -166,7 +208,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
     @callback
-    def _async_home_assistant_started(self, event: Event) -> None:
+    def _async_home_assistant_started(
+        self,
+        event: Event,
+    ) -> None:
         """Réagit au démarrage officiel de Home Assistant."""
         self._unsub_ha_started = None
 
@@ -184,7 +229,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._schedule_startup_timer(startup_delay)
 
     @callback
-    def _schedule_startup_timer(self, delay: float) -> None:
+    def _schedule_startup_timer(
+        self,
+        delay: float,
+    ) -> None:
         """Programme la fin du délai de démarrage."""
         if self._startup_timer_unsub is not None:
             self._startup_timer_unsub()
@@ -195,7 +243,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             return
 
         _LOGGER.info(
-            "[HA Monitoring] Home Assistant est démarré. Attente de %.1f s avant le premier scan.",
+            "[HA Monitoring] Home Assistant est démarré. "
+            "Attente de %.1f s avant le premier scan.",
             delay,
         )
 
@@ -206,7 +255,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
     @callback
-    def _async_startup_timer_complete(self, _: datetime) -> None:
+    def _async_startup_timer_complete(
+        self,
+        _: datetime,
+    ) -> None:
         """Termine le délai de démarrage."""
         self._startup_timer_unsub = None
         self._finish_startup_delay()
@@ -219,7 +271,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         self._is_ready = True
 
-        _LOGGER.info("[HA Monitoring] Fin du délai de démarrage. Lancement du premier scan.")
+        _LOGGER.info(
+            "[HA Monitoring] Fin du délai de démarrage. "
+            "Lancement du premier scan."
+        )
 
         self.entry.async_create_background_task(
             self.hass,
@@ -228,7 +283,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
     @callback
-    def _async_backup_event(self, event: object) -> None:
+    def _async_backup_event(
+        self,
+        event: object,
+    ) -> None:
         """Réagit aux événements natifs du Backup Manager."""
         if not isinstance(event, CreateBackupEvent):
             return
@@ -239,12 +297,20 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         ):
             return
 
+        # Conserver l'état courant avant de l'invalider.
+        #
+        # Nécessaire pour un FAILED :
+        # le helper doit pouvoir conserver la date/les informations
+        # du dernier backup réussi.
+        self._previous_backup_info = self._cached_backup_info
+
         self._last_backup_event = event
         self._last_backup_event_time = dt_util.utcnow()
         self._cached_backup_info = None
 
         _LOGGER.debug(
-            "[HA Monitoring] Événement Backup %s reçu. Invalidation du cache.",
+            "[HA Monitoring] Événement Backup %s reçu. "
+            "Actualisation de l'état Backup.",
             event.state.value,
         )
 
@@ -254,11 +320,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             "ha_monitoring_backup_refresh",
         )
 
-    def _get_last_seen_suffixes(self) -> tuple[str, ...]:
+    def _get_last_seen_suffixes(
+        self,
+    ) -> tuple[str, ...]:
         """Retourne les suffixes last_seen applicables."""
         suffixes = set(DEFAULT_LAST_SEEN_SUFFIX)
 
-        localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(self.hass.config.language)
+        localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(
+            self.hass.config.language
+        )
 
         if localized_suffix:
             suffixes.add(localized_suffix.lower())
@@ -267,12 +337,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
     async def async_on_backup_completed(self) -> None:
         """Rafraîchit les données après un signal post-backup."""
-        _LOGGER.debug("[HA Monitoring] Invalidation du cache Backup suite au signal post-backup.")
+        _LOGGER.debug(
+            "[HA Monitoring] Rafraîchissement suite au signal "
+            "post-backup."
+        )
 
-        self._cached_backup_info = None
-        self._last_backup_event = None
-        self._last_backup_event_time = None
-
+        # Ne pas invalider le cache ici sans événement natif :
+        # la souscription Backup Manager est désormais la source de vérité.
         await self.async_refresh()
 
     async def async_shutdown(self) -> None:
@@ -303,13 +374,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         self._is_ready = True
 
-        # Force Refresh :
-        # - invalide explicitement les trois caches spécialisés ;
-        # - le cycle principal est ensuite exécuté normalement.
+        # Le Force Refresh invalide les caches spécialisés périodiques.
+        #
+        # Backup est EXPLICITEMENT exclu :
+        # son état est événementiel et un refresh forcé ne doit jamais
+        # remplacer un FAILED connu par le dernier ManagerBackup réussi.
         self._last_trace_check_time = None
-        self._cached_backup_info = None
-        self._last_backup_event = None
-        self._last_backup_event_time = None
         self._last_system_stats_check_time = None
         self._cached_system_stats = None
 
@@ -322,37 +392,48 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         # BACKUP
         # ------------------------------------------------------------------
-        # Le Backup n'est jamais interrogé simplement parce que le
-        # Coordinator effectue son cycle périodique.
-        #
-        # Il est lu :
-        #   - au premier refresh ;
-        #   - après un événement Backup final ;
-        #   - après un Force Refresh explicite.
+        # Lecture :
+        #   - première lecture si aucun cache n'existe ;
+        #   - après COMPLETED / FAILED ;
+        #   - jamais à chaque scan normal ;
+        #   - pas de réinitialisation lors d'un Force Refresh.
         # ------------------------------------------------------------------
         if self._cached_backup_info is None:
-            _LOGGER.debug("[HA Monitoring] Interrogation des informations Backup.")
+            _LOGGER.debug(
+                "[HA Monitoring] Interrogation des informations Backup."
+            )
 
             self._cached_backup_info = await async_get_backup_info(
                 self.hass,
                 backup_event=self._last_backup_event,
                 backup_event_time=self._last_backup_event_time,
-                previous_info=self._cached_backup_info,
+                previous_info=self._previous_backup_info,
             )
 
+            # Le résultat devient le nouvel état de référence.
+            self._backup_cache[self.entry.entry_id] = (
+                self._cached_backup_info
+            )
+
+            self._previous_backup_info = None
             self._last_backup_event = None
             self._last_backup_event_time = None
 
         current_backup_info = self._cached_backup_info
 
         if current_backup_info is None:
-            current_backup_info = self._empty_results(in_startup_delay=True)["monitoring_backup"]
+            current_backup_info = self._empty_results(
+                in_startup_delay=True
+            )["monitoring_backup"]
 
         # ------------------------------------------------------------------
         # STARTUP DELAY
         # ------------------------------------------------------------------
         if not self._is_ready:
-            results = self._empty_results(in_startup_delay=True)
+            results = self._empty_results(
+                in_startup_delay=True
+            )
+
             results["monitoring_backup"] = current_backup_info
             return results
 
@@ -388,32 +469,42 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # Une seule passe sur tous les états HA.
         # scan_all_states est synchrone : il est donc exécuté dans
         # l'executor afin de ne jamais bloquer la boucle événementielle.
-        updates, unavailable, offline = await self.hass.async_add_executor_job(
-            partial(
-                scan_all_states,
-                self.hass,
-                excluded_updates=options.get(
-                    CONF_EXCLUDED_UPDATES,
-                    [],
-                ),
-                excluded_unavailable_entities=(excluded_unavailable_entities),
-                excluded_unavailable_domains=(excluded_unavailable_domains),
-                excluded_unavailable_globs=excluded_unavailable_globs,
-                excluded_offline=options.get(
-                    CONF_EXCLUDED_OFFLINE,
-                    [],
-                ),
-                timeout_hours=offline_timeout,
-                last_seen_suffixes=last_seen_suffixes,
+        # ------------------------------------------------------------------
+        updates, unavailable, offline = (
+            await self.hass.async_add_executor_job(
+                partial(
+                    scan_all_states,
+                    self.hass,
+                    excluded_updates=options.get(
+                        CONF_EXCLUDED_UPDATES,
+                        [],
+                    ),
+                    excluded_unavailable_entities=(
+                        excluded_unavailable_entities
+                    ),
+                    excluded_unavailable_domains=(
+                        excluded_unavailable_domains
+                    ),
+                    excluded_unavailable_globs=(
+                        excluded_unavailable_globs
+                    ),
+                    excluded_offline=options.get(
+                        CONF_EXCLUDED_OFFLINE,
+                        [],
+                    ),
+                    timeout_hours=offline_timeout,
+                    last_seen_suffixes=last_seen_suffixes,
+                )
             )
         )
 
         # ------------------------------------------------------------------
         # TRACES
         # ------------------------------------------------------------------
-        # Les traces utilisent leur propre fréquence, indépendante du scan
-        # principal. Le helper est async : il ne doit PAS être envoyé dans
-        # async_add_executor_job().
+        # Fréquence indépendante du scan principal.
+        # get_trace_errors() est async et ne doit donc PAS être exécuté
+        # dans l'executor.
+        # ------------------------------------------------------------------
         traces_scan_interval_min = float(
             options.get(
                 CONF_TRACES_SCAN_INTERVAL,
@@ -421,11 +512,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
         )
 
-        traces_scan_interval_sec = traces_scan_interval_min * 60
+        traces_scan_interval_sec = (
+            traces_scan_interval_min * 60
+        )
 
         if (
             self._last_trace_check_time is None
-            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
+            or (
+                now - self._last_trace_check_time
+            ).total_seconds()
+            >= traces_scan_interval_sec
         ):
             self._cached_automations = await get_trace_errors(
                 self.hass,
@@ -451,6 +547,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # SYSTEM INFO
         # ------------------------------------------------------------------
         # Fréquence indépendante : par défaut 24 heures.
+        # ------------------------------------------------------------------
         system_info_scan_interval_hours = float(
             options.get(
                 CONF_SYSTEM_INFO_SCAN_INTERVAL,
@@ -458,12 +555,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
         )
 
-        system_info_scan_interval_sec = system_info_scan_interval_hours * 3600
+        system_info_scan_interval_sec = (
+            system_info_scan_interval_hours * 3600
+        )
 
         if (
             self._last_system_stats_check_time is None
             or self._cached_system_stats is None
-            or (now - self._last_system_stats_check_time).total_seconds()
+            or (
+                now - self._last_system_stats_check_time
+            ).total_seconds()
             >= system_info_scan_interval_sec
         ):
             assert self._ha_start_time is not None
@@ -482,17 +583,26 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         addons = await async_get_addons(
             self.hass,
-            options.get(CONF_EXCLUDED_ADDONS, []),
+            options.get(
+                CONF_EXCLUDED_ADDONS,
+                [],
+            ),
         )
 
         integrations = await async_get_failed_integrations(
             self.hass,
-            options.get(CONF_EXCLUDED_INTEGRATIONS, []),
+            options.get(
+                CONF_EXCLUDED_INTEGRATIONS,
+                [],
+            ),
         )
 
         repairs = await async_get_pending_repairs(
             self.hass,
-            options.get(CONF_EXCLUDED_REPAIRS, []),
+            options.get(
+                CONF_EXCLUDED_REPAIRS,
+                [],
+            ),
         )
 
         return {

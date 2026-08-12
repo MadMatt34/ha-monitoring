@@ -11,7 +11,7 @@
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
 - readme :
-  - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur
+  - backup failed perdu au reboot / difficulté à obtenir les messages d'erreur, pas de persistance au redémarrage
 
 
 ## TOTEST
