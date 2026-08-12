@@ -10,7 +10,16 @@
 - event pour notifier d'une nouvelle erreur + options (pour quels monitoring, et activé ou non pour compteur moins)
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
-
+- readme :
+  - application arrêtée, pas erreur
+  - préciser les types d'exclusions
+    globs = * → n'importe quelle séquence de caractères // ? → un seul caractère
+      Applications : nom ou slug ;
+      Intégrations : domaine, nom de l’entrée ou entry_id ;
+      Réparations : domaine, issue_id ou identifiant domain: issue_id ;
+      correspondance insensible à la casse ;
+      *, ?, [] disponibles ;
+      une chaîne sans wildcard continue de fonctionner comme une correspondance exacte.
 
 gestion d'erreur partielle du Coordinator
 
@@ -31,30 +40,27 @@ Mais je ne le modifierais pas maintenant : le faire proprement nécessite de dé
 - backup en erreur
 - last_seen localisé en offline
 - changement des options individuellement
-  - updates : ok
-  - integrations : uniquement plateforme, ajouter possibilité nom convivial et mot clé
-  - unavailable : ok > pas avec un mot clé du nom dans globs
-  - offline : ok
-  - repairs : uniquement plateforme, ajouter possibilité mot clé de l'issue
-  - applications :
   - automations : ok
-  - scripts : ok
+  - updates : ok
+  [ ] integrations : par id technique, ok par nom convivial, ok par mot clé
+  [x] applications : par id technique, ok par nom convivial, ok par mot clé
+  [x] repairs : ok par plateforme, ok par nom complet, ok par mot clé
+  [x] unavailable : ok par domaine, ok par entité, ok par glob sur id, ok par glob sur nom
+  [x] offline : ok
+  [x] scripts : ok
 - Qualité des attributs >> traductions ?
+  - automations : ok
   - integrations : ok
   - updates : ok
-  - offline : ok
-  - unavailable : ok
-  - backup : ok
-  - repairs : ok
-  - applications :
-  - automations : ok
-  - scripts : ok
+  [x] offline : ok
+  [x] unavailable : ok
+  [x] backup : ok
+  [x] repairs : ok
+  [x] applications :
+  [x] scripts : ok
 
 ## TOCORRECT
 
-- Backup failed : texte convivial
-- pour repairs_pending, nom plus convivial (translation system)
-- pour les scripts et automations, translation raison de l'erreur
 - pour integrations : prendre le nom affiché dans l'UI, reason est à traduire
 
 ## DONE

@@ -17,7 +17,7 @@
             },
             "data_description": {
               "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
-              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, add-ons, and checks for pending updates or repairs (default: 3 min).",
+              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, applications, and checks for pending updates or repairs (default: 3 min).",
               "system_info_scan_interval": "Frequency at which the system checks for system information (default: 24 hours).",
               "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
               "offline_timeout": "Duration after which a device is considered offline (default: 24 hours)."
@@ -25,11 +25,11 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore from scans specific Add-ons, Integrations, or Repairs.",
+            "description": "Ignore from scans specific Applications, Integrations, or Repairs.",
             "data": {
-              "excluded_addons": "Add-ons to exclude (names or slugs)",
-              "excluded_integrations": "Integrations to exclude (names or domains)",
-              "excluded_repairs": "Repairs to exclude (keywords or IDs)"
+              "excluded_addons": "Applications to exclude (name or keyword)",
+              "excluded_integrations": "Integrations to exclude (name or domain)",
+              "excluded_repairs": "Repairs to exclude (platform or name or keyword)"
             }
           },
           "section_exclusions_scripts": {
@@ -50,7 +50,7 @@
             "description": "Ignore specific entities or with wildcards, or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Entities to exclude",
-              "excluded_unavailable_globs": "Globs of entities to exclude",
+              "excluded_unavailable_globs": "Keyword of names or IDs to exclude",
               "excluded_unavailable_domains": "Domains to exclude"
             }
           },
@@ -90,7 +90,7 @@
             },
             "data_description": {
               "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
-              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, add-ons, and checks for pending updates or repairs (default: 3 min).",
+              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, applications, and checks for pending updates or repairs (default: 3 min).",
               "system_info_scan_interval": "Frequency at which the system checks for system information (default: 24 hours).",
               "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
               "offline_timeout": "Duration after which a device is considered offline (default: 24 hours)."
@@ -98,11 +98,11 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore from scans specific Add-ons, Integrations, or Repairs.",
+            "description": "Ignore from scans specific Applications, Integrations, or Repairs.",
             "data": {
-              "excluded_addons": "Add-ons to exclude (names or slugs)",
-              "excluded_integrations": "Integrations to exclude (names or domains)",
-              "excluded_repairs": "Repairs to exclude (keywords or IDs)"
+              "excluded_addons": "Applications to exclude (name or keyword)",
+              "excluded_integrations": "Integrations to exclude (name or domain)",
+              "excluded_repairs": "Repairs to exclude (platform or name or keyword)"
             }
           },
           "section_exclusions_scripts": {
@@ -123,7 +123,7 @@
             "description": "Ignore specific entities or with wildcard, or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Entities to exclude",
-              "excluded_unavailable_globs": "Globs of entities to exclude",
+              "excluded_unavailable_globs": "Keyword of names or IDs to exclude",
               "excluded_unavailable_domains": "Domains to exclude"
             }
           },

@@ -25,11 +25,11 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ Exclusions de composants Système",
-            "description": "Ignorer lors du scan certains Add-ons, Intégrations ou Réparations.",
+            "description": "Ignorer lors du scan certaines Applications, Intégrations ou Réparations.",
             "data": {
-              "excluded_addons": "Add-ons à exclure (noms ou slugs)",
-              "excluded_integrations": "Intégrations à exclure (noms ou domaines)",
-              "excluded_repairs": "Réparations à exclure (mots-clés ou identifiants)"
+              "excluded_addons": "Applications à exclure (nom ou mot-clé)",
+              "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
+              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)"
             }
           },
           "section_exclusions_scripts": {
@@ -50,7 +50,7 @@
             "description": "Ignorer des entités spécifiques ou avec des caractères génériques, ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités à exclure",
-              "excluded_unavailable_globs": "Globs d'entités à exclure",
+              "excluded_unavailable_globs": "Mot-clé de noms ou IDs à exclure",
               "excluded_unavailable_domains": "Domaines à exclure"
             }
           },
@@ -98,11 +98,11 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ Exclusions de composants Système",
-            "description": "Ignorer lors du scan certains Add-ons, Intégrations ou Réparations.",
+            "description": "Ignorer lors du scan certaines Applications, Intégrations ou Réparations.",
             "data": {
-              "excluded_addons": "Add-ons à exclure (noms ou slugs)",
-              "excluded_integrations": "Intégrations à exclure (noms ou domaines)",
-              "excluded_repairs": "Réparations à exclure (mots-clés ou identifiants)"
+              "excluded_addons": "Applications à exclure (nom ou mot-clé)",
+              "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
+              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)"
             }
           },
           "section_exclusions_scripts": {
@@ -123,7 +123,7 @@
             "description": "Ignorer des entités spécifiques ou avec des caractères génériques, ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités à exclure",
-              "excluded_unavailable_globs": "Globs d'entités à exclure",
+              "excluded_unavailable_globs": "Mot-clé de noms ou IDs à exclure",
               "excluded_unavailable_domains": "Domaines à exclure"
             }
           },
