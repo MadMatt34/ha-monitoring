@@ -1,11 +1,14 @@
 """Gestion des erreurs de traces pour les automatisations et scripts."""
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from datetime import datetime
 import logging
 from typing import TypedDict, cast
 
-from homeassistant.components.trace.util import async_list_traces
+from homeassistant.components.trace.util import (
+    async_get_trace,
+    async_list_traces,
+)
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
@@ -35,6 +38,44 @@ class TraceShortData(TypedDict, total=False):
     error: str
 
 
+class TraceThisStateData(TypedDict, total=False):
+    """État de l'entité enregistré au moment du trigger."""
+
+    entity_id: str
+    attributes: dict[str, object]
+
+
+class TraceChangedVariablesData(TypedDict, total=False):
+    """Variables enregistrées au moment du trigger."""
+
+    this: TraceThisStateData
+
+
+class TraceTriggerEntry(TypedDict, total=False):
+    """Entrée d'une trace de trigger."""
+
+    changed_variables: TraceChangedVariablesData
+
+
+class TraceConfigData(TypedDict, total=False):
+    """Configuration enregistrée dans une trace."""
+
+    alias: str
+    id: str
+
+
+class TraceExtendedData(TypedDict, total=False):
+    """Structure utile de l'extended_dict d'une trace HA."""
+
+    domain: str
+    item_id: str
+    run_id: str
+    timestamp: TraceTimestampData
+    error: str
+    config: TraceConfigData
+    trace: dict[str, list[TraceTriggerEntry]]
+
+
 def _parse_trace_datetime(
     value: datetime | str | None,
 ) -> datetime | None:
@@ -53,7 +94,9 @@ def _parse_trace_datetime(
     return dt_util.as_utc(parsed)
 
 
-def _get_trace_timestamp(trace: TraceShortData) -> datetime | None:
+def _get_trace_timestamp(
+    trace: TraceShortData,
+) -> datetime | None:
     """Retourne le timestamp de fin d'une trace, ou son début."""
     timestamp = trace.get("timestamp")
 
@@ -89,7 +132,107 @@ def _normalize_exclusions(
     excluded: Iterable[str] | None,
 ) -> set[str]:
     """Normalise les exclusions."""
-    return {value.strip() for value in (excluded or ()) if value and value.strip()}
+    return {
+        value.strip()
+        for value in (excluded or ())
+        if value and value.strip()
+    }
+
+
+def _get_trace_alias(
+    trace: TraceExtendedData,
+    fallback_entity_id: str,
+) -> str:
+    """Retourne le nom de l'automatisation/script depuis la trace."""
+    config = trace.get("config")
+
+    if config is not None:
+        alias = config.get("alias")
+
+        if isinstance(alias, str) and alias.strip():
+            return alias.strip()
+
+    return fallback_entity_id
+
+
+def _get_trace_entity_id(
+    trace: TraceExtendedData,
+    fallback_entity_id: str,
+) -> str:
+    """Retourne l'entity_id réel enregistré dans la trace."""
+    trace_data = trace.get("trace")
+
+    if not trace_data:
+        return fallback_entity_id
+
+    trigger_entries = trace_data.get("trigger")
+
+    if not trigger_entries:
+        return fallback_entity_id
+
+    for trigger_entry in trigger_entries:
+        changed_variables = trigger_entry.get("changed_variables")
+
+        if not changed_variables:
+            continue
+
+        this_state = changed_variables.get("this")
+
+        if not this_state:
+            continue
+
+        entity_id = this_state.get("entity_id")
+
+        if isinstance(entity_id, str) and entity_id:
+            return entity_id
+
+    return fallback_entity_id
+
+
+async def _get_error_trace_details(
+    hass: HomeAssistant,
+    trace: TraceShortData,
+) -> tuple[str, str]:
+    """Récupère le nom et l'entity_id réels d'une trace en erreur."""
+    domain = trace["domain"]
+    item_id = trace["item_id"]
+    run_id = trace["run_id"]
+
+    fallback_entity_id = f"{domain}.{item_id}"
+
+    try:
+        extended_raw = await async_get_trace(
+            hass,
+            fallback_entity_id,
+            run_id,
+        )
+    except KeyError:
+        # La trace peut disparaître entre async_list_traces() et
+        # async_get_trace() (nouvelle exécution, limite du buffer, etc.).
+        _LOGGER.debug(
+            "[HA Monitoring] Trace %s / %s indisponible lors de "
+            "la récupération détaillée.",
+            fallback_entity_id,
+            run_id,
+        )
+        return fallback_entity_id, fallback_entity_id
+
+    extended_trace = cast(
+        TraceExtendedData,
+        extended_raw,
+    )
+
+    entity_id = _get_trace_entity_id(
+        extended_trace,
+        fallback_entity_id,
+    )
+
+    name = _get_trace_alias(
+        extended_trace,
+        entity_id,
+    )
+
+    return name, entity_id
 
 
 async def get_trace_errors(
@@ -116,18 +259,18 @@ async def get_trace_errors(
     if not traces_raw:
         return []
 
-    # async_list_traces() retourne des dictionnaires issus de
-    # BaseTrace.as_short_dict(). Le contrat de cette API interne HA est
-    # précisément documenté par le modèle TraceShort. On convertit ici
-    # uniquement à la frontière avec l'API interne.
-    traces = [cast(TraceShortData, trace) for trace in traces_raw if isinstance(trace, dict)]
+    traces = [
+        cast(TraceShortData, trace)
+        for trace in traces_raw
+        if isinstance(trace, dict)
+    ]
 
-    # On conserve uniquement la dernière exécution réelle de chaque
-    # automation/script. Les traces "not_triggered" sont explicitement
-    # ignorées : elles ne constituent pas une exécution du script.
+    # Une seule trace de référence par automation/script :
+    # la dernière exécution réelle.
     latest_traces: dict[str, TraceShortData] = {}
 
     for trace in traces:
+        # Les traces not_triggered ne sont pas des exécutions.
         if trace.get("not_triggered") is True:
             continue
 
@@ -145,48 +288,51 @@ async def get_trace_errors(
 
     errors: list[TraceErrorData] = []
 
-    for entity_id, trace in latest_traces.items():
+    for fallback_entity_id, trace in latest_traces.items():
         error = trace.get("error")
 
-        # C'est volontairement la seule condition déterminant si
-        # l'automation/script doit apparaître dans le capteur.
-        #
-        # Peu importe le résultat final de l'exécution :
-        # si une étape a généré une erreur, le champ "error" est présent.
+        # Une seule règle détermine la présence dans le capteur :
+        # la dernière exécution réelle contient-elle une erreur ?
         if not isinstance(error, str) or not error.strip():
             continue
 
-        item_id = trace["item_id"]
+        item_id = trace.get("item_id")
 
-        # Les exclusions sont évaluées sur l'entity_id et l'item_id.
-        # Le nom convivial est évalué ensuite.
-        if entity_id in excluded_set or item_id in excluded_set:
+        if not item_id:
             continue
 
-        state = hass.states.get(entity_id)
+        if (
+            fallback_entity_id in excluded_set
+            or item_id in excluded_set
+        ):
+            continue
 
-        if state is not None:
-            friendly_name = state.attributes.get("friendly_name") or state.name or entity_id
-        else:
-            friendly_name = entity_id
+        name, entity_id = await _get_error_trace_details(
+            hass,
+            trace,
+        )
 
-        if friendly_name in excluded_set:
+        if (
+            entity_id in excluded_set
+            or name in excluded_set
+        ):
             continue
 
         timestamp = _get_trace_timestamp(trace)
 
         if timestamp is None:
-            _LOGGER.debug(
-                "[HA Monitoring] Trace en erreur sans timestamp pour %s",
-                entity_id,
-            )
             formatted_date = "Inconnu"
+
+            _LOGGER.debug(
+                "[HA Monitoring] Trace en erreur sans timestamp : %s",
+                fallback_entity_id,
+            )
         else:
             formatted_date = format_date_local(timestamp)
 
         errors.append(
             {
-                "name": friendly_name,
+                "name": name,
                 "entity_id": entity_id,
                 "date": formatted_date,
                 "error": error.strip(),
@@ -195,9 +341,9 @@ async def get_trace_errors(
 
         _LOGGER.debug(
             "[HA Monitoring] Erreur détectée sur %s (%s) : %s",
-            entity_id,
+            name,
             formatted_date,
-            error,
+            error.strip(),
         )
 
     return errors
