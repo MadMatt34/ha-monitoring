@@ -3,7 +3,8 @@
   "name": "HA Monitoring",
   "after_dependencies": [
     "hassio",
-    "recorder"
+    "recorder",
+    "trace"
   ],
   "codeowners": [
     "@MadMatt34"
