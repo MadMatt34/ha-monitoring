@@ -19,56 +19,11 @@ from homeassistant.helpers.hassio import is_hassio
 from homeassistant.loader import async_get_custom_components
 from homeassistant.util import dt as dt_util
 
+from ..const import INTEGRATION_EXCLUDED_DOMAINS, INTEGRATION_VALID_STATES
 from ..types import RecorderData, SystemStatsData
 from .utils import format_date_local
 
 _LOGGER = logging.getLogger(__name__)
-
-
-VALID_ENTRY_STATES = {
-    ConfigEntryState.LOADED,
-    ConfigEntryState.SETUP_ERROR,
-    ConfigEntryState.SETUP_RETRY,
-    ConfigEntryState.FAILED_UNLOAD,
-    ConfigEntryState.SETUP_IN_PROGRESS,
-}
-
-
-EXCLUDED_INTEGRATION_DOMAINS = {
-    # Helpers / Entrées d'aide
-    "group",
-    "utility_meter",
-    "threshold",
-    "min_max",
-    "template",
-    "tod",
-    "derivative",
-    "integral",
-    "compensation",
-    "filter",
-    "generic_thermostat",
-    "generic_hygrostat",
-    "timer",
-    "counter",
-    "input_boolean",
-    "input_button",
-    "input_datetime",
-    "input_number",
-    "input_select",
-    "input_text",
-    "schedule",
-    "bayesian",
-    "trend",
-    "go2rtc",
-    "statistics",
-    "switch_as_x",
-    # Système / Interne
-    "hardware",
-    "diagnostics",
-    "analytics",
-    "homeassistant",
-    "integration",
-}
 
 
 async def async_get_recorder_info(
@@ -157,9 +112,9 @@ async def async_get_system_stats(
         entry
         for entry in hass.config_entries.async_entries()
         if (
-            entry.state in VALID_ENTRY_STATES
+            entry.state in INTEGRATION_VALID_STATES
             and entry.disabled_by is None
-            and entry.domain not in EXCLUDED_INTEGRATION_DOMAINS
+            and entry.domain not in INTEGRATION_EXCLUDED_DOMAINS
         )
     ]
 

@@ -20,7 +20,7 @@ from homeassistant.helpers import (
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
-from ..const import DEFAULT_LAST_SEEN_SUFFIX, DOMAIN
+from ..const import DEFAULT_LAST_SEEN_SUFFIX, DOMAIN, INTEGRATION_ERROR_STATES
 from ..types import (
     FailedIntegrationData,
     OfflineDeviceData,
@@ -294,15 +294,11 @@ async def async_get_failed_integrations(
     excluded: list[str],
 ) -> list[FailedIntegrationData]:
     """Retourne les ConfigEntries en erreur avec traduction native."""
-    error_states = {
-        ConfigEntryState.SETUP_ERROR,
-        ConfigEntryState.SETUP_RETRY,
-        ConfigEntryState.MIGRATION_ERROR,
-        ConfigEntryState.FAILED_UNLOAD,
-    }
 
     entries = [
-        entry for entry in hass.config_entries.async_entries() if entry.state in error_states
+        entry
+        for entry in hass.config_entries.async_entries()
+        if entry.state in INTEGRATION_ERROR_STATES
     ]
 
     if not entries:

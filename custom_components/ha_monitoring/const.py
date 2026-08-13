@@ -115,9 +115,54 @@ ATTR_FAILURE = "failure"
 ATTR_TOTAL = "total"
 ATTR_LIST = "list"
 
-# États d'erreur d'une ConfigEntry (Intégrations)
+# États d'une ConfigEntry en erreur (Intégrations)
 INTEGRATION_ERROR_STATES = {
     ConfigEntryState.SETUP_ERROR,
     ConfigEntryState.SETUP_RETRY,
     ConfigEntryState.MIGRATION_ERROR,
+    ConfigEntryState.FAILED_UNLOAD,
+}
+# États valides à comptabiliser pour une ConfigEntry (Intégrations)
+INTEGRATION_VALID_STATES = {
+    ConfigEntryState.LOADED,
+    ConfigEntryState.SETUP_ERROR,
+    ConfigEntryState.SETUP_RETRY,
+    ConfigEntryState.FAILED_UNLOAD,
+    ConfigEntryState.SETUP_IN_PROGRESS,
+}
+# Domaines d'intégration à exclure par défaut du comptage (Helpers, Système, Interne)
+INTEGRATION_EXCLUDED_DOMAINS = {
+    # Helpers / Entrées d'aide
+    "group",
+    "utility_meter",
+    "threshold",
+    "min_max",
+    "template",
+    "tod",
+    "derivative",
+    "integral",
+    "compensation",
+    "filter",
+    "generic_thermostat",
+    "generic_hygrostat",
+    "timer",
+    "counter",
+    "input_boolean",
+    "input_button",
+    "input_datetime",
+    "input_number",
+    "input_select",
+    "input_text",
+    "schedule",
+    "bayesian",
+    "trend",
+    "go2rtc",
+    "statistics",
+    "switch_as_x",
+    # Système / Interne
+    "hardware",
+    "diagnostics",
+    "analytics",
+    "homeassistant",
+    "integration",
 }
