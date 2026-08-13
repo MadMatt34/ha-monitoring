@@ -393,9 +393,7 @@ async def async_get_failed_integrations(
                 ConfigEntryState.MIGRATION_ERROR: (
                     f"component.{DOMAIN}.issues.migration_error.title"
                 ),
-                ConfigEntryState.FAILED_UNLOAD: (
-                    f"component.{DOMAIN}.issues.failed_unload.title"
-                ),
+                ConfigEntryState.FAILED_UNLOAD: (f"component.{DOMAIN}.issues.failed_unload.title"),
             }.get(entry.state)
 
             if state_issue_key:
