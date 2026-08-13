@@ -66,9 +66,7 @@ async def async_get_recorder_info(
 
         return round(size_bytes / (1024 * 1024), 2)
 
-    info["database_size_mb"] = await hass.async_add_executor_job(
-        _get_db_size
-    )
+    info["database_size_mb"] = await hass.async_add_executor_job(_get_db_size)
 
     return info
 
@@ -87,27 +85,19 @@ async def async_get_system_stats(
         try:
             os_info = get_os_info(hass)
         except HassioNotReadyError:
-            _LOGGER.debug(
-                "[HA Monitoring] Informations Home Assistant OS "
-                "indisponibles."
-            )
+            _LOGGER.debug("[HA Monitoring] Informations Home Assistant OS indisponibles.")
         else:
             os_version = os_info.get("version")
 
         try:
             host_info = get_host_info(hass)
         except HassioNotReadyError:
-            _LOGGER.debug(
-                "[HA Monitoring] Informations de l'hôte Supervisor "
-                "indisponibles."
-            )
+            _LOGGER.debug("[HA Monitoring] Informations de l'hôte Supervisor indisponibles.")
         else:
             boot_timestamp = host_info.get("boot_timestamp")
 
             if isinstance(boot_timestamp, int):
-                os_boot_dt = dt_util.utc_from_timestamp(
-                    boot_timestamp / 1_000_000
-                )
+                os_boot_dt = dt_util.utc_from_timestamp(boot_timestamp / 1_000_000)
 
     translations = await async_get_translations(
         hass,
@@ -116,45 +106,26 @@ async def async_get_system_stats(
         integrations={DOMAIN},
     )
 
-    unknown_text = translations[
-        f"component.{DOMAIN}.system.unknown"
-    ]
+    unknown_text = translations[f"component.{DOMAIN}.system.unknown"]
 
-    unknown_os_version_text = translations[
-        f"component.{DOMAIN}.system.unknown_os_version"
-    ]
+    unknown_os_version_text = translations[f"component.{DOMAIN}.system.unknown_os_version"]
 
-    os_last_boot = (
-        format_date_local(os_boot_dt)
-        if os_boot_dt is not None
-        else unknown_text
-    )
+    os_last_boot = format_date_local(os_boot_dt) if os_boot_dt is not None else unknown_text
 
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
 
-    devices_count = sum(
-        1
-        for device in dev_reg.devices.values()
-        if device.disabled_by is None
-    )
+    devices_count = sum(1 for device in dev_reg.devices.values() if device.disabled_by is None)
 
     entities_count = sum(
         1
         for entry in ent_reg.entities.values()
-        if (
-            entry.disabled_by is None
-            and entry.domain not in ("script", "automation")
-        )
+        if (entry.disabled_by is None and entry.domain not in ("script", "automation"))
     )
 
-    automations_count = len(
-        hass.states.async_all("automation")
-    )
+    automations_count = len(hass.states.async_all("automation"))
 
-    scripts_count = len(
-        hass.states.async_all("script")
-    )
+    scripts_count = len(hass.states.async_all("script"))
 
     active_entries = [
         entry
@@ -166,16 +137,9 @@ async def async_get_system_stats(
         )
     ]
 
-    active_integration_domains = sorted(
-        {
-            entry.domain
-            for entry in active_entries
-        }
-    )
+    active_integration_domains = sorted({entry.domain for entry in active_entries})
 
-    integrations_count = len(
-        active_integration_domains
-    )
+    integrations_count = len(active_integration_domains)
 
     _LOGGER.debug(
         "[HA Monitoring] Domaines d'intégration comptabilisés (%d) : %s",
@@ -183,19 +147,13 @@ async def async_get_system_stats(
         active_integration_domains,
     )
 
-    custom_components = await async_get_custom_components(
-        hass
-    )
+    custom_components = await async_get_custom_components(hass)
 
     active_custom_domains = sorted(
-        domain
-        for domain in custom_components
-        if domain in hass.config.components
+        domain for domain in custom_components if domain in hass.config.components
     )
 
-    custom_integrations_count = len(
-        active_custom_domains
-    )
+    custom_integrations_count = len(active_custom_domains)
 
     _LOGGER.debug(
         "[HA Monitoring] Intégrations personnalisées détectées (%d) : %s",
@@ -208,10 +166,7 @@ async def async_get_system_stats(
     return {
         "ha_version": HA_VERSION,
         "ha_last_boot": ha_last_boot,
-        "os_version": (
-            os_version
-            or unknown_os_version_text
-        ),
+        "os_version": (os_version or unknown_os_version_text),
         "os_last_boot": os_last_boot,
         "devices_count": devices_count,
         "entities_count": entities_count,
