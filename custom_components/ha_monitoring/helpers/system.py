@@ -20,7 +20,11 @@ from homeassistant.helpers import (
 from homeassistant.helpers.translation import async_get_translations
 from homeassistant.util import dt as dt_util
 
-from ..const import DEFAULT_LAST_SEEN_SUFFIX, DOMAIN, INTEGRATION_ERROR_STATES
+from ..const import (
+    DEFAULT_LAST_SEEN_SUFFIX,
+    DOMAIN,
+    INTEGRATION_ERROR_STATES,
+)
 from ..types import (
     FailedIntegrationData,
     OfflineDeviceData,
@@ -60,10 +64,7 @@ def _matches_exclusions(
     value_lower = value.lower()
 
     return any(
-        fnmatch(
-            value_lower,
-            pattern.lower(),
-        )
+        fnmatch(value_lower, pattern)
         for pattern in exclusions
     )
 
@@ -77,7 +78,9 @@ def _snapshot_states(
     device_registry = dr.async_get(hass)
 
     monitoring_entity_ids = {
-        entry.entity_id for entry in entity_registry.entities.values() if entry.platform == DOMAIN
+        entry.entity_id
+        for entry in entity_registry.entities.values()
+        if entry.platform == DOMAIN
     }
 
     snapshot: list[StateScanData] = []
@@ -86,7 +89,10 @@ def _snapshot_states(
         entity_id = state_obj.entity_id
         attributes = state_obj.attributes
 
-        friendly_name = _optional_str(attributes.get("friendly_name")) or entity_id
+        friendly_name = (
+            _optional_str(attributes.get("friendly_name"))
+            or entity_id
+        )
 
         is_last_seen = (
             state_obj.domain == "sensor"
@@ -98,6 +104,8 @@ def _snapshot_states(
         device_name: str | None = None
         platform = "inconnu"
 
+        # Les registries ne sont consultés que pour les capteurs
+        # réellement susceptibles d'identifier un appareil hors ligne.
         if is_last_seen:
             entity_entry = entity_registry.async_get(entity_id)
 
@@ -109,7 +117,10 @@ def _snapshot_states(
                     device_entry = device_registry.async_get(device_id)
 
                     if device_entry is not None:
-                        device_name = device_entry.name_by_user or device_entry.name
+                        device_name = (
+                            device_entry.name_by_user
+                            or device_entry.name
+                        )
 
         snapshot.append(
             {
@@ -117,11 +128,19 @@ def _snapshot_states(
                 "domain": state_obj.domain,
                 "state": state_obj.state,
                 "friendly_name": friendly_name,
-                "installed_version": _optional_str(attributes.get("installed_version")),
-                "latest_version": _optional_str(attributes.get("latest_version")),
+                "installed_version": _optional_str(
+                    attributes.get("installed_version")
+                ),
+                "latest_version": _optional_str(
+                    attributes.get("latest_version")
+                ),
                 "device_id": device_id,
                 "device_name": device_name,
-                "platform": (DOMAIN if entity_id in monitoring_entity_ids else platform),
+                "platform": (
+                    DOMAIN
+                    if entity_id in monitoring_entity_ids
+                    else platform
+                ),
             }
         )
 
@@ -147,6 +166,7 @@ def scan_all_states(
     excluded_unavailable_domains: list[str],
     excluded_offline: list[str],
     timeout_hours: float,
+    unknown_version: str,
     last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_SUFFIX,
     excluded_unavailable_globs: list[str] | None = None,
 ) -> tuple[
@@ -159,17 +179,27 @@ def scan_all_states(
     cutoff = now - timedelta(hours=float(timeout_hours))
 
     excluded_updates_set = set(excluded_updates)
-    excluded_unavailable_entities_set = set(excluded_unavailable_entities)
-    excluded_unavailable_domains_set = set(excluded_unavailable_domains)
+
+    excluded_unavailable_entities_set = set(
+        excluded_unavailable_entities
+    )
+
+    excluded_unavailable_domains_set = set(
+        excluded_unavailable_domains
+    )
+
     excluded_offline_set = set(excluded_offline)
 
-    excluded_unavailable_globs_normalized = {
-        pattern.lower().strip() for pattern in (excluded_unavailable_globs or []) if pattern
+    excluded_unavailable_globs_set = {
+        pattern.lower().strip()
+        for pattern in (excluded_unavailable_globs or [])
+        if pattern.strip()
     }
 
     updates: list[UpdateEntityData] = []
     unavailable: list[UnavailableEntityData] = []
     offline: list[OfflineDeviceData] = []
+
     offline_devices: set[str] = set()
 
     for state_data in states:
@@ -181,17 +211,20 @@ def scan_all_states(
         if state_data["platform"] == DOMAIN:
             continue
 
+        # --------------------------------------------------------------
+        # Entités indisponibles
+        # --------------------------------------------------------------
         if state in (STATE_UNAVAILABLE, STATE_UNKNOWN):
             if (
                 entity_id not in excluded_unavailable_entities_set
                 and domain not in excluded_unavailable_domains_set
                 and not _matches_exclusions(
                     entity_id,
-                    excluded_unavailable_globs_normalized,
+                    excluded_unavailable_globs_set,
                 )
                 and not _matches_exclusions(
                     friendly_name,
-                    excluded_unavailable_globs_normalized,
+                    excluded_unavailable_globs_set,
                 )
             ):
                 unavailable.append(
@@ -205,37 +238,46 @@ def scan_all_states(
 
             continue
 
-        translations = await async_get_translations(
-            hass,
-            hass.config.language,
-            "system",
-            integrations=integrations,
-        )
-
+        # --------------------------------------------------------------
+        # Mises à jour disponibles
+        # --------------------------------------------------------------
         if domain == "update" and state == "on":
             if entity_id not in excluded_updates_set:
                 updates.append(
                     {
                         "entity_id": entity_id,
                         "name": friendly_name,
-                        "installed_version": (state_data["installed_version"] or translations[f"component.{DOMAIN}.system.unknown_version"]),
-                        "latest_version": (state_data["latest_version"] or translations[f"component.{DOMAIN}.system.unknown_version"]),
+                        "installed_version": (
+                            state_data["installed_version"]
+                            or unknown_version
+                        ),
+                        "latest_version": (
+                            state_data["latest_version"]
+                            or unknown_version
+                        ),
                     }
                 )
 
             continue
 
+        # --------------------------------------------------------------
+        # Appareils hors ligne
+        # --------------------------------------------------------------
         if not entity_id.endswith(last_seen_suffixes):
             continue
 
         device_id = state_data["device_id"]
 
         if (
-            device_id is not None and device_id in excluded_offline_set
+            device_id is not None
+            and device_id in excluded_offline_set
         ) or entity_id in excluded_offline_set:
             continue
 
-        display_name = state_data["device_name"] or friendly_name
+        display_name = (
+            state_data["device_name"]
+            or friendly_name
+        )
 
         if display_name in excluded_offline_set:
             continue
@@ -271,7 +313,11 @@ async def async_get_addons(
     except HassioNotReadyError:
         return []
 
-    excluded_set = {value.strip() for value in excluded if value.strip()}
+    excluded_set = {
+        value.strip().lower()
+        for value in excluded
+        if value.strip()
+    }
 
     failed: list[str] = []
 
@@ -288,7 +334,10 @@ async def async_get_addons(
 
         name = str(addon.get("name") or slug)
 
-        if _matches_exclusions(name, excluded_set) or _matches_exclusions(slug, excluded_set):
+        if (
+            _matches_exclusions(name, excluded_set)
+            or _matches_exclusions(slug, excluded_set)
+        ):
             continue
 
         failed.append(name)
@@ -301,7 +350,6 @@ async def async_get_failed_integrations(
     excluded: list[str],
 ) -> list[FailedIntegrationData]:
     """Retourne les ConfigEntries en erreur avec traduction native."""
-
     entries = [
         entry
         for entry in hass.config_entries.async_entries()
@@ -311,7 +359,10 @@ async def async_get_failed_integrations(
     if not entries:
         return []
 
-    integrations = {entry.domain for entry in entries}
+    integrations = {
+        entry.domain
+        for entry in entries
+    }
 
     integration_titles = await async_get_translations(
         hass,
@@ -334,7 +385,11 @@ async def async_get_failed_integrations(
         integrations=integrations | {DOMAIN},
     )
 
-    excluded_set = {value.strip() for value in excluded if value.strip()}
+    excluded_set = {
+        value.strip().lower()
+        for value in excluded
+        if value.strip()
+    }
 
     failed_entries: list[FailedIntegrationData] = []
 
@@ -370,37 +425,58 @@ async def async_get_failed_integrations(
         translation_key = entry.error_reason_translation_key
 
         if translation_key:
-            error_key = f"component.{entry.domain}.config.error.{translation_key}"
-            abort_key = f"component.{entry.domain}.config.abort.{translation_key}"
+            error_key = (
+                f"component.{entry.domain}.config.error."
+                f"{translation_key}"
+            )
+            abort_key = (
+                f"component.{entry.domain}.config.abort."
+                f"{translation_key}"
+            )
 
-            friendly_reason = config_translations.get(error_key) or config_translations.get(
-                abort_key
+            friendly_reason = (
+                config_translations.get(error_key)
+                or config_translations.get(abort_key)
             )
 
         if friendly_reason is not None:
-            placeholders = entry.error_reason_translation_placeholders or {}
+            placeholders = (
+                entry.error_reason_translation_placeholders
+                or {}
+            )
 
             try:
-                friendly_reason = friendly_reason.format(**placeholders)
+                friendly_reason = friendly_reason.format(
+                    **placeholders
+                )
             except (KeyError, IndexError):
                 _LOGGER.debug(
-                    "Translation placeholders missing for %s config entry %s",
+                    "Translation placeholders missing for "
+                    "%s config entry %s",
                     entry.domain,
                     entry.entry_id,
                 )
 
         if friendly_reason is None:
             state_issue_key = {
-                ConfigEntryState.SETUP_RETRY: (f"component.{DOMAIN}.issues.setup_retry.title"),
-                ConfigEntryState.SETUP_ERROR: (f"component.{DOMAIN}.issues.setup_error.title"),
+                ConfigEntryState.SETUP_RETRY: (
+                    f"component.{DOMAIN}.issues.setup_retry.title"
+                ),
+                ConfigEntryState.SETUP_ERROR: (
+                    f"component.{DOMAIN}.issues.setup_error.title"
+                ),
                 ConfigEntryState.MIGRATION_ERROR: (
                     f"component.{DOMAIN}.issues.migration_error.title"
                 ),
-                ConfigEntryState.FAILED_UNLOAD: (f"component.{DOMAIN}.issues.failed_unload.title"),
+                ConfigEntryState.FAILED_UNLOAD: (
+                    f"component.{DOMAIN}.issues.failed_unload.title"
+                ),
             }.get(entry.state)
 
             if state_issue_key:
-                friendly_reason = issue_translations.get(state_issue_key)
+                friendly_reason = issue_translations.get(
+                    state_issue_key
+                )
 
         if friendly_reason is None:
             friendly_reason = entry.reason or entry.state.value
@@ -435,7 +511,10 @@ async def async_get_pending_repairs(
     if not active_issues:
         return []
 
-    integrations = {issue.domain for issue in active_issues}
+    integrations = {
+        issue.domain
+        for issue in active_issues
+    }
 
     translations = await async_get_translations(
         hass,
@@ -444,28 +523,44 @@ async def async_get_pending_repairs(
         integrations=integrations,
     )
 
-    excluded_set = {value.strip() for value in excluded if value.strip()}
+    excluded_set = {
+        value.strip().lower()
+        for value in excluded
+        if value.strip()
+    }
 
     pending: list[PendingRepairData] = []
 
     for issue in active_issues:
-        issue_identifier = f"{issue.domain}: {issue.issue_id}"
+        issue_identifier = (
+            f"{issue.domain}: {issue.issue_id}"
+        )
 
         friendly_name: str | None = None
 
         if issue.translation_key:
-            translation_id = f"component.{issue.domain}.issues.{issue.translation_key}.title"
+            translation_id = (
+                f"component.{issue.domain}.issues."
+                f"{issue.translation_key}.title"
+            )
 
-            raw_title = translations.get(translation_id)
+            raw_title = translations.get(
+                translation_id
+            )
 
             if raw_title is not None:
-                placeholders = issue.translation_placeholders or {}
+                placeholders = (
+                    issue.translation_placeholders or {}
+                )
 
                 try:
-                    friendly_name = raw_title.format(**placeholders)
+                    friendly_name = raw_title.format(
+                        **placeholders
+                    )
                 except (KeyError, IndexError):
                     _LOGGER.debug(
-                        "Translation placeholders missing for repair %s:%s",
+                        "Translation placeholders missing for "
+                        "repair %s:%s",
                         issue.domain,
                         issue.issue_id,
                     )
