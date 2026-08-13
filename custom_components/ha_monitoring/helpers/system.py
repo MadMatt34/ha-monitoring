@@ -298,6 +298,7 @@ async def async_get_failed_integrations(
         ConfigEntryState.SETUP_ERROR,
         ConfigEntryState.SETUP_RETRY,
         ConfigEntryState.MIGRATION_ERROR,
+        ConfigEntryState.FAILED_UNLOAD,
     }
 
     entries = [
@@ -391,6 +392,9 @@ async def async_get_failed_integrations(
                 ConfigEntryState.SETUP_ERROR: (f"component.{DOMAIN}.issues.setup_error.title"),
                 ConfigEntryState.MIGRATION_ERROR: (
                     f"component.{DOMAIN}.issues.migration_error.title"
+                ),
+                ConfigEntryState.FAILED_UNLOAD: (
+                    f"component.{DOMAIN}.issues.failed_unload.title"
                 ),
             }.get(entry.state)
 

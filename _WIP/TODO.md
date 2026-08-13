@@ -14,10 +14,14 @@
   - application arrêtée, pas erreur
   - préciser les types d'exclusions
     globs = * → n'importe quelle séquence de caractères // ? → un seul caractère
-      Applications : nom ou slug ;
-      Intégrations : domaine, nom de l’entrée ou entry_id ;
-      Réparations : domaine, issue_id ou identifiant domain: issue_id ;
-      correspondance insensible à la casse ;
+Applications
+  nom + slug
+
+Intégrations
+  nom intégration + titre ConfigEntry + domain + entry_id
+
+Réparations
+  nom convivial + domain + issue_id + domain:issue_id      correspondance insensible à la casse ;
       *, ?, [] disponibles ;
       une chaîne sans wildcard continue de fonctionner comme une correspondance exacte.
 
