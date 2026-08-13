@@ -12,6 +12,8 @@
 - publication hacs
 - readme :
   - application arrêtée, pas erreur
+  - offline conditions : préciser comme zwave zigbee...
+  - langages
   - préciser les types d'exclusions
     globs = * → n'importe quelle séquence de caractères // ? → un seul caractère
 Applications
@@ -34,7 +36,6 @@ tout HAMonitoringData échoue
 toutes les entités du coordinator deviennent indisponibles
 
 Mais je ne le modifierais pas maintenant : le faire proprement nécessite de décider comment représenter l'indisponibilité individuelle de chaque sous-collecte dans HAMonitoringData. Ce serait une évolution du contrat des plateformes, pas une simple correction.
-
 
 ## TOTEST
 
