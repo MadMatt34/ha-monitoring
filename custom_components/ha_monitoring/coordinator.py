@@ -323,11 +323,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         translations = await async_get_translations(
             self.hass,
             language,
-            "system",
+            "common",
             integrations={DOMAIN},
         )
 
-        self._cached_unknown_version = translations[f"component.{DOMAIN}.system.unknown_version"]
+        self._cached_unknown_version = translations[f"component.{DOMAIN}.common.unknown_version"]
 
         self._cached_translation_language = language
 

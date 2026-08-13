@@ -102,13 +102,13 @@ async def async_get_system_stats(
     translations = await async_get_translations(
         hass,
         hass.config.language,
-        "system",
+        "common",
         integrations={DOMAIN},
     )
 
-    unknown_text = translations[f"component.{DOMAIN}.system.unknown"]
+    unknown_text = translations[f"component.{DOMAIN}.common.unknown"]
 
-    unknown_os_version_text = translations[f"component.{DOMAIN}.system.unknown_os_version"]
+    unknown_os_version_text = translations[f"component.{DOMAIN}.common.unknown_os_version"]
 
     os_last_boot = format_date_local(os_boot_dt) if os_boot_dt is not None else unknown_text
 

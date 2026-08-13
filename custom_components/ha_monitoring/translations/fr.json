@@ -181,12 +181,14 @@
     "unknown_error": {
       "title": "État anormal ({state})",
       "description": "Un problème inattendu est survenu (état : {state})."
-    },
-    "backup_manager_error": {
-      "title": "Une erreur est survenue lors de la gestion de la sauvegarde."
     }
   },
-  "system": {
+  "exceptions": {
+    "backup_manager_error": {
+      "message": "Une erreur est survenue lors de la gestion de la sauvegarde."
+    }
+  },
+  "common": {
     "unknown": "Inconnu",
     "unknown_version": "Inconnue",
     "unknown_os_version": "N/A (Core/Container)"

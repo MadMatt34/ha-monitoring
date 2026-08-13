@@ -181,12 +181,14 @@
     "unknown_error": {
       "title": "Abnormal status ({state})",
       "description": "An unexpected issue has occurred with state: {state}."
-    },
-    "backup_manager_error": {
-      "title": "An error as occured during backup management."
     }
   },
-  "system": {
+  "exceptions": {
+    "backup_manager_error": {
+      "message": "An error as occured during backup management."
+    }
+  },
+  "common": {
     "unknown": "Unknown",
     "unknown_version": "Unknown",
     "unknown_os_version": "N/A (Core/Container)"
