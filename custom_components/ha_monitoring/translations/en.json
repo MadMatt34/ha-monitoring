@@ -185,7 +185,7 @@
   },
   "exceptions": {
     "backup_manager_error": {
-      "message": "An error as occured during backup management."
+      "message": "An error occured during backup management."
     }
   },
   "common": {
