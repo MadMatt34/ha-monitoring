@@ -106,11 +106,11 @@ async def _translate_failure_reason(
     translations = await async_get_translations(
         hass,
         hass.config.language,
-        "exceptions",
+        "issues",
         integrations={DOMAIN},
     )
 
-    translation_key = f"component.{DOMAIN}.exceptions.{reason}.message"
+    translation_key = f"component.{DOMAIN}.issues.{reason}.title"
 
     return translations.get(translation_key, reason)
 

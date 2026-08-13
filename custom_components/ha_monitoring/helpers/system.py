@@ -205,14 +205,21 @@ def scan_all_states(
 
             continue
 
+        translations = await async_get_translations(
+            hass,
+            hass.config.language,
+            "system",
+            integrations=integrations,
+        )
+
         if domain == "update" and state == "on":
             if entity_id not in excluded_updates_set:
                 updates.append(
                     {
                         "entity_id": entity_id,
                         "name": friendly_name,
-                        "installed_version": (state_data["installed_version"] or "Inconnue"),
-                        "latest_version": (state_data["latest_version"] or "Inconnue"),
+                        "installed_version": (state_data["installed_version"] or translations[f"component.{DOMAIN}.system.unknown_version"]),
+                        "latest_version": (state_data["latest_version"] or translations[f"component.{DOMAIN}.system.unknown_version"]),
                     }
                 )
 

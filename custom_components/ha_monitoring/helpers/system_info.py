@@ -15,6 +15,7 @@ from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
 from homeassistant.helpers.hassio import is_hassio
+from homeassistant.helpers.translation import async_get_translations
 from homeassistant.loader import async_get_custom_components
 from homeassistant.util import dt as dt_util
 
@@ -91,7 +92,14 @@ async def async_get_system_stats(
             if isinstance(boot_timestamp, int):
                 os_boot_dt = dt_util.utc_from_timestamp(boot_timestamp / 1_000_000)
 
-    os_last_boot = format_date_local(os_boot_dt) if os_boot_dt is not None else "Inconnu"
+    translations = await async_get_translations(
+        hass,
+        hass.config.language,
+        "system",
+        integrations={DOMAIN},
+    )
+
+    os_last_boot = format_date_local(os_boot_dt) if os_boot_dt is not None else translations[f"component.{DOMAIN}.system.unknown"]
 
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
@@ -146,7 +154,7 @@ async def async_get_system_stats(
     return {
         "ha_version": HA_VERSION,
         "ha_last_boot": ha_last_boot,
-        "os_version": (os_version or "N/A (Core/Container)"),
+        "os_version": (os_version or translations[f"component.{DOMAIN}.system.unknown_os_version"]),
         "os_last_boot": os_last_boot,
         "devices_count": devices_count,
         "entities_count": entities_count,
