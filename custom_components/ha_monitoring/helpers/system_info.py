@@ -11,7 +11,6 @@ from homeassistant.components.hassio import (
 )
 from homeassistant.components.recorder import get_instance
 from homeassistant.components.recorder.util import dburl_to_path
-from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import __version__ as HA_VERSION
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr, entity_registry as er
