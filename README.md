@@ -1,7 +1,10 @@
 # HA Monitoring - Home Assistant Integration
 
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-monitoring?color=green)](https://github.com/MadMatt34/ha-monitoring/releases)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
+
+[![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
+[![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
 ![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
 
@@ -19,13 +22,13 @@
 - **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
 - **System Information:** Reports versions and boot timestamps for HAOS and HA, total counts of various elements, database size, and recorder settings.
 - **Global Monitoring:**
-  - **Updates & Repairs:** Real-time tracking of system updates and pending repair issues.
+  - **Updates & Repairs:** Tracking of updates and pending repair issues.
   - **Backups:** Verification of the latest backup status and associated tracking attributes.
-  - **Applications & Integrations:** Detection of failed or errored components.
-  - **Automation & Script Traces:** Detection of recent execution errors.
+  - **Applications & Integrations:** Detection of stopped, failed or errored components.
+  - **Automation & Script Traces:** Detection of execution errors.
   - **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
-- **Startup Grace Period:** Prevents false alarms during Home Assistant's initial boot sequence.
-- **Action Button:** Trigger an immediate full system refresh on demand.
+- **Startup Grace Period:** Prevents false alarms during Home Assistant's boot sequence.
+- **Action Button:** Trigger an immediate full refresh on demand.
 - **Fine-grained Customization via UI:** Adjust scan frequencies and granularly exclude specific items from being monitored.
 
 ---
@@ -52,8 +55,7 @@
 
 Configuration is **100% UI-based** within Home Assistant.
 
-1. Go to **Settings** > **Devices & Services**.
-
+1. Go to **Settings** > **Devices & Services**.\
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Click **Add Integration** (bottom right).
 3. Search for **HA Monitoring** and select it.
@@ -68,7 +70,7 @@ You can adjust thresholds and exclusion lists at any time:
 1. Go to **Settings** > **Devices & Services** > **HA Monitoring**.
 2. Click the **CONFIGURE** button *(gear icon)*.
 3. Adjust the desired parameters:
-    - **Startup Grace Period** (in seconds): Waiting time upon boot before enabling scans (default: 2 min).
+    - **Startup Grace Period** (in seconds): Waiting time upon boot before enabling first scan (default: 2 min).
     - **Refresh Interval** (in seconds): Main data refresh frequency (default: 3 min).
     - **System Info Scan Interval** (in hours): Refresh frequency for general system stats (default: 24 hours).
     - **Traces Scan Interval** (in minutes): Frequency for scanning automation and script execution trace errors (default: 30 min).
@@ -79,40 +81,37 @@ You can adjust thresholds and exclusion lists at any time:
 
 ## 📡 Provided Entities
 
-All entities are attached to the **Home Assistant** Device:
+All entities are attached to the **Home Assistant** device:
 
 > [!TIP]
-> Each entity contains a list attribute detailing the items detected.
->
+> Each entity contains a list attribute detailing the items detected.\
 > Use **Settings** > **Tools** > **States** to explore all attributes.
->
-> [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/developer_states.svg)](https://my.home-assistant.io/redirect/developer_states/)
 
 ### Sensors (`sensor.*`)
 
 | Entity | Name | Description / Attributes |
 | :--- | :--- | :--- |
-| `sensor.monitoring_applications` | Monitoring Failed Applications | Number of failed applications. |
-| `sensor.monitoring_integrations` | Monitoring Failed Integrations | Number of failed integrations. |
-| `sensor.monitoring_automations` | Monitoring Failed Automations | Number of automations that threw an error. |
-| `sensor.monitoring_scripts` | Monitoring Failed Scripts | Number of scripts that threw an error. |
-| `sensor.monitoring_updates` | Monitoring Pending Updates | Number of pending updates. |
-| `sensor.monitoring_repairs` | Monitoring Pending Repairs | Number of active repair issues. |
+| `sensor.monitoring_applications` | Monitoring Stopped Applications | Number of applications stopped. List in attribut. |
+| `sensor.monitoring_integrations` | Monitoring Failed Integrations | Number of failed integrations. List in attribut. |
+| `sensor.monitoring_automations` | Monitoring Failed Automations | Number of automations that threw an error. List in attribut. |
+| `sensor.monitoring_scripts` | Monitoring Failed Scripts | Number of scripts that threw an error. List in attribut. |
+| `sensor.monitoring_updates` | Monitoring Pending Updates | Number of pending updates. List in attribut. |
+| `sensor.monitoring_repairs` | Monitoring Pending Repairs | Number of active repair issues. List in attribut. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
-| `sensor.monitoring_offline_devices` | Monitoring Offline Devices | Count and list of inactive devices. |
+| `sensor.monitoring_offline_devices` | Monitoring Offline Devices | Count and list of devices inactive since configured threshold. |
 
 ### Binary Sensors (`binary_sensor.*`)
 
 | Entity | Device Class | Name | Description |
 | :--- | :--- | :--- | :--- |
-| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `ON` if at least one critical issue (application, integration, automation, or script) is detected. System info are provided in attributes. |
-| `binary_sensor.monitoring_backup` | - | Monitoring Backup Status | Turns `OFF` if the last backup failed. Provides backup dates, sizes, and failure reasons as attributes. |
+| `binary_sensor.monitoring_global_status` | `problem` | Monitoring Global Status | Turns `on` if at least one critical issue (application, integration, automation, or script) is detected. System info are provided in attributes. |
+| `binary_sensor.monitoring_backup` | - | Monitoring Backup Status | Turns `off` if the last backup failed. Provides backup dates, size, and failure reasons as attributes. |
 
 ### Buttons (`button.*`)
 
 | Entity | Name | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Monitoring Force Refresh | Manually triggers an immediate full system scan. |
+| `button.monitoring_force_scan` | Monitoring Force Scan | Manually triggers an immediate full scan. |
 
 ---
 
@@ -123,14 +122,12 @@ All entities are attached to the **Home Assistant** Device:
 The first scan following a Home Assistant boot will wait until the configured grace period expires (default 2 min). This prevents false alerts before all integrations and sensors have finished loading.
 
 > [!TIP]
-> Use the attribute `startup_delay = False` as a condition in your scripts/automations or dashboard view visibility.
+> Use the attribute `startup_delay = False` as a condition in your scripts/automations or dashboard visibility.
 
 ### Data Refresh Intervals Details
 
-- **System Info Attributes:** Updated according to the frequency defined in options (default 24 hours).
-
+- **System Info Attributes:** Those attributes of `binary_sensor.monitoring_global_status` are updated according to the frequency defined in options (default 24 hours).
 - **Backup Sensor:** Updated immediately following the completion of a backup execution event.
-
 - **All Other Sensors:** Updated according to the main scan interval defined in options (default 3 min).
 
 > [!NOTE]
@@ -138,18 +135,28 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 ### Specific Sensor & Attribute Notes
 
-* **Backup Sensor:** Only the official Backup integration is taken into account; its current implementation does not provide explicit failure messages. The backup failure state is lost after a restart.
-
-* **Offline Devices Sensor:** The scan relies on a device entity of type `sensor`, with the `timestamp` device class, an `last_seen` or localized suffix, and whose state is an ISO-formatted date.
-
-* **Applications Sensor:** The scan reports applications configured with both `Start on boot` and `Watchdog` enabled that are not currently started.
-
-* **Global Status System Info Attributes:**
-  - Integrations count: Counts UI-configured integrations (YAML-configured ones cannot be tracked).
+- **Backup Sensor:** Only the official `Backup` integration is taken into account; its current implementation does not provide explicit failure messages. The backup failure state is lost after a restart.
+- **Offline Devices Sensor:** The scan relies on a device entity of type `sensor`, with the `timestamp` device class, an `last_seen` or localized suffix, and whose state is an ISO-formatted date *(which is handled by Z-Wave or Zigbee2MQTT, for example)*.
+- **Applications Sensor:** The scan reports applications configured with both `Start on boot` and `Watchdog` enabled that are not currently started.
+- **Global Status System Info Attributes:**
+  - Integrations count: Counts UI-configured integrations   (YAML-configured ones cannot be tracked).
   - Devices count: Disabled devices are excluded.
   - Entities count: Disabled entities, script entities, and automation entities are excluded.
   - Database Size: Only the standard installation using SQLite is supported.
 
+### Details on Free-text Exclusions
+
+- **Applications Exclusions:** By friendly name or part of it, by technical name or part of it.
+- **Intégrations Exclusions:** By friendly name or part of it, by technical name or part of it, by domain, by ID or part of it.
+- **Repairs Exclusions:** By friendly name or part of it, by domain, by ID or part of it.
+- **Entities Exclusions:** By friendly name or part of it, by ID or part of it.
+
+> [!NOTE] ***Partial matching (globs):***\
+>
+> - Case-insensitive.
+> - \* → any sequence of characters.
+> - ? → a single character.
+> - A string without wildcards is searched as an exact match.
 
 ---
 
@@ -248,3 +255,9 @@ content: >
 
 - Check your logs: **Settings → System → Logs**
 - Diagnostics & Privacy: Safe diagnostic export is supported when opening an issue on GitHub. Access tokens, credentials, and personal data are automatically anonymized.
+
+---
+
+## 🌐 Supported Languages
+
+🇬🇧 English • 🇫🇷 Français
