@@ -11,21 +11,6 @@
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
 - publication hacs
 - readme :
-  - application arrêtée, pas erreur
-  - offline conditions : préciser comme zwave zigbee...
-  - langages
-  - préciser les types d'exclusions
-    globs = * → n'importe quelle séquence de caractères // ? → un seul caractère
-Applications
-  nom + slug
-
-Intégrations
-  nom intégration + titre ConfigEntry + domain + entry_id
-
-Réparations
-  nom convivial + domain + issue_id + domain:issue_id      correspondance insensible à la casse ;
-      *, ?, [] disponibles ;
-      une chaîne sans wildcard continue de fonctionner comme une correspondance exacte.
 
 gestion d'erreur partielle du Coordinator
 
