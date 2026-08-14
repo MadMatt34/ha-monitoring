@@ -12,6 +12,31 @@
 - publication hacs
 - readme :
 
+---
+
+Je conserverais :
+
+scan principal       3 min
+Trace                30 min
+System Info          24 h
+Backup               événementiel
+
+et j'ajouterais progressivement :
+
+ConfigEntry change
+       → invalidate integrations
+
+Entity Registry change
+       → invalidate offline metadata
+
+Device Registry change
+       → invalidate offline metadata
+
+selected last_seen state change
+       → invalidate/recalculate offline
+
+---
+
 gestion d'erreur partielle du Coordinator
 
 une collecte secondaire échoue
@@ -21,6 +46,8 @@ tout HAMonitoringData échoue
 toutes les entités du coordinator deviennent indisponibles
 
 Mais je ne le modifierais pas maintenant : le faire proprement nécessite de décider comment représenter l'indisponibilité individuelle de chaque sous-collecte dans HAMonitoringData. Ce serait une évolution du contrat des plateformes, pas une simple correction.
+
+---
 
 ## TOTEST
 
