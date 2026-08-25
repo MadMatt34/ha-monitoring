@@ -160,11 +160,12 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 - **Exclusions Réparations :** Par nom convivial ou une partie, par domaine, par ID ou une partie.
 - **Exclusions Entités :** Par nom convivial ou une partie, par ID ou une partie.
 
-> [!NOTE] ***Filtrage par partie (Globs) :***\
-> Insensible à la casse.\
-> \* → n'importe quelle séquence de caractères.\
-> ? → un seul caractère.\
-> Une chaîne sans caractère générique est cherchée comme une correspondance exacte.
+> [!NOTE]
+> ***Filtrage par partie (Globs) :***
+> - Insensible à la casse.
+> - \* → n'importe quelle séquence de caractères.
+> - ? → un seul caractère.
+> - Une chaîne sans caractère générique est cherchée comme une correspondance exacte.
 
 ---
 

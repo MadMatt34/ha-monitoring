@@ -160,11 +160,12 @@ The first scan following a Home Assistant boot will wait until the configured gr
 - **Repairs Exclusions:** By friendly name or part of it, by domain, by ID or part of it.
 - **Entities Exclusions:** By friendly name or part of it, by ID or part of it.
 
-> [!NOTE] ***Partial matching (globs):***\
->  Case-insensitive.\
->  \* → any sequence of characters.\
->  ? → a single character.\
->  A string without wildcards is searched as an exact match.
+> [!NOTE]
+> ***Partial matching (globs):***
+>  - Case-insensitive.
+>  - \* → any sequence of characters.
+>  - ? → a single character.
+>  - A string without wildcards is searched as an exact match.
 
 ---
 
