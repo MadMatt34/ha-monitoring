@@ -745,12 +745,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     @override
     def _async_refresh_finished(self) -> None:
         """Actualise les listeners après un refresh réussi."""
-        if (
-            self.last_update_success
-            and self._scan_timestamps_changed
-        ):
+        if self.last_update_success and self._scan_timestamps_changed:
             self._async_update_scan_timestamp_listeners()
 
         self._scan_timestamps_changed = False
+
 
 type HAMonitoringConfigEntry = ConfigEntry[HAMonitoringCoordinator]

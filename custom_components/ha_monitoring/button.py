@@ -81,9 +81,7 @@ class HAMonitoringForceScanButton(
     @override
     async def async_press(self) -> None:
         """Force un rafraîchissement complet du Coordinator."""
-        _LOGGER.info(
-            "[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours."
-        )
+        _LOGGER.info("[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours.")
 
         await self.coordinator.async_force_refresh()
 
@@ -93,9 +91,7 @@ class HAMonitoringForceScanButton(
         await super().async_added_to_hass()
 
         self.async_on_remove(
-            self.coordinator.async_add_scan_timestamp_listener(
-                self._handle_scan_timestamp_update
-            )
+            self.coordinator.async_add_scan_timestamp_listener(self._handle_scan_timestamp_update)
         )
 
     @callback
