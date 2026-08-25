@@ -638,7 +638,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         self._last_scan_time = dt_util.utcnow()
         self._scan_timestamps_changed = True
-        self._async_update_scan_timestamp_listeners()
 
         return {
             ATTR_STARTUP_DELAY: False,
