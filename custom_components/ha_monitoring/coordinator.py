@@ -118,6 +118,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._startup_timer_unsub: Callable[[], None] | None = None
 
         # ------------------------------------------------------------------
+        # Timestamps des derniers scans
+        # ------------------------------------------------------------------
+        self._last_scan_time: datetime | None = None
+        self._last_backup_scan_time: datetime | None = None
+
+        # ------------------------------------------------------------------
         # Cache traces
         # ------------------------------------------------------------------
         self._last_trace_check_time: datetime | None = None
@@ -333,6 +339,26 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         return self._cached_unknown_version
 
+    @property
+    def last_scan_time(self) -> datetime | None:
+        """Retourne la date du dernier scan principal terminé."""
+        return self._last_scan_time
+
+    @property
+    def last_traces_scan_time(self) -> datetime | None:
+        """Retourne la date du dernier scan des traces terminé."""
+        return self._last_trace_check_time
+
+    @property
+    def last_system_info_scan_time(self) -> datetime | None:
+        """Retourne la date du dernier scan des informations système terminé."""
+        return self._last_system_stats_check_time
+
+    @property
+    def last_backup_scan_time(self) -> datetime | None:
+        """Retourne la date de la dernière interrogation Backup."""
+        return self._last_backup_scan_time
+
     async def async_shutdown(self) -> None:
         """Nettoie les listeners et temporisateurs."""
         if self._unsub_ha_started is not None:
@@ -395,6 +421,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 backup_event_time=self._last_backup_event_time,
                 previous_info=self._previous_backup_info,
             )
+
+            self._last_backup_scan_time = dt_util.utcnow()
 
             self._backup_cache[self.entry.entry_id] = self._cached_backup_info
 
@@ -577,6 +605,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 [],
             ),
         )
+
+        self._last_scan_time = dt_util.utcnow()
 
         return {
             ATTR_STARTUP_DELAY: False,

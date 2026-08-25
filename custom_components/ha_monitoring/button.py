@@ -1,5 +1,6 @@
 """Support pour la plateforme button de HA Monitoring."""
 
+from collections.abc import Mapping
 import logging
 from typing import override
 
@@ -50,13 +51,38 @@ class HAMonitoringForceScanButton(
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_REFRESH}"
-
         # Entity ID volontairement statique.
         self.entity_id = f"button.{UNIQUE_ID_REFRESH}"
+
+    @property
+    def extra_state_attributes(self) -> Mapping[str, str | None]:
+        """Retourne les dates des derniers scans."""
+        return {
+            "last_scan": self.coordinator.last_scan_time.isoformat()
+            if self.coordinator.last_scan_time is not None
+            else None,
+            "last_traces_scan": (
+                self.coordinator.last_traces_scan_time.isoformat()
+                if self.coordinator.last_traces_scan_time is not None
+                else None
+            ),
+            "last_system_info_scan": (
+                self.coordinator.last_system_info_scan_time.isoformat()
+                if self.coordinator.last_system_info_scan_time is not None
+                else None
+            ),
+            "last_backup_scan": (
+                self.coordinator.last_backup_scan_time.isoformat()
+                if self.coordinator.last_backup_scan_time is not None
+                else None
+            ),
+        }
 
     @override
     async def async_press(self) -> None:
         """Force un rafraîchissement complet du Coordinator."""
-        _LOGGER.info("[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours.")
+        _LOGGER.info(
+            "[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours."
+        )
 
         await self.coordinator.async_force_refresh()
