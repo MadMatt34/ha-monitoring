@@ -4,6 +4,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from functools import partial
 import logging
+from typing import override
 
 from homeassistant.components.backup import (
     CreateBackupEvent,
@@ -118,8 +119,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._startup_timer_unsub: Callable[[], None] | None = None
 
         # ------------------------------------------------------------------
+        # Timestamps des derniers scans
+        # ------------------------------------------------------------------
+        self._last_scan_time: datetime | None = None
+        self._last_backup_scan_time: datetime | None = None
+        self._scan_timestamp_listeners: list[Callable[[], None]] = []
+
+        # ------------------------------------------------------------------
         # Cache traces
         # ------------------------------------------------------------------
+        self._scan_timestamps_changed = False
         self._last_trace_check_time: datetime | None = None
         self._cached_automations: list[TraceErrorData] = []
         self._cached_scripts: list[TraceErrorData] = []
@@ -193,6 +202,26 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             EVENT_HOMEASSISTANT_STARTED,
             self._async_home_assistant_started,
         )
+
+    @callback
+    def async_add_scan_timestamp_listener(
+        self,
+        listener: Callable[[], None],
+    ) -> Callable[[], None]:
+        """Ajoute un listener pour les changements de timestamps de scan."""
+        self._scan_timestamp_listeners.append(listener)
+
+        def _remove_listener() -> None:
+            if listener in self._scan_timestamp_listeners:
+                self._scan_timestamp_listeners.remove(listener)
+
+        return _remove_listener
+
+    @callback
+    def _async_update_scan_timestamp_listeners(self) -> None:
+        """Notifie les listeners des changements de timestamps de scan."""
+        for listener in tuple(self._scan_timestamp_listeners):
+            listener()
 
     @callback
     def _async_home_assistant_started(
@@ -333,6 +362,26 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         return self._cached_unknown_version
 
+    @property
+    def last_scan_time(self) -> datetime | None:
+        """Retourne la date du dernier scan principal terminé."""
+        return self._last_scan_time
+
+    @property
+    def last_traces_scan_time(self) -> datetime | None:
+        """Retourne la date du dernier scan des traces terminé."""
+        return self._last_trace_check_time
+
+    @property
+    def last_system_info_scan_time(self) -> datetime | None:
+        """Retourne la date du dernier scan des informations système terminé."""
+        return self._last_system_stats_check_time
+
+    @property
+    def last_backup_scan_time(self) -> datetime | None:
+        """Retourne la date de la dernière interrogation Backup."""
+        return self._last_backup_scan_time
+
     async def async_shutdown(self) -> None:
         """Nettoie les listeners et temporisateurs."""
         if self._unsub_ha_started is not None:
@@ -346,6 +395,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         if self._backup_event_unsub is not None:
             self._backup_event_unsub()
             self._backup_event_unsub = None
+
+        self._scan_timestamp_listeners.clear()
 
         await super().async_shutdown()
 
@@ -377,6 +428,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         """Récupère les métriques de HA Monitoring."""
         now = dt_util.utcnow()
 
+        self._scan_timestamps_changed = False
+
         # ------------------------------------------------------------------
         # BACKUP
         # ------------------------------------------------------------------
@@ -395,6 +448,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 backup_event_time=self._last_backup_event_time,
                 previous_info=self._previous_backup_info,
             )
+
+            self._last_backup_scan_time = dt_util.utcnow()
+            self._scan_timestamps_changed = True
 
             self._backup_cache[self.entry.entry_id] = self._cached_backup_info
 
@@ -521,6 +577,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
 
             self._last_trace_check_time = now
+            self._scan_timestamps_changed = True
 
         # ------------------------------------------------------------------
         # SYSTEM INFO
@@ -548,6 +605,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
 
             self._last_system_stats_check_time = now
+            self._scan_timestamps_changed = True
 
         assert self._cached_system_stats is not None
 
@@ -577,6 +635,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 [],
             ),
         )
+
+        self._last_scan_time = dt_util.utcnow()
+        self._scan_timestamps_changed = True
 
         return {
             ATTR_STARTUP_DELAY: False,
@@ -679,6 +740,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "current_agent_errors": {},
             },
         }
+
+    @callback
+    @override
+    def _async_refresh_finished(self) -> None:
+        """Actualise les listeners après un refresh réussi."""
+        if self.last_update_success and self._scan_timestamps_changed:
+            self._async_update_scan_timestamp_listeners()
+
+        self._scan_timestamps_changed = False
 
 
 type HAMonitoringConfigEntry = ConfigEntry[HAMonitoringCoordinator]
