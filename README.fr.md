@@ -2,13 +2,15 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-monitoring?color=green)](https://github.com/MadMatt34/ha-monitoring/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
-
+[![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
+![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-monitoring.total)
+\
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
 ![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
 
-[🇬🇧 README in ENGLISH 🇬🇧](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
+[❗ README in ENGLISH 🇬🇧 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
 
 **HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (applications, intégrations, automatisations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour et des réparations en attente, de l'état des sauvegardes.
 
@@ -158,7 +160,8 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 - **Exclusions Réparations :** Par nom convivial ou une partie, par domaine, par ID ou une partie.
 - **Exclusions Entités :** Par nom convivial ou une partie, par ID ou une partie.
 
-> [!NOTE] ***Filtrage par partie (Globs) :***\
+> [!NOTE]
+> ***Filtrage par partie (Globs) :***
 > - Insensible à la casse.
 > - \* → n'importe quelle séquence de caractères.
 > - ? → un seul caractère.
