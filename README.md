@@ -2,13 +2,15 @@
 
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-monitoring?color=green)](https://github.com/MadMatt34/ha-monitoring/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
-
+[![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
+![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.ha-monitoring.total)
+\
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
 ![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
 
-[🇫🇷 README en FRANÇAIS 🇫🇷](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
+[❗ README en FRANÇAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
 
 **HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across applications, integrations, automations, scripts, unavailable entities, offline devices, pending updates, active repairs, and backup statuses.
 
@@ -159,10 +161,10 @@ The first scan following a Home Assistant boot will wait until the configured gr
 - **Entities Exclusions:** By friendly name or part of it, by ID or part of it.
 
 > [!NOTE] ***Partial matching (globs):***\
-> - Case-insensitive.
-> - \* → any sequence of characters.
-> - ? → a single character.
-> - A string without wildcards is searched as an exact match.
+>  Case-insensitive.\
+>  \* → any sequence of characters.\
+>  ? → a single character.\
+>  A string without wildcards is searched as an exact match.
 
 ---
 
