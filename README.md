@@ -113,6 +113,13 @@ All entities are attached to the **Home Assistant** device:
 | :--- | :--- | :--- |
 | `button.monitoring_force_scan` | Monitoring Force Scan | Manually triggers an immediate full scan. |
 
+The button also exposes the timestamps of the most recent scans through its state attributes:
+
+- `last_scan`: last regular monitoring scan
+- `last_traces_scan`: last automation/script traces scan
+- `last_system_info_scan`: last system information scan
+- `last_backup_scan`: last Backup information scan
+
 ---
 
 ## 💡 Additional Details
@@ -152,7 +159,6 @@ The first scan following a Home Assistant boot will wait until the configured gr
 - **Entities Exclusions:** By friendly name or part of it, by ID or part of it.
 
 > [!NOTE] ***Partial matching (globs):***\
->
 > - Case-insensitive.
 > - \* → any sequence of characters.
 > - ? → a single character.

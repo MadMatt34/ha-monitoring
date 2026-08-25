@@ -113,6 +113,13 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 | :--- | :--- | :--- |
 | `button.monitoring_force_scan` | Monitoring Forcer le scan | Permet de déclencher manuellement et instantanément un scan complet |
 
+Les attributs du bouton exposent les horodatages des analyses les plus récentes
+
+- `last_scan`: dernier scan de monitoring standard
+- `last_traces_scan`: dernier scan des traces des automatisations/scripts
+- `last_system_info_scan`: dernier scan des informations système
+- `last_backup_scan`: dernier scan des informations de sauvegarde
+
 ---
 
 ## 💡 Précisions complémentaires
@@ -152,7 +159,6 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 - **Exclusions Entités :** Par nom convivial ou une partie, par ID ou une partie.
 
 > [!NOTE] ***Filtrage par partie (Globs) :***\
->
 > - Insensible à la casse.
 > - \* → n'importe quelle séquence de caractères.
 > - ? → un seul caractère.
