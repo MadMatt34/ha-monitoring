@@ -5,7 +5,7 @@ import logging
 from typing import override
 
 from homeassistant.components.button import ButtonEntity
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -86,3 +86,19 @@ class HAMonitoringForceScanButton(
         )
 
         await self.coordinator.async_force_refresh()
+
+    @override
+    async def async_added_to_hass(self) -> None:
+        """Enregistre le listener dédié aux timestamps de scan."""
+        await super().async_added_to_hass()
+
+        self.async_on_remove(
+            self.coordinator.async_add_scan_timestamp_listener(
+                self._handle_scan_timestamp_update
+            )
+        )
+
+    @callback
+    def _handle_scan_timestamp_update(self) -> None:
+        """Actualise les attributs liés aux timestamps."""
+        self.async_write_ha_state()
