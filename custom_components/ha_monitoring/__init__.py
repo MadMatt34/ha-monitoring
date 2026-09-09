@@ -12,7 +12,6 @@ from .const import DOMAIN
 from .coordinator import HAMonitoringConfigEntry, HAMonitoringCoordinator
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
-
 PLATFORMS: list[Platform] = [
     Platform.SENSOR,
     Platform.BINARY_SENSOR,
@@ -34,7 +33,6 @@ async def async_setup_entry(
 ) -> bool:
     """Initialise l'intégration depuis une ConfigEntry."""
     hass.data.setdefault(DOMAIN, {})
-
     coordinator = HAMonitoringCoordinator(
         hass,
         entry,
@@ -82,7 +80,6 @@ async def async_remove_entry(
 ) -> None:
     """Supprime les données globales associées à la ConfigEntry."""
     domain_data = hass.data.get(DOMAIN)
-
     if domain_data is None:
         return
 
@@ -93,6 +90,14 @@ async def async_remove_entry(
 
         if not backup_cache:
             domain_data.pop("backup_cache", None)
+
+    backup_scan_time_cache = domain_data.get("backup_scan_time_cache")
+
+    if isinstance(backup_scan_time_cache, dict):
+        backup_scan_time_cache.pop(entry.entry_id, None)
+
+        if not backup_scan_time_cache:
+            domain_data.pop("backup_scan_time_cache", None)
 
 
 async def async_reload_entry(

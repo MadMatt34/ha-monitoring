@@ -73,6 +73,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _HA_START_TIME_KEY = "ha_start_time"
 _BACKUP_CACHE_KEY = "backup_cache"
+_BACKUP_SCAN_TIME_CACHE_KEY = "backup_scan_time_cache"
 
 
 class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
@@ -87,23 +88,29 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self.entry = entry
 
         hass.data.setdefault(DOMAIN, {})
-
         # Heure réelle de démarrage de HA, globale à l'instance.
         self._ha_start_time: datetime | None = hass.data[DOMAIN].get(_HA_START_TIME_KEY)
 
         self._is_ready = False
-
         # ------------------------------------------------------------------
         # Backup
         # ------------------------------------------------------------------
-        # Ce cache appartient à l'instance HA et survit donc à un reload
-        # de la ConfigEntry. Il n'est pas persisté après redémarrage HA.
+        # Ces caches appartiennent à l'instance HA et survivent donc à un
+        # reload de la ConfigEntry. Ils ne sont pas persistés après
+        # redémarrage HA.
         self._backup_cache: dict[str, MonitoringBackupData] = hass.data[DOMAIN].setdefault(
             _BACKUP_CACHE_KEY,
             {},
         )
-
         self._cached_backup_info: MonitoringBackupData | None = self._backup_cache.get(
+            entry.entry_id
+        )
+
+        self._backup_scan_time_cache: dict[str, datetime] = hass.data[DOMAIN].setdefault(
+            _BACKUP_SCAN_TIME_CACHE_KEY,
+            {},
+        )
+        self._last_backup_scan_time: datetime | None = self._backup_scan_time_cache.get(
             entry.entry_id
         )
 
@@ -111,20 +118,16 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._last_backup_event: CreateBackupEvent | None = None
         self._last_backup_event_time: datetime | None = None
         self._backup_event_unsub: Callable[[], None] | None = None
-
         # ------------------------------------------------------------------
         # Démarrage HA
         # ------------------------------------------------------------------
         self._unsub_ha_started: Callable[[], None] | None = None
         self._startup_timer_unsub: Callable[[], None] | None = None
-
         # ------------------------------------------------------------------
         # Timestamps des derniers scans
         # ------------------------------------------------------------------
         self._last_scan_time: datetime | None = None
-        self._last_backup_scan_time: datetime | None = None
         self._scan_timestamp_listeners: list[Callable[[], None]] = []
-
         # ------------------------------------------------------------------
         # Cache traces
         # ------------------------------------------------------------------
@@ -132,13 +135,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._last_trace_check_time: datetime | None = None
         self._cached_automations: list[TraceErrorData] = []
         self._cached_scripts: list[TraceErrorData] = []
-
         # ------------------------------------------------------------------
         # Cache System Info
         # ------------------------------------------------------------------
         self._last_system_stats_check_time: datetime | None = None
         self._cached_system_stats: SystemStatsData | None = None
-
         # ------------------------------------------------------------------
         # Cache traduction utilisée par le scan principal
         # ------------------------------------------------------------------
@@ -151,7 +152,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 DEFAULT_SCAN_INTERVAL,
             )
         )
-
         super().__init__(
             hass,
             _LOGGER,
@@ -162,7 +162,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         self._setup_startup_delay()
-
         # L'API Backup native est disponible indépendamment de HassIO.
         try:
             backup_manager = async_get_manager(hass)
@@ -186,7 +185,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             if self._ha_start_time is None:
                 self._ha_start_time = dt_util.utcnow()
                 self.hass.data[DOMAIN][_HA_START_TIME_KEY] = self._ha_start_time
-
             elapsed = (dt_util.utcnow() - self._ha_start_time).total_seconds()
 
             if elapsed >= startup_delay:
@@ -230,7 +228,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     ) -> None:
         """Réagit au démarrage officiel de Home Assistant."""
         self._unsub_ha_started = None
-
         self._ha_start_time = event.time_fired
         self.hass.data[DOMAIN][_HA_START_TIME_KEY] = self._ha_start_time
 
@@ -285,8 +282,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         self._is_ready = True
 
-        _LOGGER.info("[HA Monitoring] Fin du délai de démarrage. Lancement du premier scan.")
-
+        _LOGGER.info(
+            "[HA Monitoring] Fin du délai de démarrage. Lancement du premier scan."
+        )
         self.entry.async_create_background_task(
             self.hass,
             self.async_refresh(),
@@ -301,7 +299,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         """Réagit aux événements natifs du Backup Manager."""
         if not isinstance(event, CreateBackupEvent):
             return
-
         if event.state not in (
             CreateBackupState.COMPLETED,
             CreateBackupState.FAILED,
@@ -331,7 +328,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     ) -> tuple[str, ...]:
         """Retourne les suffixes last_seen applicables."""
         suffixes = set(DEFAULT_LAST_SEEN_SUFFIX)
-
         localized_suffix = LOCALIZED_LAST_SEEN_SUFFIX.get(self.hass.config.language)
 
         if localized_suffix:
@@ -342,7 +338,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     async def _async_get_unknown_version(self) -> str:
         """Retourne le texte traduit pour une version inconnue."""
         language = self.hass.config.language
-
         if (
             self._cached_unknown_version is not None
             and self._cached_translation_language == language
@@ -356,10 +351,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             integrations={DOMAIN},
         )
 
-        self._cached_unknown_version = translations[f"component.{DOMAIN}.common.unknown_version"]
+        self._cached_unknown_version = translations[
+            f"component.{DOMAIN}.common.unknown_version"
+        ]
 
         self._cached_translation_language = language
-
         return self._cached_unknown_version
 
     @property
@@ -414,8 +410,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         # Les caches périodiques sont invalidés.
         #
-        # Le cache Backup est volontairement conservé : il représente
-        # le dernier état réellement connu du Backup Manager.
+        # Le cache Backup et son timestamp sont volontairement conservés :
+        # ils représentent le dernier état réellement connu du Backup Manager.
         self._last_trace_check_time = None
         self._last_system_stats_check_time = None
         self._cached_system_stats = None
@@ -450,10 +446,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
 
             self._last_backup_scan_time = dt_util.utcnow()
+            self._backup_scan_time_cache[self.entry.entry_id] = (
+                self._last_backup_scan_time
+            )
             self._scan_timestamps_changed = True
 
             self._backup_cache[self.entry.entry_id] = self._cached_backup_info
-
             self._previous_backup_info = None
             self._last_backup_event = None
             self._last_backup_event_time = None
@@ -461,7 +459,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         current_backup_info = self._cached_backup_info
 
         if current_backup_info is None:
-            current_backup_info = self._empty_results(in_startup_delay=True)["monitoring_backup"]
+            current_backup_info = self._empty_results(
+                in_startup_delay=True
+            )["monitoring_backup"]
 
         # ------------------------------------------------------------------
         # STARTUP DELAY
@@ -529,8 +529,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     CONF_EXCLUDED_UPDATES,
                     [],
                 ),
-                excluded_unavailable_entities=(excluded_unavailable_entities),
-                excluded_unavailable_domains=(excluded_unavailable_domains),
+                excluded_unavailable_entities=excluded_unavailable_entities,
+                excluded_unavailable_domains=excluded_unavailable_domains,
                 excluded_offline=options.get(
                     CONF_EXCLUDED_OFFLINE,
                     [],
@@ -538,7 +538,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 timeout_hours=offline_timeout,
                 unknown_version=unknown_version,
                 last_seen_suffixes=last_seen_suffixes,
-                excluded_unavailable_globs=(excluded_unavailable_globs),
+                excluded_unavailable_globs=excluded_unavailable_globs,
             )
         )
 
@@ -556,7 +556,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         if (
             self._last_trace_check_time is None
-            or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
+            or (
+                now - self._last_trace_check_time
+            ).total_seconds()
+            >= traces_scan_interval_sec
         ):
             self._cached_automations = await get_trace_errors(
                 self.hass,
@@ -594,7 +597,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         if (
             self._last_system_stats_check_time is None
             or self._cached_system_stats is None
-            or (now - self._last_system_stats_check_time).total_seconds()
+            or (
+                now - self._last_system_stats_check_time
+            ).total_seconds()
             >= system_info_scan_interval_sec
         ):
             assert self._ha_start_time is not None
