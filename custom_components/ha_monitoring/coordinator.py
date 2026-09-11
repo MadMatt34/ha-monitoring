@@ -431,12 +431,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             integrations={DOMAIN},
         )
 
-        self._cached_unknown_platform = translations[
-            f"component.{DOMAIN}.common.unknown"
-        ]
-        self._cached_unknown_version = translations[
-            f"component.{DOMAIN}.common.unknown_version"
-        ]
+        self._cached_unknown_platform = translations[f"component.{DOMAIN}.common.unknown"]
+        self._cached_unknown_version = translations[f"component.{DOMAIN}.common.unknown_version"]
         self._cached_translation_language = language
 
         return (
