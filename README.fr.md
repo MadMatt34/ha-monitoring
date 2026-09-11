@@ -21,7 +21,6 @@
 
 ## ⚡ Fonctionnalités principales
 
-- **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
 - **Informations système :** Indique les versions et date/heure des démarrages de HAOS et de HA, les quantités des différents éléments, taille de base et paramètres du recorder.
 - **Surveillance globale :**
   - **Mises à jour & Réparations :** Suivi des mises à jour et des alertes de réparation.
@@ -29,8 +28,10 @@
   - **Applications (Addons) & Intégrations :** Détection des composants stoppés et en erreur.
   - **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
   - **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
+- **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
 - **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
-- **Bouton d'action :** Permet de forcer un rafraîchissement immédiat de toutes les collectes.
+- **Scan Forcé Manuellement :** Permet de forcer un rafraîchissement immédiat de toutes les collectes.
+- **Mode Maintenance :** Permet de suspendre temporairement les scans de supervision pendant une opération de maintenance sur HA.
 - **Personnalisation fine via l'interface graphique :** Définition des fréquences de scan et sélection granulaire d'éléments à exclure de la surveillance.
 
 ---
@@ -122,6 +123,14 @@ Les attributs du bouton exposent les horodatages des analyses les plus récentes
 - `last_system_info_scan`: dernier scan des informations système
 - `last_backup_scan`: dernier scan des informations de sauvegarde
 
+### Interrupteur (`switch.*`)
+
+| Entité | Nom | Description |
+| :--- | :--- | :--- |
+| `switch.monitoring_maintenance` | Monitoring Mode Maintenance | Active ou désactive le mode maintenance. |
+
+Pendant le mode maintenance, les capteurs de supervision concernés sont réinitialisés à `0` et exposent l'attribut `maintenance: true`.
+
 ---
 
 ## 💡 Précisions complémentaires
@@ -162,10 +171,26 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 
 > [!NOTE]
 > ***Filtrage par partie (Globs) :***
+>
 > - Insensible à la casse.
 > - \* → n'importe quelle séquence de caractères.
 > - ? → un seul caractère.
 > - Une chaîne sans caractère générique est cherchée comme une correspondance exacte.
+
+### Précisions sur le Mode Maintenance
+
+Met en pause :
+
+- **le scan principal de supervision** ;
+- **les scans des traces des automatisations et des scripts**.
+
+Pendant le mode maintenance, les capteurs de supervision concernés sont réinitialisés à `0` et exposent l'attribut `maintenance: true`.
+
+**La surveillance des sauvegardes et la collecte des informations système continuent normalement**.
+
+Lorsque le mode maintenance est désactivé, HA Monitoring déclenche immédiatement un nouveau rafraîchissement afin que les capteurs retrouvent leur état actuel sans attendre le prochain scan planifié.
+
+L'état du mode maintenance est persistant et est restauré après un rechargement de l'intégration ou un redémarrage de Home Assistant.
 
 ---
 

@@ -12,7 +12,7 @@
 - publication hacs
 - readme :
 
-gestion d'erreur partielle du Coordinator
+gestion d'erreur partielle du Coordinator à corriger
 
 une collecte secondaire échoue
         ↓
@@ -87,12 +87,12 @@ Mais je ne le modifierais pas maintenant : le faire proprement nécessite de dé
 ## INFO
 
 - debug : custom_components.ha_monitoring: debug
-- system ligne 256 : pour exclure basé sur 1 morceau : if any(ex in issue_identifier for ex in excluded) etc.
 
 ### PROMPT AUDIT
 
-Faire un audit approfondi pour le dépot https://github.com/MadMatt34/ha-monitoring/tree/main. Individuellement et globalement : vérifier la structure, la cohérence, la qualité ; s'assurer de l'optimisation, de l'utilisation des API natives HA, de ne pas avoir de mécanisme empirique et on conserve un fallback que s'il correspond lui-même à une API HA identifiée.
-A noter, pour offline_devices on s'appuie sur des entités ayant un suffixe last_seen ou la version localisée ; donc je pense qu'il est inutile de remettre en question ce mécanisme.
+Faire un audit approfondi pour le dépot https://github.com/MadMatt34/ha-monitoring. Individuellement et globalement : vérifier la structure, la cohérence, la qualité, le typage ; s'assurer de l'optimisation, de l'utilisation des API natives HA, de ne pas avoir de mécanisme empirique.
+
+A noter, pour offline_devices on s'appuie sur des entités ayant un suffixe last_seen ou la version localisée ; donc il est inutile de remettre en question ce mécanisme.
 Attention, il est important de conserver le délai d'attente au démarrage de HA, et de conserver les fréquences de scan différentes pour backup, system_info, et tous les autres capteurs.
-Je veux conserver un nommage des ID des entités défini de façon statique. Le cache de DeviceInfo n'a pas besoin d'être dynamique. Un typage strict est nécessaire. On verra plus tard pour implémenter les tests unitaires.
+Conserver un nommage des ID des entités défini de façon statique. Le cache de DeviceInfo n'a pas besoin d'être dynamique. Un typage strict est nécessaire. On verra plus tard pour implémenter les tests unitaires.
 On part du principe qu'on ne tient compte que d'une base de données sous SQLLite. Le cache backup est conservé lors d'un refresh forcé ou reload de l'intégration.

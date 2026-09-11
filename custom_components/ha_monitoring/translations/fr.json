@@ -161,7 +161,7 @@
       "force_scan": { "name": "Monitoring Forcer le scan" }
     },
     "switch": {
-      "maintenance": { "name": "Monitoring Maintenance Mode" }
+      "maintenance": { "name": "Monitoring Mode Maintenance" }
     }
   },
   "issues": {
