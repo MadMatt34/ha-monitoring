@@ -82,35 +82,35 @@ Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
 
 ---
 
-## 📡 Entités fournies
+## 📦 Entités fournies
 
 Toutes les entités sont rattachées à l'appareil **Home Assistant** :
+
+### 📊 Capteurs (`sensor.*`)
+
+| Entité | Nom | Description / Attributs |
+| :--- | :--- | :--- |
+| `sensor.monitoring_applications` | Monitoring Applications stoppées | Nombre et liste d'applications à l'arrêt. |
+| `sensor.monitoring_integrations` | Monitoring Intégrations en erreur | Nombre et liste d'intégrations en échec. |
+| `sensor.monitoring_automations` | Monitoring Automatisations en erreur | Nombre et liste d'automatisations ayant levé une erreur. |
+| `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre et liste de scripts ayant levé une erreur. |
+| `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
+| `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre et liste de réparations en attente. |
+| `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
+| `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs depuis le délai configuré. |
 
 > [!TIP]
 > Chaque entité contient des attributs listant les éléments détectés.\
 > Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
 
-### Capteurs (`sensor.*`)
-
-| Entité | Nom | Description / Attributs |
-| :--- | :--- | :--- |
-| `sensor.monitoring_applications` | Monitoring Applications stoppées | Nombre d'applications à l'arrêt. Liste en attribut. |
-| `sensor.monitoring_integrations` | Monitoring Intégrations en erreur | Nombre d'intégrations en échec. Liste en attribut. |
-| `sensor.monitoring_automations` | Monitoring Automatisations en erreur | Nombre d'automatisations ayant levé une erreur. Liste en attribut. |
-| `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre de scripts ayant levé une erreur. Liste en attribut. |
-| `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre de mises à jour en attente. Liste en attribut. |
-| `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre de réparations en attente. Liste en attribut. |
-| `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
-| `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs depuis le délai configuré. |
-
-### Capteurs binaires (`binary_sensor.*`)
+### 🔘 Capteurs binaires (`binary_sensor.*`)
 
 | Entité | Device Class | Nom | Description |
 | :--- | :--- | :--- | :--- |
 | `binary_sensor.monitoring_global_status` | `problem` | Monitoring Statut Global | Passe à `on` si au moins un problème critique (application, intégration, automatisation ou script) est détecté. Informations système fournies en attributs. |
 | `binary_sensor.monitoring_backup` | - | Monitoring État de la sauvegarde | Passe à `off` si la dernière sauvegarde a échoué. Fournit en attributs les dates et la taille de la sauvegarde, la raison de l'éventuel échec. |
 
-### Boutons (`button.*`)
+### ▶️ Boutons (`button.*`)
 
 | Entité | Nom | Description |
 | :--- | :--- | :--- |
@@ -123,7 +123,7 @@ Les attributs du bouton exposent les horodatages des analyses les plus récentes
 - `last_system_info_scan`: dernier scan des informations système
 - `last_backup_scan`: dernier scan des informations de sauvegarde
 
-### Interrupteur (`switch.*`)
+### 🎚️ Interrupteur (`switch.*`)
 
 | Entité | Nom | Description |
 | :--- | :--- | :--- |
@@ -135,14 +135,14 @@ Pendant le mode maintenance, les capteurs de supervision concernés sont réinit
 
 ## 💡 Précisions complémentaires
 
-### Précisions sur la période de grâce au démarrage
+### ⏳ Précisions sur la période de grâce au démarrage
 
 Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la période de grâce configurée dans les paramètres (par défaut 2 min). Cela évite d'obtenir des valeurs fausses si l'ensemble des intégrations et capteurs n'ont pas été chargés.
 
 > [!TIP]
 > Utilisez l'attribut `startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
 
-### Précisions sur les délais d'actualisation des données
+### 🕒 Précisions sur les délais d'actualisation des données
 
 - **Attributs informations système :** ces attributs du capteur `binary_sensor.monitoring_global_status` sont actualisés suivant le fréquence définie dans les paramètres (par défaut 24 heures).
 - **Capteur backup :** ce capteur et ses attributs sont actualisés après l'exécution d'une sauvegarde.
@@ -151,7 +151,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 > [!NOTE]
 > L'ensemble des capteurs et leurs attributs sont actualisés au démarrage de l'intégration, lors de l'utilisation du bouton `Forcer le scan` ou après la modification de paramètres de l'intégration.
 
-### Précisions sur certains capteurs et attributs
+### 🔎 Précisions sur certains capteurs et attributs
 
 - **Capteur Sauvegarde :** Seule l'intégration `Backup` officielle est prise en compte ; son fonctionnement actuel ne permet pas d'avoir des messages d'échec explicites. L'état de sauvegarde en échec est perdu au redémarrage.
 - **Capteur Appareils hors ligne :** Le scan se base sur une entité de l'appareil, de type `sensor`, de classe `timestamp` avec un suffixe `last_seen` ou localisé, et son état est une date au format ISO *(ce qui est fait par Z-Wave, Zigbee2MQTT par exemple)*.
@@ -162,7 +162,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
   - Nombre d'entités : les entités désactivées ne sont pas comptabilisées, et les entités pour les scripts et automatisations non plus.
   - Taille de la base de donnée : uniquement l'installation standard est considérée (SQLLite)
 
-### Précisions sur les exclusions en texte-libre
+### 🚫 Précisions sur les exclusions en texte-libre
 
 - **Exclusion Applications :** Par nom convivial ou une partie, par nom technique ou une partie.
 - **Exclusions Intégrations :** Par nom convivial ou une partie, par nom technique ou une partie, par domaine, par ID ou une partie.
@@ -177,7 +177,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 > - ? → un seul caractère.
 > - Une chaîne sans caractère générique est cherchée comme une correspondance exacte.
 
-### Précisions sur le Mode Maintenance
+### 🔧 Précisions sur le Mode Maintenance
 
 Met en pause :
 
@@ -196,7 +196,7 @@ L'état du mode maintenance est persistant et est restauré après un rechargeme
 
 ## 🤖 Exemples d'automatisations & Dashboard
 
-### Exemple 1 : Notification en cas de problème système
+### - Exemple 1 : Notification en cas de problème système
 
 ```yaml
 alias: "Alerte : Problème Système Détecté"
@@ -221,7 +221,7 @@ mode: single
 
 ---
 
-### Exemple 2 : Notification en cas d'échec de sauvegarde
+### - Exemple 2 : Notification en cas d'échec de sauvegarde
 
 ```yaml
 alias: "Alerte : Échec Sauvegarde"
@@ -239,7 +239,7 @@ action:
 
 ---
 
-### Exemple 3 : Carte Markdown Dashboard
+### - Exemple 3 : Carte Markdown Dashboard
 
 Affichez un rapport détaillé et dynamique directement sur votre tableau de bord :
 
