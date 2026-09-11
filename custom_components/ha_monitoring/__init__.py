@@ -52,20 +52,14 @@ async def async_setup_entry(
     entry.runtime_data = coordinator
 
     # Le cleanup doit être enregistré AVANT le first_refresh().
-    entry.async_on_unload(
-        coordinator.async_shutdown
-    )
+    entry.async_on_unload(coordinator.async_shutdown)
 
     # Charger les données persistantes avant le premier refresh.
     await coordinator.async_initialize()
 
     await coordinator.async_config_entry_first_refresh()
 
-    entry.async_on_unload(
-        entry.add_update_listener(
-            async_reload_entry
-        )
-    )
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     await hass.config_entries.async_forward_entry_setups(
         entry,
@@ -94,9 +88,7 @@ async def async_remove_entry(
     domain_data = hass.data.get(DOMAIN)
 
     if domain_data is not None:
-        backup_cache = domain_data.get(
-            "backup_cache"
-        )
+        backup_cache = domain_data.get("backup_cache")
 
         if isinstance(backup_cache, dict):
             backup_cache.pop(
@@ -110,9 +102,7 @@ async def async_remove_entry(
                     None,
                 )
 
-        backup_scan_time_cache = domain_data.get(
-            "backup_scan_time_cache"
-        )
+        backup_scan_time_cache = domain_data.get("backup_scan_time_cache")
 
         if isinstance(backup_scan_time_cache, dict):
             backup_scan_time_cache.pop(
@@ -132,15 +122,11 @@ async def async_remove_entry(
         STORAGE_KEY_MAINTENANCE,
     )
 
-    stored_data = (
-        await maintenance_store.async_load()
-    ) or {}
+    stored_data = (await maintenance_store.async_load()) or {}
 
     if entry.entry_id in stored_data:
         stored_data.pop(entry.entry_id)
-        await maintenance_store.async_save(
-            stored_data
-        )
+        await maintenance_store.async_save(stored_data)
 
 
 async def async_reload_entry(
@@ -148,6 +134,4 @@ async def async_reload_entry(
     entry: HAMonitoringConfigEntry,
 ) -> None:
     """Recharge l'intégration."""
-    await hass.config_entries.async_reload(
-        entry.entry_id
-    )
+    await hass.config_entries.async_reload(entry.entry_id)

@@ -21,7 +21,6 @@
 
 ## ⚡ Main Features
 
-- **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
 - **System Information:** Reports versions and boot timestamps for HAOS and HA, total counts of various elements, database size, and recorder settings.
 - **Global Monitoring:**
   - **Updates & Repairs:** Tracking of updates and pending repair issues.
@@ -29,8 +28,10 @@
   - **Applications & Integrations:** Detection of stopped, failed or errored components.
   - **Automation & Script Traces:** Detection of execution errors.
   - **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
+- **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
 - **Startup Grace Period:** Prevents false alarms during Home Assistant's boot sequence.
-- **Action Button:** Trigger an immediate full refresh on demand.
+- **Manual Force Scan:** Trigger an immediate full refresh on demand.
+- **Maintenance Mode:** Temporarily pauses the monitoring scans while maintenance is being performed on HA.
 - **Fine-grained Customization via UI:** Adjust scan frequencies and granularly exclude specific items from being monitored.
 
 ---
@@ -122,6 +123,14 @@ The button also exposes the timestamps of the most recent scans through its stat
 - `last_system_info_scan`: last system information scan
 - `last_backup_scan`: last Backup information scan
 
+### Switchs (`switch.*`)
+
+| Entity | Name | Description |
+| :--- | :--- | :--- |
+| `switch.monitoring_maintenance` | Monitoring Maintenance Mode | Enables or disables maintenance mode. |
+
+While maintenance mode is enabled, the affected monitoring sensors are reset to `0` and expose the attribute `maintenance: true`.
+
 ---
 
 ## 💡 Additional Details
@@ -162,10 +171,26 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 > [!NOTE]
 > ***Partial matching (globs):***
->  - Case-insensitive.
->  - \* → any sequence of characters.
->  - ? → a single character.
->  - A string without wildcards is searched as an exact match.
+>
+> - Case-insensitive.
+> - \* → any sequence of characters.
+> - ? → a single character.
+> - A string without wildcards is searched as an exact match.
+
+### Maintenance Mode
+
+Activates pause on:
+
+- **the main monitoring scan**;
+- **automation and script trace scans**.
+
+While maintenance mode is enabled, the affected monitoring sensors are reset to `0` and expose the attribute `maintenance: true`.
+
+**Backup monitoring and System Information collection continue to run normally**.
+
+When maintenance mode is disabled, HA Monitoring immediately triggers a new refresh so that the monitoring sensors return to their current state without waiting for the next scheduled scan.
+
+The maintenance mode state is persistent and is restored after both an integration reload and a Home Assistant restart.
 
 ---
 
