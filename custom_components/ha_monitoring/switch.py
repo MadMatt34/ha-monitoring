@@ -40,9 +40,7 @@ class MaintenanceSwitch(
 ):
     """Switch permettant d'activer le mode maintenance."""
 
-    _attr_translation_key = (
-        TRANSLATION_KEY_MAINTENANCE
-    )
+    _attr_translation_key = TRANSLATION_KEY_MAINTENANCE
     _attr_icon = ICON_MAINTENANCE
 
     def __init__(
@@ -53,13 +51,9 @@ class MaintenanceSwitch(
         """Initialise le switch."""
         super().__init__(coordinator)
 
-        self._attr_unique_id = (
-            f"{entry.entry_id}_{UNIQUE_ID_MAINTENANCE}"
-        )
+        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_MAINTENANCE}"
 
-        self.entity_id = (
-            f"switch.{UNIQUE_ID_MAINTENANCE}"
-        )
+        self.entity_id = f"switch.{UNIQUE_ID_MAINTENANCE}"
 
     @override
     @property
@@ -70,13 +64,9 @@ class MaintenanceSwitch(
     @override
     async def async_turn_on(self, **kwargs: object) -> None:
         """Active le mode maintenance."""
-        await self.coordinator.async_set_maintenance_mode(
-            True
-        )
+        await self.coordinator.async_set_maintenance_mode(True)
 
     @override
     async def async_turn_off(self, **kwargs: object) -> None:
         """Désactive le mode maintenance."""
-        await self.coordinator.async_set_maintenance_mode(
-            False
-        )
+        await self.coordinator.async_set_maintenance_mode(False)

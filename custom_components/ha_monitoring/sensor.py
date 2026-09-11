@@ -72,15 +72,11 @@ async def async_setup_entry(
     """Ajoute l'ensemble des capteurs de surveillance."""
     coordinator = entry.runtime_data
 
-    sensors: list[
-        HAMonitoringGenericSensor[SensorData]
-    ] = [
+    sensors: list[HAMonitoringGenericSensor[SensorData]] = [
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_addons"
-            ],
+            data_getter=lambda data: data["monitoring_addons"],
             unique_key=UNIQUE_ID_ADDONS,
             translation_key=TRANSLATION_KEY_ADDONS,
             icon=ICON_ADDONS,
@@ -88,9 +84,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_integrations"
-            ],
+            data_getter=lambda data: data["monitoring_integrations"],
             unique_key=UNIQUE_ID_INTEGRATIONS,
             translation_key=TRANSLATION_KEY_INTEGRATIONS,
             icon=ICON_INTEGRATIONS,
@@ -98,9 +92,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_automations"
-            ],
+            data_getter=lambda data: data["monitoring_automations"],
             unique_key=UNIQUE_ID_AUTOMATIONS,
             translation_key=TRANSLATION_KEY_AUTOMATIONS,
             icon=ICON_AUTOMATIONS,
@@ -108,9 +100,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_scripts"
-            ],
+            data_getter=lambda data: data["monitoring_scripts"],
             unique_key=UNIQUE_ID_SCRIPTS,
             translation_key=TRANSLATION_KEY_SCRIPTS,
             icon=ICON_SCRIPTS,
@@ -118,9 +108,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_updates"
-            ],
+            data_getter=lambda data: data["monitoring_updates"],
             unique_key=UNIQUE_ID_UPDATES,
             translation_key=TRANSLATION_KEY_UPDATES,
             icon=ICON_UPDATES,
@@ -128,9 +116,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_repairs"
-            ],
+            data_getter=lambda data: data["monitoring_repairs"],
             unique_key=UNIQUE_ID_REPAIRS,
             translation_key=TRANSLATION_KEY_REPAIRS,
             icon=ICON_REPAIRS,
@@ -138,9 +124,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_unavailable"
-            ],
+            data_getter=lambda data: data["monitoring_unavailable"],
             unique_key=UNIQUE_ID_UNAVAILABLE,
             translation_key=TRANSLATION_KEY_UNAVAILABLE,
             icon=ICON_UNAVAILABLE,
@@ -148,9 +132,7 @@ async def async_setup_entry(
         HAMonitoringGenericSensor(
             coordinator=coordinator,
             entry=entry,
-            data_getter=lambda data: data[
-                "monitoring_offline"
-            ],
+            data_getter=lambda data: data["monitoring_offline"],
             unique_key=UNIQUE_ID_OFFLINE,
             translation_key=TRANSLATION_KEY_OFFLINE,
             icon=ICON_OFFLINE,
@@ -177,10 +159,7 @@ class HAMonitoringGenericSensor[T: SensorData](
         unique_key: str,
         translation_key: str,
         icon: str,
-        extra_attributes: Callable[
-            [T], dict[str, object]
-        ]
-        | None = None,
+        extra_attributes: Callable[[T], dict[str, object]] | None = None,
     ) -> None:
         """Initialise le capteur générique."""
         super().__init__(coordinator)
@@ -190,27 +169,20 @@ class HAMonitoringGenericSensor[T: SensorData](
 
         self._attr_translation_key = translation_key
         self._attr_icon = icon
-        self._attr_unique_id = (
-            f"{entry.entry_id}_{unique_key}"
-        )
+        self._attr_unique_id = f"{entry.entry_id}_{unique_key}"
 
         self.entity_id = f"sensor.{unique_key}"
 
     @property
     def _sensor_data(self) -> T:
         """Retourne le bloc de données typé."""
-        return self._data_getter(
-            self.coordinator.data
-        )
+        return self._data_getter(self.coordinator.data)
 
     @override
     @property
     def native_value(self) -> int:
         """Retourne le nombre total d'éléments détectés."""
-        if (
-            self.coordinator.data["startup_delay"]
-            or self.coordinator.maintenance_mode
-        ):
+        if self.coordinator.data["startup_delay"] or self.coordinator.maintenance_mode:
             return 0
 
         return self._sensor_data["total"]
@@ -222,28 +194,16 @@ class HAMonitoringGenericSensor[T: SensorData](
     ) -> dict[str, object]:
         """Retourne les détails et métadonnées."""
         data = self._sensor_data
-        maintenance = (
-            self.coordinator.maintenance_mode
-        )
+        maintenance = self.coordinator.maintenance_mode
 
         attributes: dict[str, object] = {
-            ATTR_LIST: (
-                [] if maintenance else data["items"]
-            ),
-            ATTR_TOTAL: (
-                0 if maintenance else data["total"]
-            ),
-            ATTR_STARTUP_DELAY: (
-                self.coordinator.data[
-                    "startup_delay"
-                ]
-            ),
+            ATTR_LIST: ([] if maintenance else data["items"]),
+            ATTR_TOTAL: (0 if maintenance else data["total"]),
+            ATTR_STARTUP_DELAY: (self.coordinator.data["startup_delay"]),
             ATTR_MAINTENANCE: maintenance,
         }
 
         if self._extra_attributes_getter is not None:
-            attributes.update(
-                self._extra_attributes_getter(data)
-            )
+            attributes.update(self._extra_attributes_getter(data))
 
         return attributes
