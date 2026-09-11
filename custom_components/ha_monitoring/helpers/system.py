@@ -69,6 +69,7 @@ def _matches_exclusions(
 def _snapshot_states(
     hass: HomeAssistant,
     last_seen_suffixes: tuple[str, ...],
+    unknown_platform: str,
 ) -> list[StateScanData]:
     """Capture les données HA nécessaires au scan."""
     entity_registry = er.async_get(hass)
@@ -94,7 +95,7 @@ def _snapshot_states(
 
         device_id: str | None = None
         device_name: str | None = None
-        platform = "inconnu"
+        platform = unknown_platform
 
         # Les registries ne sont consultés que pour les capteurs
         # réellement susceptibles d'identifier un appareil hors ligne.
@@ -103,7 +104,7 @@ def _snapshot_states(
 
             if entity_entry is not None:
                 device_id = entity_entry.device_id
-                platform = entity_entry.platform or "inconnu"
+                platform = entity_entry.platform or unknown_platform
 
                 if device_id is not None:
                     device_entry = device_registry.async_get(device_id)
