@@ -158,6 +158,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         # Cache traduction utilisée par le scan principal
         # ------------------------------------------------------------------
+        self._cached_unknown_platform: str | None = None
         self._cached_unknown_version: str | None = None
         self._cached_translation_language: str | None = None
 
@@ -407,17 +408,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         return tuple(suffixes)
 
-    async def _async_get_unknown_version(
+    async def _async_get_common_translations(
         self,
-    ) -> str:
-        """Retourne le texte traduit pour une version inconnue."""
+    ) -> tuple[str, str]:
+        """Retourne les textes common traduits utilisés par le scan."""
         language = self.hass.config.language
 
         if (
-            self._cached_unknown_version is not None
+            self._cached_unknown_platform is not None
+            and self._cached_unknown_version is not None
             and self._cached_translation_language == language
         ):
-            return self._cached_unknown_version
+            return (
+                self._cached_unknown_platform,
+                self._cached_unknown_version,
+            )
 
         translations = await async_get_translations(
             self.hass,
@@ -426,11 +431,18 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             integrations={DOMAIN},
         )
 
-        self._cached_unknown_version = translations[f"component.{DOMAIN}.common.unknown_version"]
-
+        self._cached_unknown_platform = translations[
+            f"component.{DOMAIN}.common.unknown"
+        ]
+        self._cached_unknown_version = translations[
+            f"component.{DOMAIN}.common.unknown_version"
+        ]
         self._cached_translation_language = language
 
-        return self._cached_unknown_version
+        return (
+            self._cached_unknown_platform,
+            self._cached_unknown_version,
+        )
 
     @property
     def last_scan_time(self) -> datetime | None:
@@ -642,7 +654,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         last_seen_suffixes = self._get_last_seen_suffixes()
 
-        unknown_version = await self._async_get_unknown_version()
+        unknown_platform, unknown_version = await self._async_get_common_translations()
 
         # ------------------------------------------------------------------
         # SCAN PRINCIPAL
@@ -650,6 +662,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         state_snapshot = _snapshot_states(
             self.hass,
             last_seen_suffixes,
+            unknown_platform,
         )
 
         (
