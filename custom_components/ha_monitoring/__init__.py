@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.storage import Store
 
 from .const import (
     DOMAIN,
@@ -17,7 +18,6 @@ from .coordinator import (
     HAMonitoringConfigEntry,
     HAMonitoringCoordinator,
 )
-from homeassistant.helpers.storage import Store
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
