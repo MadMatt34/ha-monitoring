@@ -14,6 +14,7 @@ from .const import (
     ATTR_DATE_LAST_SUCCESS,
     ATTR_DATE_NEXT_SCHEDULE,
     ATTR_FAILURE,
+    ATTR_MAINTENANCE,
     ATTR_SIZE,
     ATTR_STARTUP_DELAY,
     ICON_BACKUP,
@@ -35,7 +36,7 @@ async def async_setup_entry(
     entry: HAMonitoringConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    """Configure les capteurs binaires via Config Entry."""
+    """Configure les capteurs binaires."""
     coordinator = entry.runtime_data
 
     async_add_entities(
@@ -56,7 +57,7 @@ class GlobalStatusBinarySensor(
     HAMonitoringBaseEntity,
     BinarySensorEntity,
 ):
-    """Capteur binaire indiquant le statut global du système."""
+    """Capteur binaire indiquant le statut global."""
 
     _attr_translation_key = TRANSLATION_KEY_STATUS
     _attr_icon = ICON_STATUS
@@ -67,13 +68,16 @@ class GlobalStatusBinarySensor(
         coordinator: HAMonitoringCoordinator,
         entry: HAMonitoringConfigEntry,
     ) -> None:
-        """Initialise le capteur binaire de statut global."""
+        """Initialise le capteur."""
         super().__init__(coordinator)
 
-        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_STATUS}"
+        self._attr_unique_id = (
+            f"{entry.entry_id}_{UNIQUE_ID_STATUS}"
+        )
 
-        # Entity ID volontairement statique.
-        self.entity_id = f"binary_sensor.{UNIQUE_ID_STATUS}"
+        self.entity_id = (
+            f"binary_sensor.{UNIQUE_ID_STATUS}"
+        )
 
     @override
     @property
@@ -81,7 +85,10 @@ class GlobalStatusBinarySensor(
         """Retourne True si un problème est détecté."""
         data = self.coordinator.data
 
-        if data["startup_delay"]:
+        if (
+            data["startup_delay"]
+            or self.coordinator.maintenance_mode
+        ):
             return False
 
         return any(
@@ -96,19 +103,40 @@ class GlobalStatusBinarySensor(
 
     @override
     @property
-    def extra_state_attributes(self) -> dict[str, object]:
+    def extra_state_attributes(
+        self,
+    ) -> dict[str, object]:
         """Retourne les métriques système détaillées."""
         data = self.coordinator.data
         stats = data["system_stats"]
 
         return {
-            ATTR_STARTUP_DELAY: data["startup_delay"],
-            "ha_version": stats.get("ha_version"),
-            "ha_last_boot": stats.get("ha_last_boot"),
-            "os_version": stats.get("os_version"),
-            "os_last_boot": stats.get("os_last_boot"),
-            "devices_count": stats.get("devices_count", 0),
-            "entities_count": stats.get("entities_count", 0),
+            ATTR_STARTUP_DELAY: data[
+                "startup_delay"
+            ],
+            ATTR_MAINTENANCE: (
+                self.coordinator.maintenance_mode
+            ),
+            "ha_version": stats.get(
+                "ha_version"
+            ),
+            "ha_last_boot": stats.get(
+                "ha_last_boot"
+            ),
+            "os_version": stats.get(
+                "os_version"
+            ),
+            "os_last_boot": stats.get(
+                "os_last_boot"
+            ),
+            "devices_count": stats.get(
+                "devices_count",
+                0,
+            ),
+            "entities_count": stats.get(
+                "entities_count",
+                0,
+            ),
             "automations_count": stats.get(
                 "automations_count",
                 0,
@@ -125,11 +153,21 @@ class GlobalStatusBinarySensor(
                 "custom_integrations_count",
                 0,
             ),
-            "recorder_commit_interval": stats.get("recorder_commit_interval"),
-            "recorder_keep_days": stats.get("recorder_keep_days"),
-            "recorder_auto_purge": stats.get("recorder_auto_purge"),
-            "recorder_auto_repack": stats.get("recorder_auto_repack"),
-            "database_size_mb": stats.get("database_size_mb"),
+            "recorder_commit_interval": stats.get(
+                "recorder_commit_interval"
+            ),
+            "recorder_keep_days": stats.get(
+                "recorder_keep_days"
+            ),
+            "recorder_auto_purge": stats.get(
+                "recorder_auto_purge"
+            ),
+            "recorder_auto_repack": stats.get(
+                "recorder_auto_repack"
+            ),
+            "database_size_mb": stats.get(
+                "database_size_mb"
+            ),
         }
 
 
@@ -137,7 +175,7 @@ class BackupStatusBinarySensor(
     HAMonitoringBaseEntity,
     BinarySensorEntity,
 ):
-    """Capteur binaire indiquant si la dernière sauvegarde a réussi."""
+    """Capteur binaire indiquant l'état de la sauvegarde."""
 
     _attr_translation_key = TRANSLATION_KEY_BACKUP
     _attr_icon = ICON_BACKUP
@@ -147,35 +185,50 @@ class BackupStatusBinarySensor(
         coordinator: HAMonitoringCoordinator,
         entry: HAMonitoringConfigEntry,
     ) -> None:
-        """Initialise le capteur binaire d'état de la sauvegarde."""
+        """Initialise le capteur."""
         super().__init__(coordinator)
 
-        self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_BACKUP}"
+        self._attr_unique_id = (
+            f"{entry.entry_id}_{UNIQUE_ID_BACKUP}"
+        )
 
-        # Entity ID volontairement statique.
-        self.entity_id = f"binary_sensor.{UNIQUE_ID_BACKUP}"
+        self.entity_id = (
+            f"binary_sensor.{UNIQUE_ID_BACKUP}"
+        )
 
     @override
     @property
     def is_on(self) -> bool:
-        """Retourne True si la dernière sauvegarde est considérée OK."""
+        """Retourne True si la dernière sauvegarde est OK."""
         data = self.coordinator.data
 
         if data["startup_delay"]:
             return True
 
-        return data["monitoring_backup"]["is_ok"]
+        return data["monitoring_backup"][
+            "is_ok"
+        ]
 
     @override
     @property
-    def extra_state_attributes(self) -> dict[str, object]:
-        """Retourne les détails de la dernière sauvegarde."""
-        backup = self.coordinator.data["monitoring_backup"]
+    def extra_state_attributes(
+        self,
+    ) -> dict[str, object]:
+        """Retourne les détails de la sauvegarde."""
+        backup = self.coordinator.data[
+            "monitoring_backup"
+        ]
 
         return {
-            ATTR_DATE_LAST_RUN: backup["date_last_run"],
-            ATTR_DATE_LAST_SUCCESS: backup["date_last_success"],
-            ATTR_DATE_NEXT_SCHEDULE: backup["date_next_schedule"],
+            ATTR_DATE_LAST_RUN: backup[
+                "date_last_run"
+            ],
+            ATTR_DATE_LAST_SUCCESS: backup[
+                "date_last_success"
+            ],
+            ATTR_DATE_NEXT_SCHEDULE: backup[
+                "date_next_schedule"
+            ],
             ATTR_SIZE: backup["size"],
             ATTR_FAILURE: backup["failure"],
         }

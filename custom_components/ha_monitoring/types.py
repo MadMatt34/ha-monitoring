@@ -99,7 +99,7 @@ class TraceErrorData(TypedDict):
 
 
 class MonitoringAddonData(TypedDict):
-    """Données du capteur Add-ons."""
+    """Données du capteur Applications."""
 
     items: list[str]
     total: int
@@ -152,6 +152,7 @@ class HAMonitoringData(TypedDict):
     """Structure complète produite par le Coordinator."""
 
     startup_delay: bool
+    maintenance_mode: bool
     system_stats: SystemStatsData
     monitoring_addons: MonitoringAddonData
     monitoring_integrations: MonitoringIntegrationData

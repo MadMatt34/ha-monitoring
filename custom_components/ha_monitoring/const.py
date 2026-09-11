@@ -14,7 +14,7 @@ CONF_SCAN_INTERVAL = "scan_interval"
 DEFAULT_SCAN_INTERVAL = 180  # en secondes
 
 CONF_SYSTEM_INFO_SCAN_INTERVAL = "system_info_scan_interval"
-DEFAULT_SYSTEM_INFO_SCAN_INTERVAL = 24  # En heures
+DEFAULT_SYSTEM_INFO_SCAN_INTERVAL = 24  # en heures
 
 CONF_TRACES_SCAN_INTERVAL = "traces_scan_interval"
 DEFAULT_TRACES_SCAN_INTERVAL = 30  # en minutes
@@ -33,6 +33,7 @@ CONF_EXCLUDED_OFFLINE = "excluded_offline"
 CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
 CONF_EXCLUDED_UNAVAILABLE_GLOBS = "excluded_unavailable_globs"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
+
 # Domaines indésirables masqués par défaut
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "assist_satellite",
@@ -64,6 +65,7 @@ ICON_UNAVAILABLE = "mdi:ghost-outline"
 ICON_OFFLINE = "mdi:link-variant-off"
 ICON_BACKUP = "mdi:backup-restore"
 ICON_REFRESH = "mdi:refresh"
+ICON_MAINTENANCE = "mdi:wrench-clock"
 
 # Identifiants uniques
 UNIQUE_ID_ADDONS = "monitoring_applications"
@@ -77,6 +79,7 @@ UNIQUE_ID_UNAVAILABLE = "monitoring_unavailable_entities"
 UNIQUE_ID_OFFLINE = "monitoring_offline_devices"
 UNIQUE_ID_BACKUP = "monitoring_backup"
 UNIQUE_ID_REFRESH = "monitoring_force_scan"
+UNIQUE_ID_MAINTENANCE = "monitoring_maintenance"
 
 # Clés de traduction
 TRANSLATION_KEY_ADDONS = "applications"
@@ -90,14 +93,16 @@ TRANSLATION_KEY_UNAVAILABLE = "unavailable_entities"
 TRANSLATION_KEY_OFFLINE = "offline_devices"
 TRANSLATION_KEY_BACKUP = "backup"
 TRANSLATION_KEY_REFRESH = "force_scan"
+TRANSLATION_KEY_MAINTENANCE = "maintenance"
 
-# Suffixes et clés d'attributs utilisés pour la détection Hors-ligne
+# Suffixes utilisés pour la détection Hors-ligne
 DEFAULT_LAST_SEEN_SUFFIX = (
     "last_seen",
     "last_updated",
     "_last_seen",
     "_last_updated",
 )
+
 LOCALIZED_LAST_SEEN_SUFFIX: dict[str, str] = {
     "fr": "derniere_connexion",
     "en": "last_seen",
@@ -114,6 +119,11 @@ ATTR_SIZE = "size"
 ATTR_FAILURE = "failure"
 ATTR_TOTAL = "total"
 ATTR_LIST = "list"
+ATTR_MAINTENANCE = "maintenance"
+
+# Persistance
+STORAGE_KEY_MAINTENANCE = f"{DOMAIN}.maintenance_mode"
+STORAGE_VERSION_MAINTENANCE = 1
 
 # États d'une ConfigEntry en erreur (Intégrations)
 INTEGRATION_ERROR_STATES = {
@@ -122,6 +132,7 @@ INTEGRATION_ERROR_STATES = {
     ConfigEntryState.MIGRATION_ERROR,
     ConfigEntryState.FAILED_UNLOAD,
 }
+
 # États valides à comptabiliser pour une ConfigEntry (Intégrations)
 INTEGRATION_VALID_STATES = {
     ConfigEntryState.LOADED,
@@ -130,9 +141,9 @@ INTEGRATION_VALID_STATES = {
     ConfigEntryState.FAILED_UNLOAD,
     ConfigEntryState.SETUP_IN_PROGRESS,
 }
-# Domaines d'intégration à exclure par défaut du comptage (Helpers, Système, Interne)
+
+# Domaines d'intégration à exclure par défaut du comptage
 INTEGRATION_EXCLUDED_DOMAINS = {
-    # Helpers / Entrées d'aide
     "group",
     "utility_meter",
     "threshold",
@@ -159,7 +170,6 @@ INTEGRATION_EXCLUDED_DOMAINS = {
     "go2rtc",
     "statistics",
     "switch_as_x",
-    # Système / Interne
     "hardware",
     "diagnostics",
     "analytics",

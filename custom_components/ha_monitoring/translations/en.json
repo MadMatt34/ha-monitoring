@@ -159,6 +159,9 @@
     },
     "button": {
       "force_scan": { "name": "Monitoring Force Scan" }
+    },
+    "switch": {
+      "maintenance": { "name": "Monitoring Maintenance Mode" }
     }
   },
   "issues": {
