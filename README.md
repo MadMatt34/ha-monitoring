@@ -179,9 +179,7 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 ### Maintenance Mode
 
-Temporarily pauses the monitoring scans while maintenance is being performed on the Home Assistant system.
-
-Enable `switch.monitoring_maintenance` to pause:
+Activates pause on:
 
 - **the main monitoring scan**;
 - **automation and script trace scans**.
