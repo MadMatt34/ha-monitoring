@@ -28,6 +28,7 @@ jobs:
         run: ruff format .
 
       - name: Auto-commit formatted files
+        if: github.ref != 'refs/heads/main' && github.ref != 'refs/heads/master'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "style: auto-format avec Ruff"
