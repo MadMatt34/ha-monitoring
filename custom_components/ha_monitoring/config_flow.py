@@ -13,6 +13,7 @@ from .const import (
     CONF_BATTERY_LOW_THRESHOLD,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_AUTOMATIONS,
+    CONF_EXCLUDED_BATTERIES,
     CONF_EXCLUDED_INTEGRATIONS,
     CONF_EXCLUDED_OFFLINE,
     CONF_EXCLUDED_REPAIRS,
@@ -69,6 +70,9 @@ def get_schema(
     )
     current_battery_threshold = options.get(
         CONF_BATTERY_LOW_THRESHOLD, DEFAULT_BATTERY_LOW_THRESHOLD,
+    )
+    current_excluded_batteries = options.get(
+       CONF_EXCLUDED_BATTERIES, [],
     )
 
     domain_options: list[str] = []
@@ -189,6 +193,18 @@ def get_schema(
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[], custom_value=True, multiple=True
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_BATTERIES,
+                            default=current_excluded_batteries,
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                multiple=True,
+                                filter=selector.EntityFilterSelectorConfig(
+                                    domain="sensor",
+                                    device_class="battery",
+                                ),
                             )
                         ),
                     }

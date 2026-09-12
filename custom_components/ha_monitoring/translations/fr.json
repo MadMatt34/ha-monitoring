@@ -6,7 +6,7 @@
         "description": "Configurez les délais, les seuils, et les listes d'exclusions par type de surveillance.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Fréquences & Temporisations",
+            "name": "⏱️ Fréquences, Temporisations, et Seuils",
             "description": "Ajustez les intervalles de rafraîchissement, les seuils, et le délai de démarrage.",
             "data": {
               "startup_delay": "Délai de grâce au démarrage (en secondes)",
@@ -31,7 +31,8 @@
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)"
+              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)",
+              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           },
           "section_exclusions_scripts": {
@@ -81,7 +82,7 @@
         "description": "Configurez les délais, les seuils, et les règles d'exclusion.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Fréquences & Temporisations",
+            "name": "⏱️ Fréquences, Temporisations, et Seuils",
             "description": "Ajustez les intervalles, les seuils, et le délai de démarrage.",
             "data": {
               "startup_delay": "Délai de grâce au démarrage (en secondes)",
@@ -106,7 +107,8 @@
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)"
+              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)",
+              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           },
           "section_exclusions_scripts": {

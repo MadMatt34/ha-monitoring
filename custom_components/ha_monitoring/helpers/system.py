@@ -189,6 +189,7 @@ def scan_all_states(
     excluded_unavailable_entities: list[str],
     excluded_unavailable_domains: list[str],
     excluded_offline: list[str],
+    excluded_batteries: list[str],
     timeout_hours: float,
     unknown_version: str,
     battery_threshold: float,
@@ -212,6 +213,7 @@ def scan_all_states(
         excluded_unavailable_domains
     )
     excluded_offline_set = set(excluded_offline)
+    excluded_batteries_set = set(excluded_batteries)
 
     excluded_unavailable_globs_set = {
         pattern.lower().strip()
@@ -289,7 +291,11 @@ def scan_all_states(
         # --------------------------------------------------------------
         battery_level = state_data["battery_level"]
 
-        if battery_level is not None and battery_level < battery_threshold:
+        if (
+            battery_level is not None
+            and entity_id not in excluded_batteries_set
+            and battery_level < battery_threshold
+        ):
             device_id = state_data["device_id"]
             device_name = state_data["device_name"]
 

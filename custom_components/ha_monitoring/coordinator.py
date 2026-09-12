@@ -35,6 +35,7 @@ from .const import (
     CONF_BATTERY_LOW_THRESHOLD,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_AUTOMATIONS,
+    CONF_EXCLUDED_BATTERIES,
     CONF_EXCLUDED_INTEGRATIONS,
     CONF_EXCLUDED_OFFLINE,
     CONF_EXCLUDED_REPAIRS,
@@ -642,6 +643,7 @@ class HAMonitoringCoordinator(
             results["monitoring_backup"] = (
                 current_backup_info
             )
+
             results["maintenance_mode"] = (
                 self._maintenance_mode
             )
@@ -765,6 +767,11 @@ class HAMonitoringCoordinator(
             [],
         )
 
+        excluded_batteries = options.get(
+            CONF_EXCLUDED_BATTERIES,
+            [],
+        )
+
         last_seen_suffixes = (
             self._get_last_seen_suffixes()
         )
@@ -805,6 +812,7 @@ class HAMonitoringCoordinator(
                     CONF_EXCLUDED_OFFLINE,
                     [],
                 ),
+                excluded_batteries=excluded_batteries,
                 timeout_hours=offline_timeout,
                 unknown_version=unknown_version,
                 battery_threshold=battery_threshold,

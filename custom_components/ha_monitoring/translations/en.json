@@ -6,7 +6,7 @@
         "description": "Configure intervals, tresholds, and exclusion lists by monitoring type.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Timings & Delays",
+            "name": "⏱️ Timings, Delays, and Tresholds",
             "description": "Adjust refresh intervals, tresholds, and startup delay.",
             "data": {
               "startup_delay": "Startup grace period (in seconds)",
@@ -31,7 +31,8 @@
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
-              "excluded_repairs": "Repairs to exclude (platform or name or keyword)"
+              "excluded_repairs": "Repairs to exclude (platform or name or keyword)",
+              "excluded_batteries": "Battery sensors to exclude"
             }
           },
           "section_exclusions_scripts": {
@@ -81,7 +82,7 @@
         "description": "Configure intervals, tresholds, and exclusion rules.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Timings & Delays",
+            "name": "⏱️ Timings, Delays, and Tresholds",
             "description": "Adjust intervals, tresholds, and startup delay.",
             "data": {
               "startup_delay": "Startup grace period (in seconds)",
@@ -106,7 +107,8 @@
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
-              "excluded_repairs": "Repairs to exclude (platform or name or keyword)"
+              "excluded_repairs": "Repairs to exclude (platform or name or keyword)",
+              "excluded_batteries": "Battery sensors to exclude"
             }
           },
           "section_exclusions_scripts": {
