@@ -10,6 +10,7 @@ from homeassistant.helpers import selector
 import voluptuous as vol
 
 from .const import (
+    CONF_BATTERY_LOW_THRESHOLD,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_AUTOMATIONS,
     CONF_EXCLUDED_INTEGRATIONS,
@@ -25,6 +26,7 @@ from .const import (
     CONF_STARTUP_DELAY,
     CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
+    DEFAULT_BATTERY_LOW_THRESHOLD,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
@@ -62,9 +64,11 @@ def get_schema(
     )
     current_timeout = options.get(CONF_OFFLINE_TIMEOUT, DEFAULT_OFFLINE_TIMEOUT)
     current_startup_delay = options.get(CONF_STARTUP_DELAY, DEFAULT_STARTUP_DELAY)
-
     current_excluded_domains = options.get(
         CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
+    )
+    current_battery_threshold = options.get(
+        CONF_BATTERY_LOW_THRESHOLD, DEFAULT_BATTERY_LOW_THRESHOLD,
     )
 
     domain_options: list[str] = []
@@ -141,6 +145,18 @@ def get_schema(
                                 step=1,
                                 mode="slider",
                                 unit_of_measurement="h",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_BATTERY_LOW_THRESHOLD,
+                            default=current_battery_threshold,
+                        ): selector.NumberSelector(
+                            selector.NumberSelectorConfig(
+                                min=1,
+                                max=100,
+                                step=1,
+                                mode="slider",
+                                unit_of_measurement="%",
                             )
                         ),
                     }

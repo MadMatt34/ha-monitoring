@@ -69,6 +69,16 @@ class OfflineDeviceData(TypedDict):
     platform: str
 
 
+class BatteryLowData(TypedDict):
+    """Structure d'un appareil dont la batterie est faible."""
+
+    entity_id: str
+    name: str
+    battery: float
+    device_id: str | None
+    device_name: str | None
+
+
 class FailedIntegrationData(TypedDict):
     """Structure d'une intégration en erreur."""
 
@@ -148,6 +158,14 @@ class MonitoringOfflineData(TypedDict):
     timeout: float
 
 
+class MonitoringBatteryData(TypedDict):
+    """Données du capteur des batteries faibles."""
+
+    items: list[BatteryLowData]
+    total: int
+    threshold: float
+
+
 class HAMonitoringData(TypedDict):
     """Structure complète produite par le Coordinator."""
 
@@ -162,4 +180,5 @@ class HAMonitoringData(TypedDict):
     monitoring_repairs: MonitoringRepairData
     monitoring_unavailable: MonitoringUnavailableData
     monitoring_offline: MonitoringOfflineData
+    monitoring_battery: MonitoringBatteryData
     monitoring_backup: MonitoringBackupData
