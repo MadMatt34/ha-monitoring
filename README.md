@@ -8,7 +8,7 @@
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
-![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
+![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/docs/logo.png)
 
 [❗ README en FRANÇAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
 
@@ -26,6 +26,7 @@
   - **Updates & Repairs:** Tracking of updates and pending repair issues.
   - **Backups:** Verification of the latest backup status and associated tracking attributes.
   - **Applications & Integrations:** Detection of stopped, failed or errored components.
+  - **Battery-powered devices:** Report devices whose battery level falls below a configurable threshold.
   - **Automation & Script Traces:** Detection of execution errors.
   - **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
 - **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
@@ -78,30 +79,42 @@ You can adjust thresholds and exclusion lists at any time:
     - **System Info Scan Interval** (in hours): Refresh frequency for general system stats (default: 24 hours).
     - **Traces Scan Interval** (in minutes): Frequency for scanning automation and script execution trace errors (default: 30 min).
     - **Offline Inactivity Threshold** (in hours): Inactivity duration before marking a device as offline (default: 24h).
-    - **Exclusions**: Select applications, integrations, repairs, updates, automations, scripts, devices, or entities to ignore.
+    - **Low Battery Treshold** (in percent): Battery levels strictly below this percentage are reported as low (default: 15%).
+    - **Exclusions**: Select items to ignore.
+      - Applications,
+      - Integrations,
+      - Repairs,
+      - Updates,
+      - Batteries,
+      - Automations,
+      - Scripts,
+      - Devices,
+      - Entities.
 
 ---
 
 ## 📦 Provided Entities
 
-All entities are attached to the **Home Assistant** device:
+All entities are attached to the **Home Assistant** device.
 
 ### 📊 Sensors (`sensor.*`)
 
-| Entity | Name | Description / Attributes |
+| Entity | Name | Description & Attributes |
 | :--- | :--- | :--- |
 | `sensor.monitoring_applications` | Monitoring Stopped Applications | Count and list of applications stopped. |
-| `sensor.monitoring_integrations` | Monitoring Failed Integrations | Count and list of failed integrations. |
 | `sensor.monitoring_automations` | Monitoring Failed Automations | Count and list of automations that threw an error. |
-| `sensor.monitoring_scripts` | Monitoring Failed Scripts | Count and list of scripts that threw an error. |
-| `sensor.monitoring_updates` | Monitoring Pending Updates | Count and list of pending updates. |
-| `sensor.monitoring_repairs` | Monitoring Pending Repairs | Count and list of active repair issues. |
-| `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
+| `sensor.monitoring_integrations` | Monitoring Failed Integrations | Count and list of failed integrations. |
+| `sensor.monitoring_low_battery` | Monitoring Low Battery | Count and list of devices with a battery level below configured threshold. |
 | `sensor.monitoring_offline_devices` | Monitoring Offline Devices | Count and list of devices inactive since configured threshold. |
+| `sensor.monitoring_repairs` | Monitoring Pending Repairs | Count and list of active repair issues. |
+| `sensor.monitoring_scripts` | Monitoring Failed Scripts | Count and list of scripts that threw an error. |
+| `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
+| `sensor.monitoring_updates` | Monitoring Pending Updates | Count and list of pending updates. |
 
 > [!TIP]
 > Each entity contains a list attribute detailing the items detected.\
-> Use **Settings** > **Tools** > **States** to explore all attributes.
+> Use **Settings** > **Tools** > **States** to explore all attributes.\
+> [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
 ### 🔘 Binary Sensors (`binary_sensor.*`)
 
@@ -161,6 +174,8 @@ The first scan following a Home Assistant boot will wait until the configured gr
   - Devices count: Disabled devices are excluded.
   - Entities count: Disabled entities, script entities, and automation entities are excluded.
   - Database Size: Only the standard installation using SQLite is supported.
+- **Low Battery Sensor:** The scan relies on entities of type `sensor` with the `battery` device class.\
+When a device exposes multiple battery sensors, the device is reported once using its lowest battery level.
 
 ### 🚫 Details on Free-text Exclusions
 
@@ -186,10 +201,10 @@ Activates pause on:
 
 While maintenance mode is enabled, the affected monitoring sensors are reset to `0` and expose the attribute `maintenance: true`.
 
-**Backup monitoring and System Information collection continue to run normally**.
+> [!NOTE]
+> **Backup monitoring and System Information collection continue to run normally**.
 
-When maintenance mode is disabled, HA Monitoring immediately triggers a new refresh so that the monitoring sensors return to their current state without waiting for the next scheduled scan.
-
+When maintenance mode is disabled, HA Monitoring immediately triggers a new refresh so that the monitoring sensors return to their current state without waiting for the next scheduled scan.\
 The maintenance mode state is persistent and is restored after both an integration reload and a Home Assistant restart.
 
 ---
@@ -287,7 +302,8 @@ content: >
 
 ## 🛠️ Troubleshooting
 
-- Check your logs: **Settings → System → Logs**
+- Check your logs: **Settings → System → Logs**\
+[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
 - Diagnostics & Privacy: Safe diagnostic export is supported when opening an issue on GitHub. Access tokens, credentials, and personal data are automatically anonymized.
 
 ---

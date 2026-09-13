@@ -8,7 +8,7 @@
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
-![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/logo.png)
+![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/docs/logo.png)
 
 [❗ README in ENGLISH 🇬🇧 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
 
@@ -26,6 +26,7 @@
   - **Mises à jour & Réparations :** Suivi des mises à jour et des alertes de réparation.
   - **Sauvegardes :** Vérification de l'état de la dernière sauvegarde et attributs de suivi.
   - **Applications (Addons) & Intégrations :** Détection des composants stoppés et en erreur.
+  - **Appareils alimentés par batterie :** Signaler ceux dont le niveau de batterie passe sous un seuil configurable.
   - **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
   - **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
 - **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
@@ -78,7 +79,17 @@ Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
     - **Intervalle de scan des informations système** (en heures) : Fréquence d'actualisation des informations système (par défaut 24 heures).
     - **Intervalle de scan des traces** (en minutes) : Fréquence d'analyse des erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).
     - **Seuil d'inactivité hors ligne** (en heures) : Durée d'inactivité avant de considérer un appareil hors ligne (par défaut : 24h).
-    - **Exclusions** : Sélectionnez les applications, intégrations, réparations, mises à jour, automatisations, scripts, appareils, entités à ignorer.
+    - **Seuil de batterie faible** (en pourcentage) : Les niveaux de batterie strictement inférieurs à ce pourcentage sont signalés comme faibles (par défaut : 15 %).
+    - **Exclusions** : Sélectionnez les éléments à ignorer.
+      - Applications,
+      - Intégrations,
+      - Réparations,
+      - Batteries,
+      - Mises à jour,
+      - Automatisations,
+      - Scripts,
+      - Appareils,
+      - Entités.
 
 ---
 
@@ -91,17 +102,19 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 | Entité | Nom | Description / Attributs |
 | :--- | :--- | :--- |
 | `sensor.monitoring_applications` | Monitoring Applications stoppées | Nombre et liste d'applications à l'arrêt. |
-| `sensor.monitoring_integrations` | Monitoring Intégrations en erreur | Nombre et liste d'intégrations en échec. |
 | `sensor.monitoring_automations` | Monitoring Automatisations en erreur | Nombre et liste d'automatisations ayant levé une erreur. |
-| `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre et liste de scripts ayant levé une erreur. |
-| `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
-| `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre et liste de réparations en attente. |
-| `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
+| `sensor.monitoring_integrations` | Monitoring Intégrations en erreur | Nombre et liste d'intégrations en échec. |
+| `sensor.monitoring_low_battery` | Monitoring Batteries faibles | Nombre d’appareils dont le niveau de batterie est strictement inférieur au seuil configuré. |
 | `sensor.monitoring_offline_devices` | Monitoring Appareils hors ligne | Nombre et liste des appareils inactifs depuis le délai configuré. |
+| `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre et liste de réparations en attente. |
+| `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre et liste de scripts ayant levé une erreur. |
+| `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
+| `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
 
 > [!TIP]
 > Chaque entité contient des attributs listant les éléments détectés.\
-> Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.
+> Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.\
+> [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
 ### 🔘 Capteurs binaires (`binary_sensor.*`)
 
@@ -161,6 +174,8 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
   - Nombre d'appareils : les appareils désactivés ne sont pas comptabilisés.
   - Nombre d'entités : les entités désactivées ne sont pas comptabilisées, et les entités pour les scripts et automatisations non plus.
   - Taille de la base de donnée : uniquement l'installation standard est considérée (SQLLite)
+- **Capteur Batteries :** Le scan se base sur les entités de type `sensor` et de classe `battery`.\
+Lorsqu'un appareil expose plusieurs capteurs de batterie, il n'est signalé qu'une seule fois, avec le niveau de batterie le plus faible.
 
 ### 🚫 Précisions sur les exclusions en texte-libre
 
@@ -186,10 +201,10 @@ Met en pause :
 
 Pendant le mode maintenance, les capteurs de supervision concernés sont réinitialisés à `0` et exposent l'attribut `maintenance: true`.
 
-**La surveillance des sauvegardes et la collecte des informations système continuent normalement**.
+> [!NOTE]
+> **La surveillance des sauvegardes et la collecte des informations système continuent normalement**.
 
-Lorsque le mode maintenance est désactivé, HA Monitoring déclenche immédiatement un nouveau rafraîchissement afin que les capteurs retrouvent leur état actuel sans attendre le prochain scan planifié.
-
+Lorsque le mode maintenance est désactivé, HA Monitoring déclenche immédiatement un nouveau rafraîchissement afin que les capteurs retrouvent leur état actuel sans attendre le prochain scan planifié.\
 L'état du mode maintenance est persistant et est restauré après un rechargement de l'intégration ou un redémarrage de Home Assistant.
 
 ---
@@ -287,7 +302,8 @@ content: >
 
 ## 🛠️ Dépannage
 
-- Consultez les logs : **Paramètres → Système → Journaux**
+- Consultez les logs : **Paramètres → Système → Journaux**\
+[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
 - Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
 
 ---
