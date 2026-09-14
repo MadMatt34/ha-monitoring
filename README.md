@@ -12,7 +12,7 @@
 
 [❗ README en FRANÇAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
 
-**HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across applications, integrations, automations, scripts, unavailable entities, offline devices, pending updates, active repairs, and backup statuses.
+**HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across applications, integrations, automations, scripts, unavailable entities, offline devices, low batteries, pending updates, active repairs, and backup statuses.
 
 > [!IMPORTANT]
 > This integration is not intended to automatically fix errors, but rather to centralize information that is often hidden or hard to find. You can then build custom automations based on these metrics.
@@ -127,14 +127,7 @@ All entities are attached to the **Home Assistant** device.
 
 | Entity | Name | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Monitoring Force Scan | Manually triggers an immediate full scan. |
-
-The button also exposes the timestamps of the most recent scans through its state attributes:
-
-- `last_scan`: last regular monitoring scan
-- `last_traces_scan`: last automation/script traces scan
-- `last_system_info_scan`: last system information scan
-- `last_backup_scan`: last Backup information scan
+| `button.monitoring_force_scan` | Monitoring Force Scan | Manually triggers an immediate full scan. The timestamps and durations of the last scans are exposed in attributes. |
 
 ### 🎚️ Switchs (`switch.*`)
 
@@ -194,10 +187,8 @@ When a device exposes multiple battery sensors, the device is reported once usin
 
 ### 🔧 Maintenance Mode Details
 
-Activates pause on:
-
-- **the main monitoring scan**;
-- **automation and script trace scans**.
+- **the main monitoring scan is *paused***;
+- **automation and script trace scans are *paused***.
 
 While maintenance mode is enabled, the affected monitoring sensors are reset to `0` and expose the attribute `maintenance: true`.
 

@@ -12,7 +12,7 @@
 
 [❗ README in ENGLISH 🇬🇧 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.md)
 
-**HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (applications, intégrations, automatisations, scripts), des entités indisponibles, des appareils hors ligne, des mises à jour et des réparations en attente, de l'état des sauvegardes.
+**HA Monitoring** est une intégration personnalisée pour Home Assistant conçue pour surveiller l'état de santé du système et d'autres composants en temps réel. Elle centralise certaines informations système, et la détection des dysfonctionnements (applications, intégrations, automatisations, scripts), des entités indisponibles, des appareils hors ligne, des batteries faibles, des mises à jour et des réparations en attente, de l'état des sauvegardes.
 
 > [!IMPORTANT]
 > Cette intégration n'a pas vocation à corriger les erreurs, uniquement centraliser toutes ces informations souvent invisibles ou difficilement accessibles au premier abord. A vous de construire ensuite les automatisations qui vous conviennent.
@@ -127,14 +127,7 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 
 | Entité | Nom | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Monitoring Forcer le scan | Permet de déclencher manuellement et instantanément un scan complet |
-
-Les attributs du bouton exposent les horodatages des analyses les plus récentes
-
-- `last_scan`: dernier scan de monitoring standard
-- `last_traces_scan`: dernier scan des traces des automatisations/scripts
-- `last_system_info_scan`: dernier scan des informations système
-- `last_backup_scan`: dernier scan des informations de sauvegarde
+| `button.monitoring_force_scan` | Monitoring Forcer le scan | Permet de déclencher manuellement et instantanément un scan complet. Les attributs exposent les horodatages et les durées des dernières analyses. |
 
 ### 🎚️ Interrupteur (`switch.*`)
 
@@ -194,10 +187,8 @@ Lorsqu'un appareil expose plusieurs capteurs de batterie, il n'est signalé qu'u
 
 ### 🔧 Précisions sur le Mode Maintenance
 
-Met en pause :
-
-- **le scan principal de supervision** ;
-- **les scans des traces des automatisations et des scripts**.
+- **le scan principal de supervision est en *pause*** ;
+- **les scans des traces des automatisations et des scripts sont en *pause***.
 
 Pendant le mode maintenance, les capteurs de supervision concernés sont réinitialisés à `0` et exposent l'attribut `maintenance: true`.
 
