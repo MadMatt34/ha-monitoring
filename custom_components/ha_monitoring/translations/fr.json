@@ -6,21 +6,23 @@
         "description": "Configurez les délais, les seuils, et les listes d'exclusions par type de surveillance.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Fréquences & Temporisations",
+            "name": "⏱️ Fréquences, Temporisations, et Seuils",
             "description": "Ajustez les intervalles de rafraîchissement, les seuils, et le délai de démarrage.",
             "data": {
               "startup_delay": "Délai de grâce au démarrage (en secondes)",
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
               "system_info_scan_interval": "Intervalle de scan des informations système (en heures)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)"
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
+              "battery_low_threshold": "Seuil de batterie faible (%)"
             },
             "data_description": {
               "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes).",
               "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 3 min).",
               "system_info_scan_interval": "Fréquence à laquelle le système vérifie les informations système (par défaut : 24 heures).",
               "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
-              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures)."
+              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
+              "battery_low_threshold": "Les niveaux de batterie strictement inférieurs à ce pourcentage sont signalés comme faibles (par défaut : 15 %)."
             }
           },
           "section_exclusions_system": {
@@ -29,7 +31,8 @@
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)"
+              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)",
+              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           },
           "section_exclusions_scripts": {
@@ -79,21 +82,23 @@
         "description": "Configurez les délais, les seuils, et les règles d'exclusion.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Fréquences & Temporisations",
+            "name": "⏱️ Fréquences, Temporisations, et Seuils",
             "description": "Ajustez les intervalles, les seuils, et le délai de démarrage.",
             "data": {
               "startup_delay": "Délai de grâce au démarrage (en secondes)",
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
               "system_info_scan_interval": "Intervalle de scan des informations système (en heures)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)"
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
+              "battery_low_threshold": "Seuil de batterie faible (%)"
             },
             "data_description": {
               "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes).",
               "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 3 min).",
               "system_info_scan_interval": "Fréquence à laquelle le système vérifie les informations système (par défaut : 24 heures).",
               "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
-              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures)."
+              "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
+              "battery_low_threshold": "Les niveaux de batterie strictement inférieurs à ce pourcentage sont signalés comme faibles (par défaut : 15 %)."
             }
           },
           "section_exclusions_system": {
@@ -102,7 +107,8 @@
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)"
+              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)",
+              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           },
           "section_exclusions_scripts": {
@@ -151,7 +157,8 @@
       "updates": { "name": "Monitoring Mises à jour" },
       "repairs": { "name": "Monitoring Corrections" },
       "unavailable_entities": { "name": "Monitoring Entités indisponibles" },
-      "offline_devices": { "name": "Monitoring Appareils hors ligne" }
+      "offline_devices": { "name": "Monitoring Appareils hors ligne" },
+      "low_battery": { "name": "Monitoring Batteries faibles" }
     },
     "binary_sensor": {
       "global_status": { "name": "Monitoring Statut Global" },

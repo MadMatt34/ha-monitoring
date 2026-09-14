@@ -9,6 +9,7 @@ from homeassistant.components.hassio import (
     HassioNotReadyError,
     get_addons_info,
 )
+from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.const import STATE_UNAVAILABLE, STATE_UNKNOWN
 from homeassistant.core import HomeAssistant
@@ -26,6 +27,7 @@ from ..const import (
     INTEGRATION_ERROR_STATES,
 )
 from ..types import (
+    BatteryLowData,
     FailedIntegrationData,
     OfflineDeviceData,
     PendingRepairData,
@@ -49,6 +51,7 @@ class StateScanData(TypedDict):
     device_id: str | None
     device_name: str | None
     platform: str
+    battery_level: float | None
 
 
 def _optional_str(value: object) -> str | None:
@@ -93,13 +96,28 @@ def _snapshot_states(
             and entity_id.endswith(last_seen_suffixes)
         )
 
+        is_battery = (
+            state_obj.domain == "sensor"
+            and attributes.get("device_class") == SensorDeviceClass.BATTERY
+        )
+
         device_id: str | None = None
         device_name: str | None = None
         platform = unknown_platform
+        battery_level: float | None = None
+
+        if is_battery and state_obj.state not in (
+            STATE_UNKNOWN,
+            STATE_UNAVAILABLE,
+        ):
+            try:
+                battery_level = float(state_obj.state)
+            except ValueError:
+                battery_level = None
 
         # Les registries ne sont consultés que pour les capteurs
-        # réellement susceptibles d'identifier un appareil hors ligne.
-        if is_last_seen:
+        # pouvant identifier un appareil hors ligne ou une batterie faible.
+        if is_last_seen or is_battery:
             entity_entry = entity_registry.async_get(entity_id)
 
             if entity_entry is not None:
@@ -123,6 +141,7 @@ def _snapshot_states(
                 "device_id": device_id,
                 "device_name": device_name,
                 "platform": (DOMAIN if entity_id in monitoring_entity_ids else platform),
+                "battery_level": battery_level,
             }
         )
 
@@ -147,26 +166,27 @@ def scan_all_states(
     excluded_unavailable_entities: list[str],
     excluded_unavailable_domains: list[str],
     excluded_offline: list[str],
+    excluded_batteries: list[str],
     timeout_hours: float,
     unknown_version: str,
+    battery_threshold: float,
     last_seen_suffixes: tuple[str, ...] = DEFAULT_LAST_SEEN_SUFFIX,
     excluded_unavailable_globs: list[str] | None = None,
 ) -> tuple[
     list[UpdateEntityData],
     list[UnavailableEntityData],
     list[OfflineDeviceData],
+    list[BatteryLowData],
 ]:
     """Traite un snapshot d'états HA en une seule passe."""
     now = dt_util.utcnow()
     cutoff = now - timedelta(hours=float(timeout_hours))
 
     excluded_updates_set = set(excluded_updates)
-
     excluded_unavailable_entities_set = set(excluded_unavailable_entities)
-
     excluded_unavailable_domains_set = set(excluded_unavailable_domains)
-
     excluded_offline_set = set(excluded_offline)
+    excluded_batteries_set = set(excluded_batteries)
 
     excluded_unavailable_globs_set = {
         pattern.lower().strip() for pattern in (excluded_unavailable_globs or []) if pattern.strip()
@@ -175,6 +195,7 @@ def scan_all_states(
     updates: list[UpdateEntityData] = []
     unavailable: list[UnavailableEntityData] = []
     offline: list[OfflineDeviceData] = []
+    batteries: dict[str, BatteryLowData] = {}
 
     offline_devices: set[str] = set()
 
@@ -231,6 +252,37 @@ def scan_all_states(
             continue
 
         # --------------------------------------------------------------
+        # Batteries faibles
+        # --------------------------------------------------------------
+        battery_level = state_data["battery_level"]
+
+        if (
+            battery_level is not None
+            and entity_id not in excluded_batteries_set
+            and battery_level < battery_threshold
+        ):
+            device_id = state_data["device_id"]
+            device_name = state_data["device_name"]
+
+            key = device_id or entity_id
+            name = device_name or friendly_name
+
+            battery_data: BatteryLowData = {
+                "entity_id": entity_id,
+                "name": name,
+                "battery": battery_level,
+                "device_id": device_id,
+                "device_name": device_name,
+            }
+
+            existing = batteries.get(key)
+
+            if existing is None or battery_level < existing["battery"]:
+                batteries[key] = battery_data
+
+            continue
+
+        # --------------------------------------------------------------
         # Appareils hors ligne
         # --------------------------------------------------------------
         if not entity_id.endswith(last_seen_suffixes):
@@ -266,7 +318,12 @@ def scan_all_states(
             }
         )
 
-    return updates, unavailable, offline
+    return (
+        updates,
+        unavailable,
+        offline,
+        list(batteries.values()),
+    )
 
 
 async def async_get_addons(

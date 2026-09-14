@@ -11,9 +11,11 @@ from .const import (
     ATTR_LIST,
     ATTR_MAINTENANCE,
     ATTR_STARTUP_DELAY,
+    ATTR_THRESHOLD,
     ATTR_TOTAL,
     ICON_ADDONS,
     ICON_AUTOMATIONS,
+    ICON_BATTERY,
     ICON_INTEGRATIONS,
     ICON_OFFLINE,
     ICON_REPAIRS,
@@ -22,6 +24,7 @@ from .const import (
     ICON_UPDATES,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_AUTOMATIONS,
+    TRANSLATION_KEY_BATTERY,
     TRANSLATION_KEY_INTEGRATIONS,
     TRANSLATION_KEY_OFFLINE,
     TRANSLATION_KEY_REPAIRS,
@@ -30,6 +33,7 @@ from .const import (
     TRANSLATION_KEY_UPDATES,
     UNIQUE_ID_ADDONS,
     UNIQUE_ID_AUTOMATIONS,
+    UNIQUE_ID_BATTERY,
     UNIQUE_ID_INTEGRATIONS,
     UNIQUE_ID_OFFLINE,
     UNIQUE_ID_REPAIRS,
@@ -45,6 +49,7 @@ from .entity import HAMonitoringBaseEntity
 from .types import (
     HAMonitoringData,
     MonitoringAddonData,
+    MonitoringBatteryData,
     MonitoringIntegrationData,
     MonitoringOfflineData,
     MonitoringRepairData,
@@ -61,6 +66,7 @@ type SensorData = (
     | MonitoringRepairData
     | MonitoringUnavailableData
     | MonitoringOfflineData
+    | MonitoringBatteryData
 )
 
 
@@ -140,6 +146,17 @@ async def async_setup_entry(
                 "seuil_timeout": data["timeout"],
             },
         ),
+        HAMonitoringGenericSensor(
+            coordinator=coordinator,
+            entry=entry,
+            data_getter=lambda data: data["monitoring_battery"],
+            unique_key=UNIQUE_ID_BATTERY,
+            translation_key=TRANSLATION_KEY_BATTERY,
+            icon=ICON_BATTERY,
+            extra_attributes=lambda data: {
+                ATTR_THRESHOLD: data["threshold"],
+            },
+        ),
     ]
 
     async_add_entities(sensors)
@@ -159,7 +176,11 @@ class HAMonitoringGenericSensor[T: SensorData](
         unique_key: str,
         translation_key: str,
         icon: str,
-        extra_attributes: Callable[[T], dict[str, object]] | None = None,
+        extra_attributes: Callable[
+            [T],
+            dict[str, object],
+        ]
+        | None = None,
     ) -> None:
         """Initialise le capteur générique."""
         super().__init__(coordinator)

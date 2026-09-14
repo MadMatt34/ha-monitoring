@@ -22,14 +22,20 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
-from homeassistant.helpers.translation import async_get_translations
-from homeassistant.helpers.update_coordinator import DataUpdateCoordinator
+from homeassistant.helpers.translation import (
+    async_get_translations,
+)
+from homeassistant.helpers.update_coordinator import (
+    DataUpdateCoordinator,
+)
 from homeassistant.util import dt as dt_util
 
 from .const import (
     ATTR_STARTUP_DELAY,
+    CONF_BATTERY_LOW_THRESHOLD,
     CONF_EXCLUDED_ADDONS,
     CONF_EXCLUDED_AUTOMATIONS,
+    CONF_EXCLUDED_BATTERIES,
     CONF_EXCLUDED_INTEGRATIONS,
     CONF_EXCLUDED_OFFLINE,
     CONF_EXCLUDED_REPAIRS,
@@ -43,6 +49,7 @@ from .const import (
     CONF_STARTUP_DELAY,
     CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
+    DEFAULT_BATTERY_LOW_THRESHOLD,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_LAST_SEEN_SUFFIX,
     DEFAULT_OFFLINE_TIMEOUT,
@@ -156,7 +163,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._cached_system_stats: SystemStatsData | None = None
 
         # ------------------------------------------------------------------
-        # Cache traduction utilisée par le scan principal
+        # Cache traductions utilisées par le scan principal
         # ------------------------------------------------------------------
         self._cached_unknown_platform: str | None = None
         self._cached_unknown_version: str | None = None
@@ -223,12 +230,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         await self._maintenance_store.async_save(stored_data)
 
         if enabled:
-            # Publication immédiate de l'état maintenance.
             await self.async_refresh()
             return
 
-        # La sortie du mode maintenance force immédiatement
-        # un nouveau cycle complet.
         await self.async_force_refresh()
 
     async def async_remove_persistent_data(self) -> None:
@@ -432,7 +436,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         self._cached_unknown_platform = translations[f"component.{DOMAIN}.common.unknown"]
+
         self._cached_unknown_version = translations[f"component.{DOMAIN}.common.unknown_version"]
+
         self._cached_translation_language = language
 
         return (
@@ -446,7 +452,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         return self._last_scan_time
 
     @property
-    def last_traces_scan_time(self) -> datetime | None:
+    def last_traces_scan_time(
+        self,
+    ) -> datetime | None:
         """Retourne la date du dernier scan des traces."""
         return self._last_trace_check_time
 
@@ -545,6 +553,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             results = self._empty_results(in_startup_delay=True)
 
             results["monitoring_backup"] = current_backup_info
+
             results["maintenance_mode"] = self._maintenance_mode
 
             return results
@@ -555,6 +564,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             options.get(
                 CONF_OFFLINE_TIMEOUT,
                 DEFAULT_OFFLINE_TIMEOUT,
+            )
+        )
+
+        battery_threshold = float(
+            options.get(
+                CONF_BATTERY_LOW_THRESHOLD,
+                DEFAULT_BATTERY_LOW_THRESHOLD,
             )
         )
 
@@ -630,6 +646,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     "total": 0,
                     "timeout": offline_timeout,
                 },
+                "monitoring_battery": {
+                    "items": [],
+                    "total": 0,
+                    "threshold": battery_threshold,
+                },
                 "monitoring_backup": current_backup_info,
             }
 
@@ -645,6 +666,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         excluded_unavailable_globs = options.get(
             CONF_EXCLUDED_UNAVAILABLE_GLOBS,
+            [],
+        )
+
+        excluded_batteries = options.get(
+            CONF_EXCLUDED_BATTERIES,
             [],
         )
 
@@ -665,6 +691,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             updates,
             unavailable,
             offline,
+            low_batteries,
         ) = await self.hass.async_add_executor_job(
             partial(
                 scan_all_states,
@@ -679,8 +706,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     CONF_EXCLUDED_OFFLINE,
                     [],
                 ),
+                excluded_batteries=excluded_batteries,
                 timeout_hours=offline_timeout,
                 unknown_version=unknown_version,
+                battery_threshold=battery_threshold,
                 last_seen_suffixes=(last_seen_suffixes),
                 excluded_unavailable_globs=(excluded_unavailable_globs),
             )
@@ -790,6 +819,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "total": len(offline),
                 "timeout": offline_timeout,
             },
+            "monitoring_battery": {
+                "items": low_batteries,
+                "total": len(low_batteries),
+                "threshold": battery_threshold,
+            },
             "monitoring_backup": current_backup_info,
         }
 
@@ -803,6 +837,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             self.entry.options.get(
                 CONF_OFFLINE_TIMEOUT,
                 DEFAULT_OFFLINE_TIMEOUT,
+            )
+        )
+
+        battery_threshold = float(
+            self.entry.options.get(
+                CONF_BATTERY_LOW_THRESHOLD,
+                DEFAULT_BATTERY_LOW_THRESHOLD,
             )
         )
 
@@ -842,6 +883,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": [],
                 "total": 0,
                 "timeout": timeout,
+            },
+            "monitoring_battery": {
+                "items": [],
+                "total": 0,
+                "threshold": battery_threshold,
             },
             "monitoring_backup": {
                 "is_ok": True,
