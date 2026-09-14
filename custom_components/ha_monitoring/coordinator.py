@@ -557,7 +557,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
 
             self._last_backup_scan_duration = time.monotonic() - scan_backup_start
-            self.stamp = dt_util.utcnow()
+            self._last_backup_scan_timestamp = dt_util.utcnow()
 
             self._backup_scan_timestamp_cache[self.entry.entry_id] = (
                 self._last_backup_scan_timestamp
