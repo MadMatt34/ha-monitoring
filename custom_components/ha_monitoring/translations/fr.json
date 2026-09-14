@@ -3,22 +3,22 @@
     "step": {
       "user": {
         "title": "HA Monitoring",
-        "description": "Configurez les délais, les seuils, et les listes d'exclusions par type de surveillance.",
+        "description": "Configurez les délais, les seuils et les listes d'exclusions par type de surveillance.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Fréquences, Temporisations, et Seuils",
-            "description": "Ajustez les intervalles de rafraîchissement, les seuils, et le délai de démarrage.",
+            "name": "⏱️ Fréquences, délais et seuils",
+            "description": "Ajustez les intervalles de rafraîchissement, les seuils et le délai de démarrage.",
             "data": {
               "startup_delay": "Délai de grâce au démarrage (en secondes)",
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
               "system_info_scan_interval": "Intervalle de scan des informations système (en heures)",
               "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
               "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
-              "battery_low_threshold": "Seuil de batterie faible (%)"
+              "battery_low_threshold": "Seuil de batterie faible (en pourcents)"
             },
             "data_description": {
               "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes).",
-              "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 3 min).",
+              "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour et de réparations (par défaut : 3 min).",
               "system_info_scan_interval": "Fréquence à laquelle le système vérifie les informations système (par défaut : 24 heures).",
               "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
               "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
@@ -26,39 +26,39 @@
             }
           },
           "section_exclusions_system": {
-            "name": "⚙️ Exclusions de composants Système",
-            "description": "Ignorer lors du scan certaines Applications, Intégrations ou Réparations.",
+            "name": "⚙️ Exclusions des composants système",
+            "description": "Ignorer lors des scans certaines Applications, Intégrations, Réparations ou batteries.",
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)",
+              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)",
               "excluded_batteries": "Capteurs de batterie à exclure"
             }
           },
           "section_exclusions_scripts": {
-            "name": "🏷️ Exclusions d'Automatisations & Scripts",
+            "name": "🏷️ Exclusions des automatisations et scripts",
             "data": {
               "excluded_automations": "Automatisations à exclure",
               "excluded_scripts": "Scripts à exclure"
             }
           },
           "section_exclusions_updates": {
-            "name": "🏷️ Exclusions de Mises à Jour",
+            "name": "🏷️ Exclusions des mises à jour",
             "data": {
               "excluded_updates": "Mises à jour à exclure"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Exclusions d'Entités Indisponibles",
-            "description": "Ignorer des entités spécifiques ou avec des caractères génériques, ou des domaines complets.",
+            "name": "🏷️ Exclusions des entités indisponibles",
+            "description": "Ignorer des entités spécifiques, correspondant à des caractères génériques, ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités à exclure",
-              "excluded_unavailable_globs": "Mot-clé de noms ou IDs à exclure",
+              "excluded_unavailable_globs": "Noms ou IDs correspondant à ces motifs à exclure",
               "excluded_unavailable_domains": "Domaines à exclure"
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Exclusions d'Appareils Hors-ligne",
+            "name": "🏷️ Exclusions des appareils hors ligne",
             "data": {
               "excluded_offline": "Appareils à exclure"
             }
@@ -79,114 +79,163 @@
     "step": {
       "init": {
         "title": "Options de HA Monitoring",
-        "description": "Configurez les délais, les seuils, et les règles d'exclusion.",
+        "description": "Choisissez ce que vous souhaitez configurer.",
+        "menu_options": {
+          "timings": "⏱️ Délais, fréquences et seuils",
+          "exclusions": "🚫 Listes d'exclusions",
+          "done": "✅ Enregistrer & Terminer"
+        }
+      },
+      "timings": {
+        "title": "Délais, fréquences et seuils",
+        "description": "Ajustez les intervalles de rafraîchissement, les délais, les seuils et les temporisations.",
         "sections": {
-          "section_timings": {
-            "name": "⏱️ Fréquences, Temporisations, et Seuils",
-            "description": "Ajustez les intervalles, les seuils, et le délai de démarrage.",
+          "section_delays": {
+            "name": "⏳ Délais et Temporisations",
             "data": {
-              "startup_delay": "Délai de grâce au démarrage (en secondes)",
-              "scan_interval": "Intervalle de rafraîchissement (en secondes)",
-              "system_info_scan_interval": "Intervalle de scan des informations système (en heures)",
-              "traces_scan_interval": "Intervalle de scan des traces (en minutes)",
-              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
-              "battery_low_threshold": "Seuil de batterie faible (%)"
+              "startup_delay": "Délai de grâce au démarrage (en secondes)"
             },
             "data_description": {
-              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes).",
-              "scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les entités, les appareils, les intégrations, les applications et vérifie les attentes de mises à jour, de réparations (par défaut : 3 min).",
-              "system_info_scan_interval": "Fréquence à laquelle le système vérifie les informations système (par défaut : 24 heures).",
-              "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
+              "startup_delay": "Durée pendant laquelle le scan est ignoré après un démarrage (par défaut : 2 minutes)."
+            }
+          },
+          "section_timings": {
+            "name": "🔄 Fréquences de Scans",
+            "data": {
+              "scan_interval": "Intervalle du scan principal (en secondes)",
+              "system_info_scan_interval": "Intervalle du scan des informations système (en heures)",
+              "traces_scan_interval": "Intervalle du scan des traces (en minutes)"
+            },
+            "data_description": {
+              "scan_interval": "Fréquence à laquelle le scan principal de supervision est exécuté (par défaut : 3 min).",
+              "system_info_scan_interval": "Fréquence à laquelle les informations système sont vérifiées (par défaut : 24 heures).",
+              "traces_scan_interval": "Fréquence à laquelle les traces des automatisations et scripts sont vérifiées (par défaut : 30 min)."
+            }
+          },
+          "section_thresholds": {
+            "name": "📏 Seuils",
+            "data": {
+              "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
+              "battery_low_threshold": "Seuil de batterie faible (en pourcents)"
+            },
+            "data_description": {
               "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
               "battery_low_threshold": "Les niveaux de batterie strictement inférieurs à ce pourcentage sont signalés comme faibles (par défaut : 15 %)."
             }
-          },
+          }
+        }
+      },
+      "exclusions": {
+        "title": "Listes d'Exclusions",
+        "description": "Configurez les éléments qui doivent être ignorés par la supervision.",
+        "sections": {
           "section_exclusions_system": {
-            "name": "⚙️ Exclusions de composants Système",
-            "description": "Ignorer lors du scan certaines Applications, Intégrations ou Réparations.",
+            "name": "⚙️ Exclusions des composants système",
+            "description": "Ignorer certaines Applications, Intégrations, Réparations ou batteries.",
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme ou nom ou mot-clé)",
+              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)",
               "excluded_batteries": "Capteurs de batterie à exclure"
             }
           },
+          "section_exclusions_updates": {
+            "name": "🏷️ Exclusions des mises à jour",
+            "data": {
+              "excluded_updates": "Mises à jour à exclure"
+            }
+          },
           "section_exclusions_scripts": {
-            "name": "🏷️ Exclusions d'Automatisations & Scripts",
+            "name": "🏷️ Exclusions des automatisations et scripts",
             "data": {
               "excluded_automations": "Automatisations à exclure",
               "excluded_scripts": "Scripts à exclure"
             }
           },
-          "section_exclusions_updates": {
-            "name": "🏷️ Exclusions de Mises à Jour",
+          "section_exclusions_offline": {
+            "name": "🏷️ Exclusions des appareils hors ligne",
             "data": {
-              "excluded_updates": "Mises à jour à exclure"
+              "excluded_offline": "Appareils à exclure"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Exclusions d'Entités Indisponibles",
-            "description": "Ignorer des entités spécifiques ou avec des caractères génériques, ou des domaines complets.",
+            "name": "🏷️ Exclusions des entités indisponibles",
+            "description": "Ignorer des entités spécifiques, correspondant à des caractères génériques, ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités à exclure",
-              "excluded_unavailable_globs": "Mot-clé de noms ou IDs à exclure",
+              "excluded_unavailable_globs": "Noms ou IDs correspondant à ces motifs à exclure",
               "excluded_unavailable_domains": "Domaines à exclure"
-            }
-          },
-          "section_exclusions_offline": {
-            "name": "🏷️ Exclusions d'Appareils Hors-ligne",
-            "data": {
-              "excluded_offline": "Appareils à exclure"
             }
           }
         }
       }
-    },
-    "error": {
-      "invalid_number": "Veuillez saisir un nombre entier valide.",
-      "invalid_interval": "L'intervalle doit être d'au moins 5 secondes.",
-      "invalid_timeout": "Le seuil d'inactivité doit être d'au moins 1 heure."
     }
   },
   "entity": {
     "sensor": {
-      "applications": { "name": "Monitoring Applications" },
-      "integrations": { "name": "Monitoring Intégrations" },
-      "automations": { "name": "Monitoring Automatisations" },
-      "scripts": { "name": "Monitoring Scripts" },
-      "updates": { "name": "Monitoring Mises à jour" },
-      "repairs": { "name": "Monitoring Corrections" },
-      "unavailable_entities": { "name": "Monitoring Entités indisponibles" },
-      "offline_devices": { "name": "Monitoring Appareils hors ligne" },
-      "low_battery": { "name": "Monitoring Batteries faibles" }
+      "applications": {
+        "name": "Monitoring Applications"
+      },
+      "integrations": {
+        "name": "Monitoring Intégrations"
+      },
+      "automations": {
+        "name": "Monitoring Automatisations"
+      },
+      "scripts": {
+        "name": "Monitoring Scripts"
+      },
+      "updates": {
+        "name": "Monitoring Mises à jour"
+      },
+      "repairs": {
+        "name": "Monitoring Corrections"
+      },
+      "unavailable_entities": {
+        "name": "Monitoring Entités indisponibles"
+      },
+      "offline_devices": {
+        "name": "Monitoring Appareils hors ligne"
+      },
+      "low_battery": {
+        "name": "Monitoring Batteries faibles"
+      }
     },
     "binary_sensor": {
-      "global_status": { "name": "Monitoring Statut Global" },
-      "backup": { "name": "Monitoring Sauvegarde" }
+      "global_status": {
+        "name": "Monitoring Statut Global"
+      },
+      "backup": {
+        "name": "Monitoring Sauvegarde"
+      }
     },
     "button": {
-      "force_scan": { "name": "Monitoring Forcer le scan" }
+      "force_scan": {
+        "name": "Monitoring Forcer le scan"
+      }
     },
     "switch": {
-      "maintenance": { "name": "Monitoring Mode Maintenance" }
+      "maintenance": {
+        "name": "Monitoring Mode Maintenance"
+      }
     }
   },
   "issues": {
     "setup_retry": {
-      "title": "Connexion temporairement impossible",
-      "description": "Tentative de reconnexion en cours."
+      "title": "Connexion temporairement indisponible",
+      "description": "L'intégration tente actuellement de se reconnecter."
     },
     "setup_error": {
-      "title": "Échec d'initialisation / Erreur de configuration",
-      "description": "Une erreur est survenue lors du démarrage. Veuillez consulter les journaux."
+      "title": "Échec de l'initialisation / Erreur de configuration",
+      "description": "Une erreur est survenue lors de l'initialisation. Veuillez consulter les journaux."
     },
     "migration_error": {
       "title": "Erreur lors de la migration des données",
-      "description": "Impossible de migrer les données de l'intégration vers la nouvelle version."
+      "description": "Impossible de migrer les données de configuration de l'intégration vers la dernière version."
     },
     "failed_unload": {
-      "title": "L'intégration n'a pas pu être déchargée",
-      "description": "Une erreur est survenue lors de la désinstallation de l'intégration. Veuillez consulter les journaux."
+      "title": "Échec du déchargement de l'intégration",
+      "description": "Une erreur est survenue lors de la désinstallation. Veuillez consulter les journaux."
     },
     "unknown_error": {
       "title": "État anormal ({state})",

@@ -3,18 +3,18 @@
     "step": {
       "user": {
         "title": "HA Monitoring",
-        "description": "Configure intervals, tresholds, and exclusion lists by monitoring type.",
+        "description": "Configure intervals, thresholds, and exclusion lists by monitoring type.",
         "sections": {
           "section_timings": {
-            "name": "⏱️ Timings, Delays, and Tresholds",
-            "description": "Adjust refresh intervals, tresholds, and startup delay.",
+            "name": "⏱️ Timings, Delays, and Thresholds",
+            "description": "Adjust refresh intervals, thresholds, and startup delay.",
             "data": {
               "startup_delay": "Startup grace period (in seconds)",
               "scan_interval": "Refresh interval (in seconds)",
               "system_info_scan_interval": "System info scan interval (in hours)",
               "traces_scan_interval": "Traces scan interval (in minutes)",
               "offline_timeout": "Offline device inactivity threshold (in hours)",
-              "battery_low_threshold": "Low battery threshold (%)"
+              "battery_low_threshold": "Low battery threshold (en pourcents)"
             },
             "data_description": {
               "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
@@ -53,7 +53,7 @@
             "description": "Ignore specific entities or with wildcards, or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Entities to exclude",
-              "excluded_unavailable_globs": "Keyword of names or IDs to exclude",
+              "excluded_unavailable_globs": "Names or IDs matching these patterns to exclude",
               "excluded_unavailable_domains": "Domains to exclude"
             }
           },
@@ -79,36 +79,70 @@
     "step": {
       "init": {
         "title": "HA Monitoring Options",
-        "description": "Configure intervals, tresholds, and exclusion rules.",
+        "description": "Choose what you want to configure.",
+        "menu_options": {
+          "timings": "⏱️ Timings, Delays, and Thresholds",
+          "exclusions": "🚫 Exclusions lists",
+          "done": "✅ Save & Done"
+        }
+      },
+      "timings": {
+        "title": "Timings, Delays, and Thresholds",
+        "description": "Adjust refresh intervals, delays, timeouts, and thresholds.",
         "sections": {
-          "section_timings": {
-            "name": "⏱️ Timings, Delays, and Tresholds",
-            "description": "Adjust intervals, tresholds, and startup delay.",
+          "section_delays": {
+            "name": "⏳ Delays and Timeouts",
             "data": {
-              "startup_delay": "Startup grace period (in seconds)",
-              "scan_interval": "Refresh interval (in seconds)",
-              "system_info_scan_interval": "System info scan interval (in hours)",
-              "traces_scan_interval": "Traces scan interval (in minutes)",
-              "offline_timeout": "Offline device inactivity threshold (in hours)",
-              "battery_low_threshold": "Low battery threshold (%)"
+              "startup_delay": "Startup grace period (in seconds)"
             },
             "data_description": {
-              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
-              "scan_interval": "Frequency at which the system checks for errors in entities, devices, integrations, applications, and checks for pending updates or repairs (default: 3 min).",
-              "system_info_scan_interval": "Frequency at which the system checks for system information (default: 24 hours).",
-              "traces_scan_interval": "Frequency at which the system checks for errors in automation and script traces (default: 30 min).",
+              "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes)."
+            }
+          },
+          "section_timings": {
+            "name": "🔄 Scan Intervals",
+            "data": {
+              "scan_interval": "Main scan interval (in seconds)",
+              "system_info_scan_interval": "System info scan interval (in hours)",
+              "traces_scan_interval": "Trace scan interval (in minutes)"
+            },
+            "data_description": {
+              "scan_interval": "Frequency at which the main monitoring scan runs (default: 3 min).",
+              "system_info_scan_interval": "Frequency at which the system information scan runs (default: 24 hours).",
+              "traces_scan_interval": "Frequency at which automation and script traces are checked (default: 30 min)."
+            }
+          },
+          "section_thresholds": {
+            "name": "📏 Thresholds",
+            "data": {
+              "offline_timeout": "Offline device inactivity threshold (in hours)",
+              "battery_low_threshold": "Low battery threshold (in percents)"
+            },
+            "data_description": {
               "offline_timeout": "Duration after which a device is considered offline (default: 24 hours).",
               "battery_low_threshold": "Battery levels strictly below this percentage are reported as low (default: 15%)."
             }
-          },
+          }
+        }
+      },
+      "exclusions": {
+        "title": "Exclusions Lists",
+        "description": "Configure the items that should be ignored by monitoring.",
+        "sections": {
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore from scans specific Applications, Integrations, or Repairs.",
+            "description": "Ignore specific Applications, Integrations, Repairs, or Battery Sensors.",
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
               "excluded_repairs": "Repairs to exclude (platform or name or keyword)",
               "excluded_batteries": "Battery sensors to exclude"
+            }
+          },
+          "section_exclusions_updates": {
+            "name": "🏷️ Update Exclusions",
+            "data": {
+              "excluded_updates": "Updates to exclude"
             }
           },
           "section_exclusions_scripts": {
@@ -118,57 +152,72 @@
               "excluded_scripts": "Scripts to exclude"
             }
           },
-          "section_exclusions_updates": {
-            "name": "🏷️ Update Exclusions",
-            "data": {
-              "excluded_updates": "Updates to exclude"
-            }
-          },
-          "section_exclusions_unavailable": {
-            "name": "🏷️ Unavailable Entity Exclusions",
-            "description": "Ignore specific entities or with wildcard, or entire domains.",
-            "data": {
-              "excluded_unavailable_entities": "Entities to exclude",
-              "excluded_unavailable_globs": "Keyword of names or IDs to exclude",
-              "excluded_unavailable_domains": "Domains to exclude"
-            }
-          },
           "section_exclusions_offline": {
             "name": "🏷️ Offline Device Exclusions",
             "data": {
               "excluded_offline": "Devices to exclude"
             }
+          },
+          "section_exclusions_unavailable": {
+            "name": "🏷️ Unavailable Entity Exclusions",
+            "description": "Ignore specific entities or with wildcards, or entire domains.",
+            "data": {
+              "excluded_unavailable_entities": "Entities to exclude",
+              "excluded_unavailable_globs": "Names or IDs matching these patterns to exclude",
+              "excluded_unavailable_domains": "Domains to exclude"
+            }
           }
         }
       }
-    },
-    "error": {
-      "invalid_number": "Please enter a valid integer.",
-      "invalid_interval": "Interval must be at least 5 seconds.",
-      "invalid_timeout": "Inactivity threshold must be at least 1 hour."
     }
   },
   "entity": {
     "sensor": {
-      "applications": { "name": "Monitoring Applications" },
-      "integrations": { "name": "Monitoring Integrations" },
-      "automations": { "name": "Monitoring Automations" },
-      "scripts": { "name": "Monitoring Scripts" },
-      "updates": { "name": "Monitoring Updates" },
-      "repairs": { "name": "Monitoring Repairs" },
-      "unavailable_entities": { "name": "Monitoring Unavailable Entities" },
-      "offline_devices": { "name": "Monitoring Offline Devices" },
-      "low_battery": { "name": "Monitoring Low Battery" }
+      "applications": {
+        "name": "Monitoring Applications"
+      },
+      "integrations": {
+        "name": "Monitoring Integrations"
+      },
+      "automations": {
+        "name": "Monitoring Automations"
+      },
+      "scripts": {
+        "name": "Monitoring Scripts"
+      },
+      "updates": {
+        "name": "Monitoring Updates"
+      },
+      "repairs": {
+        "name": "Monitoring Repairs"
+      },
+      "unavailable_entities": {
+        "name": "Monitoring Unavailable Entities"
+      },
+      "offline_devices": {
+        "name": "Monitoring Offline Devices"
+      },
+      "low_battery": {
+        "name": "Monitoring Low Battery"
+      }
     },
     "binary_sensor": {
-      "global_status": { "name": "Monitoring Global Status" },
-      "backup_status": { "name": "Monitoring Backup" }
+      "global_status": {
+        "name": "Monitoring Global Status"
+      },
+      "backup": {
+        "name": "Monitoring Backup"
+      }
     },
     "button": {
-      "force_scan": { "name": "Monitoring Force Scan" }
+      "force_scan": {
+        "name": "Monitoring Force Scan"
+      }
     },
     "switch": {
-      "maintenance": { "name": "Monitoring Maintenance Mode" }
+      "maintenance": {
+        "name": "Monitoring Maintenance Mode"
+      }
     }
   },
   "issues": {
@@ -195,7 +244,7 @@
   },
   "exceptions": {
     "backup_manager_error": {
-      "message": "An error occured during backup management."
+      "message": "An error occurred during backup management."
     }
   },
   "common": {
