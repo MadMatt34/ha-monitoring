@@ -4,6 +4,7 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from functools import partial
 import logging
+import time
 from typing import override
 
 from homeassistant.components.backup import (
@@ -83,7 +84,7 @@ _LOGGER = logging.getLogger(__name__)
 
 _HA_START_TIME_KEY = "ha_start_time"
 _BACKUP_CACHE_KEY = "backup_cache"
-_BACKUP_SCAN_TIME_CACHE_KEY = "backup_scan_time_cache"
+_BACKUP_SCAN_TIME_CACHE_KEY = "backup_scan_timestamp_cache"
 
 
 class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
@@ -122,12 +123,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             entry.entry_id
         )
 
-        self._backup_scan_time_cache: dict[str, datetime] = hass.data[DOMAIN].setdefault(
+        self._backup_scan_timestamp_cache: dict[str, datetime] = hass.data[DOMAIN].setdefault(
             _BACKUP_SCAN_TIME_CACHE_KEY,
             {},
         )
 
-        self._last_backup_scan_time: datetime | None = self._backup_scan_time_cache.get(
+        self._last_backup_scan_timestamp: datetime | None = self._backup_scan_timestamp_cache.get(
             entry.entry_id
         )
 
@@ -145,7 +146,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         # Timestamps des derniers scans
         # ------------------------------------------------------------------
-        self._last_scan_time: datetime | None = None
+        self._last_scan_timestamp: datetime | None = None
+        self._last_scan_duration: float | None = None
+        self._last_trace_scan_duration: float | None = None
+        self._last_system_info_scan_duration: float | None = None
+        self._last_backup_scan_duration: float | None = None
         self._scan_timestamp_listeners: list[Callable[[], None]] = []
         self._scan_timestamps_changed = False
 
@@ -447,30 +452,50 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
     @property
-    def last_scan_time(self) -> datetime | None:
+    def last_scan_timestamp(self) -> datetime | None:
         """Retourne la date du dernier scan principal."""
-        return self._last_scan_time
+        return self._last_scan_timestamp
 
     @property
-    def last_traces_scan_time(
+    def last_scan_duration(self) -> float | None:
+        """Retourne la durée du dernier scan principal."""
+        return self._last_scan_duration
+
+    @property
+    def last_traces_scan_timestamp(
         self,
     ) -> datetime | None:
         """Retourne la date du dernier scan des traces."""
         return self._last_trace_check_time
 
     @property
-    def last_system_info_scan_time(
+    def last_traces_scan_duration(self) -> float | None:
+        """Retourne la durée du dernier scan des traces."""
+        return self._last_trace_scan_duration
+
+    @property
+    def last_system_info_scan_timestamp(
         self,
     ) -> datetime | None:
         """Retourne la date du dernier scan System Info."""
         return self._last_system_stats_check_time
 
     @property
-    def last_backup_scan_time(
+    def last_system_info_scan_duration(self) -> float | None:
+        """Retourne la durée du dernier scan System Info."""
+        return self._last_system_info_scan_duration
+
+    @property
+    def last_backup_scan_timestamp(
         self,
     ) -> datetime | None:
         """Retourne la date du dernier scan Backup."""
-        return self._last_backup_scan_time
+        return self._last_backup_scan_timestamp
+
+    @property
+    def last_backup_scan_duration(self) -> float | None:
+        """Retourne la durée du dernier scan Backup."""
+        return self._last_backup_scan_duration
 
     async def async_shutdown(self) -> None:
         """Nettoie les listeners et temporisateurs."""
@@ -522,16 +547,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         if self._cached_backup_info is None:
             _LOGGER.debug("[HA Monitoring] Interrogation des informations Backup.")
 
+            scan_backup_start = time.monotonic()
+
             self._cached_backup_info = await async_get_backup_info(
                 self.hass,
                 backup_event=self._last_backup_event,
-                backup_event_time=(self._last_backup_event_time),
-                previous_info=(self._previous_backup_info),
+                backup_event_time=self._last_backup_event_time,
+                previous_info=self._previous_backup_info,
             )
 
-            self._last_backup_scan_time = dt_util.utcnow()
+            self._last_backup_scan_duration = time.monotonic() - scan_backup_start
+            self._last_backup_scan_timestamp = dt_util.utcnow()
 
-            self._backup_scan_time_cache[self.entry.entry_id] = self._last_backup_scan_time
+            self._backup_scan_timestamp_cache[self.entry.entry_id] = (
+                self._last_backup_scan_timestamp
+            )
 
             self._scan_timestamps_changed = True
 
@@ -595,12 +625,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         ):
             assert self._ha_start_time is not None
 
+            scan_system_start = time.monotonic()
+
             self._cached_system_stats = await async_get_system_stats(
                 self.hass,
                 self._ha_start_time,
             )
 
-            self._last_system_stats_check_time = now
+            self._last_system_info_scan_duration = time.monotonic() - scan_system_start
+            self._last_system_stats_check_time = dt_util.utcnow()
             self._scan_timestamps_changed = True
 
         assert self._cached_system_stats is not None
@@ -681,6 +714,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         # SCAN PRINCIPAL
         # ------------------------------------------------------------------
+        scan_main_start = time.monotonic()
+
         state_snapshot = _snapshot_states(
             self.hass,
             last_seen_suffixes,
@@ -731,6 +766,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             self._last_trace_check_time is None
             or (now - self._last_trace_check_time).total_seconds() >= traces_scan_interval_sec
         ):
+            scan_traces_start = time.monotonic()
+
             self._cached_automations = await get_trace_errors(
                 self.hass,
                 "automation",
@@ -739,7 +776,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     [],
                 ),
             )
-
             self._cached_scripts = await get_trace_errors(
                 self.hass,
                 "script",
@@ -749,7 +785,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 ),
             )
 
-            self._last_trace_check_time = now
+            self._last_trace_scan_duration = time.monotonic() - scan_traces_start
+            self._last_trace_check_time = dt_util.utcnow()
             self._scan_timestamps_changed = True
 
         # ------------------------------------------------------------------
@@ -779,7 +816,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             ),
         )
 
-        self._last_scan_time = dt_util.utcnow()
+        self._last_scan_duration = time.monotonic() - scan_main_start
+        self._last_scan_timestamp = dt_util.utcnow()
         self._scan_timestamps_changed = True
 
         return {

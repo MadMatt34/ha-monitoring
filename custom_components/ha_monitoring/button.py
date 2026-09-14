@@ -51,31 +51,38 @@ class HAMonitoringForceScanButton(
         super().__init__(coordinator)
 
         self._attr_unique_id = f"{entry.entry_id}_{UNIQUE_ID_REFRESH}"
+
         # Entity ID volontairement statique.
         self.entity_id = f"button.{UNIQUE_ID_REFRESH}"
 
     @property
-    def extra_state_attributes(self) -> Mapping[str, str | None]:
-        """Retourne les dates des derniers scans."""
+    def extra_state_attributes(self) -> Mapping[str, str | float | None]:
+        """Retourne les informations des derniers scans."""
         return {
-            "last_scan": self.coordinator.last_scan_time.isoformat()
-            if self.coordinator.last_scan_time is not None
-            else None,
-            "last_traces_scan": (
-                self.coordinator.last_traces_scan_time.isoformat()
-                if self.coordinator.last_traces_scan_time is not None
+            "last_scan_timestamp": (
+                self.coordinator.last_scan_timestamp.isoformat()
+                if self.coordinator.last_scan_timestamp is not None
                 else None
             ),
-            "last_system_info_scan": (
-                self.coordinator.last_system_info_scan_time.isoformat()
-                if self.coordinator.last_system_info_scan_time is not None
+            "last_scan_duration": self.coordinator.last_scan_duration,
+            "last_traces_scan_timestamp": (
+                self.coordinator.last_traces_scan_timestamp.isoformat()
+                if self.coordinator.last_traces_scan_timestamp is not None
                 else None
             ),
-            "last_backup_scan": (
-                self.coordinator.last_backup_scan_time.isoformat()
-                if self.coordinator.last_backup_scan_time is not None
+            "last_traces_scan_duration": (self.coordinator.last_traces_scan_duration),
+            "last_system_info_scan_timestamp": (
+                self.coordinator.last_system_info_scan_timestamp.isoformat()
+                if self.coordinator.last_system_info_scan_timestamp is not None
                 else None
             ),
+            "last_system_info_scan_duration": (self.coordinator.last_system_info_scan_duration),
+            "last_backup_scan_timestamp": (
+                self.coordinator.last_backup_scan_timestamp.isoformat()
+                if self.coordinator.last_backup_scan_timestamp is not None
+                else None
+            ),
+            "last_backup_scan_duration": (self.coordinator.last_backup_scan_duration),
         }
 
     @override
@@ -87,7 +94,7 @@ class HAMonitoringForceScanButton(
 
     @override
     async def async_added_to_hass(self) -> None:
-        """Enregistre le listener dédié aux timestamps de scan."""
+        """Enregistre le listener dédié aux métriques de scan."""
         await super().async_added_to_hass()
 
         self.async_on_remove(
@@ -96,5 +103,5 @@ class HAMonitoringForceScanButton(
 
     @callback
     def _handle_scan_timestamp_update(self) -> None:
-        """Actualise les attributs liés aux timestamps."""
+        """Actualise les attributs liés aux scans."""
         self.async_write_ha_state()
