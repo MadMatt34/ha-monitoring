@@ -69,10 +69,12 @@ def get_schema(
         CONF_EXCLUDED_UNAVAILABLE_DOMAINS, DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS
     )
     current_battery_threshold = options.get(
-        CONF_BATTERY_LOW_THRESHOLD, DEFAULT_BATTERY_LOW_THRESHOLD,
+        CONF_BATTERY_LOW_THRESHOLD,
+        DEFAULT_BATTERY_LOW_THRESHOLD,
     )
     current_excluded_batteries = options.get(
-       CONF_EXCLUDED_BATTERIES, [],
+        CONF_EXCLUDED_BATTERIES,
+        [],
     )
 
     domain_options: list[str] = []
