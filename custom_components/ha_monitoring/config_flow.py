@@ -37,9 +37,7 @@ from .const import (
     DOMAIN,
 )
 
-_LOGGER = logging.getLogger(
-    "custom_components.ha_monitoring.config_flow"
-)
+_LOGGER = logging.getLogger("custom_components.ha_monitoring.config_flow")
 
 
 def _flatten_options(
@@ -102,22 +100,14 @@ def get_schema(
 
     if hass is not None:
         entity_ids = hass.states.async_entity_ids()
-        all_domains = {
-            entity_id.split(".", 1)[0]
-            for entity_id in entity_ids
-        }
+        all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
 
         domain_options = sorted(all_domains)
-        allowed_domains = sorted(
-            all_domains
-            - set(current_excluded_domains)
-        )
+        allowed_domains = sorted(all_domains - set(current_excluded_domains))
 
     return vol.Schema(
         {
-            vol.Required(
-                "section_timings"
-            ): section(
+            vol.Required("section_timings"): section(
                 vol.Schema(
                     {
                         vol.Required(
@@ -196,17 +186,12 @@ def get_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_system"
-            ): section(
+            vol.Required("section_exclusions_system"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_ADDONS,
-                            default=options.get(
-                                CONF_EXCLUDED_ADDONS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_ADDONS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -216,10 +201,7 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_INTEGRATIONS,
-                            default=options.get(
-                                CONF_EXCLUDED_INTEGRATIONS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_INTEGRATIONS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -229,10 +211,7 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_REPAIRS,
-                            default=options.get(
-                                CONF_EXCLUDED_REPAIRS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_REPAIRS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -258,17 +237,12 @@ def get_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_updates"
-            ): section(
+            vol.Required("section_exclusions_updates"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_UPDATES,
-                            default=options.get(
-                                CONF_EXCLUDED_UPDATES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UPDATES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 domain="update",
@@ -279,17 +253,12 @@ def get_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_scripts"
-            ): section(
+            vol.Required("section_exclusions_scripts"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_AUTOMATIONS,
-                            default=options.get(
-                                CONF_EXCLUDED_AUTOMATIONS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 domain="automation",
@@ -298,10 +267,7 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_SCRIPTS,
-                            default=options.get(
-                                CONF_EXCLUDED_SCRIPTS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_SCRIPTS) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 domain="script",
@@ -312,29 +278,18 @@ def get_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_offline"
-            ): section(
+            vol.Required("section_exclusions_offline"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
-                            default=options.get(
-                                CONF_EXCLUDED_OFFLINE
-                            )
-                            or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(
-                                multiple=True
-                            )
-                        ),
+                            default=options.get(CONF_EXCLUDED_OFFLINE) or [],
+                        ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                     }
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_unavailable"
-            ): section(
+            vol.Required("section_exclusions_unavailable"): section(
                 vol.Schema(
                     {
                         vol.Optional(
@@ -345,17 +300,12 @@ def get_schema(
                                 options=domain_options,
                                 custom_value=False,
                                 multiple=True,
-                                mode=(
-                                    selector.SelectSelectorMode.DROPDOWN
-                                ),
+                                mode=(selector.SelectSelectorMode.DROPDOWN),
                             )
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_GLOBS,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_GLOBS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -365,17 +315,12 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_ENTITIES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
                                 filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain=allowed_domains
-                                    )
+                                    selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
                                 ),
@@ -395,9 +340,7 @@ def get_timings_schema(
     """Construit la page des délais, fréquences et seuils."""
     return vol.Schema(
         {
-            vol.Required(
-                "section_delays"
-            ): section(
+            vol.Required("section_delays"): section(
                 vol.Schema(
                     {
                         vol.Required(
@@ -419,9 +362,7 @@ def get_timings_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_timings"
-            ): section(
+            vol.Required("section_timings"): section(
                 vol.Schema(
                     {
                         vol.Required(
@@ -473,9 +414,7 @@ def get_timings_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_thresholds"
-            ): section(
+            vol.Required("section_thresholds"): section(
                 vol.Schema(
                     {
                         vol.Required(
@@ -527,29 +466,19 @@ def get_exclusions_schema(
     )
 
     entity_ids = hass.states.async_entity_ids()
-    all_domains = {
-        entity_id.split(".", 1)[0]
-        for entity_id in entity_ids
-    }
+    all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
 
     domain_options = sorted(all_domains)
-    allowed_domains = sorted(
-        all_domains - set(current_excluded_domains)
-    )
+    allowed_domains = sorted(all_domains - set(current_excluded_domains))
 
     return vol.Schema(
         {
-            vol.Required(
-                "section_exclusions_system"
-            ): section(
+            vol.Required("section_exclusions_system"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_ADDONS,
-                            default=options.get(
-                                CONF_EXCLUDED_ADDONS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_ADDONS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -559,10 +488,7 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_INTEGRATIONS,
-                            default=options.get(
-                                CONF_EXCLUDED_INTEGRATIONS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_INTEGRATIONS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -572,10 +498,7 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_REPAIRS,
-                            default=options.get(
-                                CONF_EXCLUDED_REPAIRS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_REPAIRS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -585,10 +508,7 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_BATTERIES,
-                            default=options.get(
-                                CONF_EXCLUDED_BATTERIES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_BATTERIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
@@ -604,17 +524,12 @@ def get_exclusions_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_updates"
-            ): section(
+            vol.Required("section_exclusions_updates"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_UPDATES,
-                            default=options.get(
-                                CONF_EXCLUDED_UPDATES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UPDATES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 domain="update",
@@ -625,17 +540,12 @@ def get_exclusions_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_scripts"
-            ): section(
+            vol.Required("section_exclusions_scripts"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_AUTOMATIONS,
-                            default=options.get(
-                                CONF_EXCLUDED_AUTOMATIONS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_AUTOMATIONS) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 domain="automation",
@@ -644,10 +554,7 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_SCRIPTS,
-                            default=options.get(
-                                CONF_EXCLUDED_SCRIPTS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_SCRIPTS) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 domain="script",
@@ -658,29 +565,18 @@ def get_exclusions_schema(
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_offline"
-            ): section(
+            vol.Required("section_exclusions_offline"): section(
                 vol.Schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
-                            default=options.get(
-                                CONF_EXCLUDED_OFFLINE
-                            )
-                            or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(
-                                multiple=True
-                            )
-                        ),
+                            default=options.get(CONF_EXCLUDED_OFFLINE) or [],
+                        ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                     }
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(
-                "section_exclusions_unavailable"
-            ): section(
+            vol.Required("section_exclusions_unavailable"): section(
                 vol.Schema(
                     {
                         vol.Optional(
@@ -691,17 +587,12 @@ def get_exclusions_schema(
                                 options=domain_options,
                                 custom_value=False,
                                 multiple=True,
-                                mode=(
-                                    selector.SelectSelectorMode.DROPDOWN
-                                ),
+                                mode=(selector.SelectSelectorMode.DROPDOWN),
                             )
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_GLOBS,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_GLOBS
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -711,17 +602,12 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_ENTITIES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
                                 filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain=allowed_domains
-                                    )
+                                    selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
                                 ),
@@ -749,14 +635,10 @@ class HAMonitoringConfigFlow(
     ) -> FlowResult:
         """Formulaire initial d'ajout de l'intégration."""
         if self._async_current_entries():
-            return self.async_abort(
-                reason="already_configured"
-            )
+            return self.async_abort(reason="already_configured")
 
         if user_input is not None:
-            cleaned_input = _flatten_options(
-                user_input
-            )
+            cleaned_input = _flatten_options(user_input)
 
             return self.async_create_entry(
                 title="HA Monitoring",
@@ -778,9 +660,7 @@ class HAMonitoringConfigFlow(
         return HAMonitoringOptionsFlowHandler()
 
 
-class HAMonitoringOptionsFlowHandler(
-    config_entries.OptionsFlow
-):
+class HAMonitoringOptionsFlowHandler(config_entries.OptionsFlow):
     """Gère les options avec un menu en deux pages."""
 
     def __init__(self) -> None:
@@ -790,9 +670,7 @@ class HAMonitoringOptionsFlowHandler(
     def _get_options(self) -> dict[str, Any]:
         """Retourne une copie mutable des options actuelles."""
         if self._options is None:
-            self._options = dict(
-                self.config_entry.options
-            )
+            self._options = dict(self.config_entry.options)
 
         return self._options
 
@@ -818,9 +696,7 @@ class HAMonitoringOptionsFlowHandler(
         options = self._get_options()
 
         if user_input is not None:
-            options.update(
-                _flatten_options(user_input)
-            )
+            options.update(_flatten_options(user_input))
             return await self.async_step_init()
 
         return self.async_show_form(
@@ -836,9 +712,7 @@ class HAMonitoringOptionsFlowHandler(
         options = self._get_options()
 
         if user_input is not None:
-            options.update(
-                _flatten_options(user_input)
-            )
+            options.update(_flatten_options(user_input))
             return await self.async_step_init()
 
         return self.async_show_form(
