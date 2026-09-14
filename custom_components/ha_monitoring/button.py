@@ -70,33 +70,25 @@ class HAMonitoringForceScanButton(
                 if self.coordinator.last_traces_scan_time is not None
                 else None
             ),
-            "last_traces_scan_duration": (
-                self.coordinator.last_traces_scan_duration
-            ),
+            "last_traces_scan_duration": (self.coordinator.last_traces_scan_duration),
             "last_system_info_scan": (
                 self.coordinator.last_system_info_scan_time.isoformat()
                 if self.coordinator.last_system_info_scan_time is not None
                 else None
             ),
-            "last_system_info_scan_duration": (
-                self.coordinator.last_system_info_scan_duration
-            ),
+            "last_system_info_scan_duration": (self.coordinator.last_system_info_scan_duration),
             "last_backup_scan": (
                 self.coordinator.last_backup_scan_time.isoformat()
                 if self.coordinator.last_backup_scan_time is not None
                 else None
             ),
-            "last_backup_scan_duration": (
-                self.coordinator.last_backup_scan_duration
-            ),
+            "last_backup_scan_duration": (self.coordinator.last_backup_scan_duration),
         }
 
     @override
     async def async_press(self) -> None:
         """Force un rafraîchissement complet du Coordinator."""
-        _LOGGER.info(
-            "[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours."
-        )
+        _LOGGER.info("[HA Monitoring] Bouton appuyé : rafraîchissement forcé en cours.")
 
         await self.coordinator.async_force_refresh()
 
@@ -106,9 +98,7 @@ class HAMonitoringForceScanButton(
         await super().async_added_to_hass()
 
         self.async_on_remove(
-            self.coordinator.async_add_scan_timestamp_listener(
-                self._handle_scan_timestamp_update
-            )
+            self.coordinator.async_add_scan_timestamp_listener(self._handle_scan_timestamp_update)
         )
 
     @callback
