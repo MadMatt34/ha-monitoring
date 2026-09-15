@@ -2,20 +2,14 @@
 
 ## TODO
 
-- implémenter les tests unitaires
 - dans le code commentaires et logger en anglais
-- service pour ajouter/supprimer des exclusions (?)
 - event pour notifier d'une nouvelle erreur + options (pour quels monitoring, et activé ou non pour compteur moins)
 - capteur global plus graduel (ex. 0 à 5 suivant criticité des monitorings et/ou un seuil)
+- gestion d'erreur granulaire dans les étapes des scans (une erreur ne doit pas tout bloquer)\
+le faire proprement nécessite de décider comment représenter l'indisponibilité individuelle de chaque sous-collecte dans HAMonitoringData. Ce serait une évolution du contrat des plateformes, pas une simple correction.
+- déclenchement des scans suite abonnement aux events HA quand ça existe
 - publication hacs
-
-gestion d'erreur partielle du Coordinator à corriger
-  une collecte secondaire échoue
-          ↓
-  tout HAMonitoringData échoue
-          ↓
-  toutes les entités du coordinator deviennent indisponibles
-Mais je ne le modifierais pas maintenant : le faire proprement nécessite de décider comment représenter l'indisponibilité individuelle de chaque sous-collecte dans HAMonitoringData. Ce serait une évolution du contrat des plateformes, pas une simple correction.
+- implémenter les tests unitaires
 
 ## INFO
 
