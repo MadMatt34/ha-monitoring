@@ -59,9 +59,7 @@ async def async_get_config_entry_diagnostics(
             "is_ready": coordinator._is_ready,
             "last_update_success": coordinator.last_update_success,
             "last_exception": (
-                str(coordinator.last_exception)
-                if coordinator.last_exception
-                else None
+                str(coordinator.last_exception) if coordinator.last_exception else None
             ),
             "maintenance_mode": coordinator.maintenance_mode,
             "scan_status": {
@@ -76,25 +74,19 @@ async def async_get_config_entry_diagnostics(
                     if coordinator.last_traces_scan_timestamp is not None
                     else None
                 ),
-                "last_traces_scan_duration": (
-                    coordinator.last_traces_scan_duration
-                ),
+                "last_traces_scan_duration": (coordinator.last_traces_scan_duration),
                 "last_system_info_scan_timestamp": (
                     coordinator.last_system_info_scan_timestamp.isoformat()
                     if coordinator.last_system_info_scan_timestamp is not None
                     else None
                 ),
-                "last_system_info_scan_duration": (
-                    coordinator.last_system_info_scan_duration
-                ),
+                "last_system_info_scan_duration": (coordinator.last_system_info_scan_duration),
                 "last_backup_scan_timestamp": (
                     coordinator.last_backup_scan_timestamp.isoformat()
                     if coordinator.last_backup_scan_timestamp is not None
                     else None
                 ),
-                "last_backup_scan_duration": (
-                    coordinator.last_backup_scan_duration
-                ),
+                "last_backup_scan_duration": (coordinator.last_backup_scan_duration),
             },
             "data": (
                 async_redact_data(
