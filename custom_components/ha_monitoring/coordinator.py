@@ -160,7 +160,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._last_scan_duration: float | None = None
         self._last_trace_scan_duration: float | None = None
         self._last_system_info_scan_duration: float | None = None
-        self._last_backup_scan_duration: float | None = None
         self._scan_timestamp_listeners: list[Callable[[], None]] = []
         self._scan_timestamps_changed = False
 
