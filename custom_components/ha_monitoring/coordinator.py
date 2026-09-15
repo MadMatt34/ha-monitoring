@@ -84,7 +84,8 @@ _LOGGER = logging.getLogger(__name__)
 
 _HA_START_TIME_KEY = "ha_start_time"
 _BACKUP_CACHE_KEY = "backup_cache"
-_BACKUP_SCAN_TIME_CACHE_KEY = "backup_scan_timestamp_cache"
+_BACKUP_SCAN_TIMESTAMP_CACHE_KEY = "backup_scan_timestamp_cache"
+_BACKUP_SCAN_DURATION_CACHE_KEY = "backup_scan_duration_cache"
 
 
 class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
@@ -124,12 +125,21 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         self._backup_scan_timestamp_cache: dict[str, datetime] = hass.data[DOMAIN].setdefault(
-            _BACKUP_SCAN_TIME_CACHE_KEY,
+            _BACKUP_SCAN_TIMESTAMP_CACHE_KEY,
             {},
         )
 
         self._last_backup_scan_timestamp: datetime | None = self._backup_scan_timestamp_cache.get(
             entry.entry_id
+        )
+
+        self._backup_scan_duration_cache: dict[str, float] = hass.data[DOMAIN].setdefault(
+            _BACKUP_SCAN_DURATION_CACHE_KEY,
+            {},
+        )
+
+        self._last_backup_scan_duration: float | None = (
+            self._backup_scan_duration_cache.get(entry.entry_id)
         )
 
         self._previous_backup_info: MonitoringBackupData | None = None
@@ -557,8 +567,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
 
             self._last_backup_scan_duration = time.monotonic() - scan_backup_start
-            self._last_backup_scan_timestamp = dt_util.utcnow()
+            self._backup_scan_duration_cache[self.entry.entry_id] = (
+                self._last_backup_scan_duration
+            )
 
+            self._last_backup_scan_timestamp = dt_util.utcnow()
             self._backup_scan_timestamp_cache[self.entry.entry_id] = (
                 self._last_backup_scan_timestamp
             )
