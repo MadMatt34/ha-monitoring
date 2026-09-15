@@ -138,8 +138,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             {},
         )
 
-        self._last_backup_scan_duration: float | None = (
-            self._backup_scan_duration_cache.get(entry.entry_id)
+        self._last_backup_scan_duration: float | None = self._backup_scan_duration_cache.get(
+            entry.entry_id
         )
 
         self._previous_backup_info: MonitoringBackupData | None = None
@@ -567,9 +567,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             )
 
             self._last_backup_scan_duration = time.monotonic() - scan_backup_start
-            self._backup_scan_duration_cache[self.entry.entry_id] = (
-                self._last_backup_scan_duration
-            )
+            self._backup_scan_duration_cache[self.entry.entry_id] = self._last_backup_scan_duration
 
             self._last_backup_scan_timestamp = dt_util.utcnow()
             self._backup_scan_timestamp_cache[self.entry.entry_id] = (
