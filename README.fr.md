@@ -21,19 +21,19 @@
 
 ## ⚡ Fonctionnalités principales
 
-- **Informations système :** Indique les versions et date/heure des démarrages de HAOS et de HA, les quantités des différents éléments, taille de base et paramètres du recorder.
-- **Surveillance globale :**
-  - **Mises à jour & Réparations :** Suivi des mises à jour et des alertes de réparation.
-  - **Sauvegardes :** Vérification de l'état de la dernière sauvegarde et attributs de suivi.
-  - **Applications (Addons) & Intégrations :** Détection des composants stoppés et en erreur.
-  - **Appareils alimentés par batterie :** Signaler ceux dont le niveau de batterie passe sous un seuil configurable.
-  - **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
-  - **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
-- **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
-- **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
-- **Scan Forcé Manuellement :** Permet de forcer un rafraîchissement immédiat de toutes les collectes.
-- **Mode Maintenance :** Permet de suspendre temporairement les scans de supervision pendant une opération de maintenance sur HA.
-- **Personnalisation fine via l'interface graphique :** Définition des fréquences de scan et sélection granulaire d'éléments à exclure de la surveillance.
+- 🖥️ **Informations système :** Indique les versions et date/heure des démarrages de HAOS et de HA, les quantités des différents éléments, taille de base et paramètres du recorder.
+- 🛡️ **Surveillance globale :**
+  - 🔄 **Mises à jour & Réparations :** Suivi des mises à jour et des alertes de réparation.
+  - 💾 **Sauvegardes :** Vérification de l'état de la dernière sauvegarde et attributs de suivi.
+  - 🧩 **Applications (Addons) & Intégrations :** Détection des composants stoppés et en erreur.
+  - 🔋 **Appareils alimentés par batterie :** Signaler ceux dont le niveau de batterie passe sous un seuil configurable.
+  - ⚠️ **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
+  - 📡 **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
+- 🏠 **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
+- ⏳ **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
+- 🔄 **Scan Forcé Manuellement :** Permet de forcer un rafraîchissement immédiat de toutes les collectes.
+- 🔧 **Mode Maintenance :** Permet de suspendre temporairement les scans de supervision pendant une opération de maintenance sur HA.
+- ⚙️ **Personnalisation fine via l'interface graphique :** Définition des fréquences de scan et sélection granulaire d'éléments à exclure de la surveillance.
 
 ---
 
@@ -127,7 +127,7 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 
 | Entité | Nom | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Monitoring Forcer le scan | Permet de déclencher manuellement et instantanément un scan complet. Les attributs exposent les horodatages et les durées des dernières analyses. |
+| `button.monitoring_force_scan` | Monitoring Forcer le scan | Permet de déclencher manuellement et instantanément un scan complet (sauf backup). Les attributs exposent les horodatages et les durées en secondes des dernières analyses. |
 
 ### 🎚️ Interrupteur (`switch.*`)
 

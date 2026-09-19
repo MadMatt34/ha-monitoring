@@ -21,19 +21,19 @@
 
 ## ⚡ Main Features
 
-- **System Information:** Reports versions and boot timestamps for HAOS and HA, total counts of various elements, database size, and recorder settings.
-- **Global Monitoring:**
-  - **Updates & Repairs:** Tracking of updates and pending repair issues.
-  - **Backups:** Verification of the latest backup status and associated tracking attributes.
-  - **Applications & Integrations:** Detection of stopped, failed or errored components.
-  - **Battery-powered devices:** Report devices whose battery level falls below a configurable threshold.
-  - **Automation & Script Traces:** Detection of execution errors.
-  - **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
-- **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
-- **Startup Grace Period:** Prevents false alarms during Home Assistant's boot sequence.
-- **Manual Force Scan:** Trigger an immediate full refresh on demand.
-- **Maintenance Mode:** Temporarily pauses the monitoring scans while maintenance is being performed on HA.
-- **Fine-grained Customization via UI:** Adjust scan frequencies and granularly exclude specific items from being monitored.
+- 🖥️ **System Information:** Reports versions and boot timestamps for HAOS and HA, total counts of various elements, database size, and recorder settings.
+- 🛡️ **Global Monitoring:**
+  - 🔄 **Updates & Repairs:** Tracking of updates and pending repair issues.
+  - 💾 **Backups:** Verification of the latest backup status and associated tracking attributes.
+  - 🧩 **Applications & Integrations:** Detection of stopped, failed or errored components.
+  - 🔋 **Battery-powered devices:** Report devices whose battery level falls below a configurable threshold.
+  - ⚠️ **Automation & Script Traces:** Detection of execution errors.
+  - 📡 **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
+- 🏠 **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
+- ⏳ **Startup Grace Period:** Prevents false alarms during Home Assistant's boot sequence.
+- 🔄 **Manual Force Scan:** Trigger an immediate full refresh on demand.
+- 🔧 **Maintenance Mode:** Temporarily pauses the monitoring scans while maintenance is being performed on HA.
+- ⚙️ **Fine-grained Customization via UI:** Adjust scan frequencies and granularly exclude specific items from being monitored.
 
 ---
 
@@ -127,7 +127,7 @@ All entities are attached to the **Home Assistant** device.
 
 | Entity | Name | Description |
 | :--- | :--- | :--- |
-| `button.monitoring_force_scan` | Monitoring Force Scan | Manually triggers an immediate full scan. The timestamps and durations of the last scans are exposed in attributes. |
+| `button.monitoring_force_scan` | Monitoring Force Scan | Manually triggers an immediate full scan (except backup). The timestamps and durations in seconds of the last scans are exposed in attributes. |
 
 ### 🎚️ Switchs (`switch.*`)
 

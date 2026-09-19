@@ -89,7 +89,6 @@ async def async_remove_entry(
 
     if domain_data is not None:
         backup_cache = domain_data.get("backup_cache")
-
         if isinstance(backup_cache, dict):
             backup_cache.pop(
                 entry.entry_id,
@@ -102,17 +101,29 @@ async def async_remove_entry(
                     None,
                 )
 
-        backup_scan_time_cache = domain_data.get("backup_scan_time_cache")
-
-        if isinstance(backup_scan_time_cache, dict):
-            backup_scan_time_cache.pop(
+        backup_scan_timestamp_cache = domain_data.get("backup_scan_timestamp_cache")
+        if isinstance(backup_scan_timestamp_cache, dict):
+            backup_scan_timestamp_cache.pop(
                 entry.entry_id,
                 None,
             )
 
-            if not backup_scan_time_cache:
+            if not backup_scan_timestamp_cache:
                 domain_data.pop(
-                    "backup_scan_time_cache",
+                    "backup_scan_timestamp_cache",
+                    None,
+                )
+
+        backup_scan_duration_cache = domain_data.get("backup_scan_duration_cache")
+        if isinstance(backup_scan_duration_cache, dict):
+            backup_scan_duration_cache.pop(
+                entry.entry_id,
+                None,
+            )
+
+            if not backup_scan_duration_cache:
+                domain_data.pop(
+                    "backup_scan_duration_cache",
                     None,
                 )
 
