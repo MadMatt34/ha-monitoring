@@ -219,20 +219,6 @@ def get_schema(
                                 multiple=True,
                             )
                         ),
-                        vol.Optional(
-                            CONF_EXCLUDED_BATTERIES,
-                            default=current_excluded_batteries,
-                        ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(
-                                multiple=True,
-                                filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain="sensor",
-                                        device_class="battery",
-                                    )
-                                ),
-                            )
-                        ),
                     }
                 ),
                 {"collapsed": True},
@@ -323,6 +309,27 @@ def get_schema(
                                     selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
+                                ),
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required("section_exclusions_battery"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_BATTERIES,
+                            default=current_excluded_batteries,
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                multiple=True,
+                                filter=(
+                                    selector.EntityFilterSelectorConfig(
+                                        domain="sensor",
+                                        device_class="battery",
+                                    )
                                 ),
                             )
                         ),
@@ -506,20 +513,6 @@ def get_exclusions_schema(
                                 multiple=True,
                             )
                         ),
-                        vol.Optional(
-                            CONF_EXCLUDED_BATTERIES,
-                            default=options.get(CONF_EXCLUDED_BATTERIES) or [],
-                        ): selector.EntitySelector(
-                            selector.EntitySelectorConfig(
-                                multiple=True,
-                                filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain="sensor",
-                                        device_class="battery",
-                                    )
-                                ),
-                            )
-                        ),
                     }
                 ),
                 {"collapsed": True},
@@ -610,6 +603,27 @@ def get_exclusions_schema(
                                     selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
+                                ),
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required("section_exclusions_battery"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_BATTERIES,
+                            default=current_excluded_batteries,
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                multiple=True,
+                                filter=(
+                                    selector.EntityFilterSelectorConfig(
+                                        domain="sensor",
+                                        device_class="battery",
+                                    )
                                 ),
                             )
                         ),

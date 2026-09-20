@@ -31,25 +31,24 @@
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)",
-              "excluded_batteries": "Capteurs de batterie à exclure"
+              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)"
             }
           },
           "section_exclusions_scripts": {
-            "name": "🏷️ Exclusions des automatisations et scripts",
+            "name": "📜 Exclusions des automatisations et scripts",
             "data": {
               "excluded_automations": "Automatisations à exclure",
               "excluded_scripts": "Scripts à exclure"
             }
           },
           "section_exclusions_updates": {
-            "name": "🏷️ Exclusions des mises à jour",
+            "name": "⬆️ Exclusions des mises à jour",
             "data": {
               "excluded_updates": "Mises à jour à exclure"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Exclusions des entités indisponibles",
+            "name": "📡 Exclusions des entités indisponibles",
             "description": "Ignorer des entités spécifiques, correspondant à des caractères génériques, ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités à exclure",
@@ -58,9 +57,15 @@
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Exclusions des appareils hors ligne",
+            "name": "📴 Exclusions des appareils hors ligne",
             "data": {
               "excluded_offline": "Appareils à exclure"
+            }
+          },
+          "section_exclusions_battery": {
+            "name": "🔋 Exclusions des batteries faibles",
+            "data": {
+              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           }
         }
@@ -113,7 +118,7 @@
             }
           },
           "section_thresholds": {
-            "name": "📏 Seuils",
+            "name": "📊 Seuils",
             "data": {
               "offline_timeout": "Seuil d'inactivité des appareils hors ligne (en heures)",
               "battery_low_threshold": "Seuil de batterie faible (en pourcents)"
@@ -135,36 +140,41 @@
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)",
-              "excluded_batteries": "Capteurs de batterie à exclure"
+              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)"
             }
           },
           "section_exclusions_updates": {
-            "name": "🏷️ Exclusions des mises à jour",
+            "name": "⬆️ Exclusions des mises à jour",
             "data": {
               "excluded_updates": "Mises à jour à exclure"
             }
           },
           "section_exclusions_scripts": {
-            "name": "🏷️ Exclusions des automatisations et scripts",
+            "name": "📜 Exclusions des automatisations et scripts",
             "data": {
               "excluded_automations": "Automatisations à exclure",
               "excluded_scripts": "Scripts à exclure"
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Exclusions des appareils hors ligne",
+            "name": "📴 Exclusions des appareils hors ligne",
             "data": {
               "excluded_offline": "Appareils à exclure"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Exclusions des entités indisponibles",
+            "name": "📡 Exclusions des entités indisponibles",
             "description": "Ignorer des entités spécifiques, correspondant à des caractères génériques, ou des domaines complets.",
             "data": {
               "excluded_unavailable_entities": "Entités à exclure",
               "excluded_unavailable_globs": "Noms ou IDs correspondant à ces motifs à exclure",
               "excluded_unavailable_domains": "Domaines à exclure"
+            }
+          },
+          "section_exclusions_battery": {
+            "name": "🔋 Exclusions des batteries faibles",
+            "data": {
+              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           }
         }

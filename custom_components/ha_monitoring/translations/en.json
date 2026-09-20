@@ -31,25 +31,24 @@
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
-              "excluded_repairs": "Repairs to exclude (platform or name or keyword)",
-              "excluded_batteries": "Battery sensors to exclude"
+              "excluded_repairs": "Repairs to exclude (platform or name or keyword)"
             }
           },
           "section_exclusions_scripts": {
-            "name": "🏷️ Automation & Script Exclusions",
+            "name": "📜 Automation & Script Exclusions",
             "data": {
               "excluded_automations": "Automations to exclude",
               "excluded_scripts": "Scripts to exclude"
             }
           },
           "section_exclusions_updates": {
-            "name": "🏷️ Update Exclusions",
+            "name": "⬆️ Update Exclusions",
             "data": {
               "excluded_updates": "Updates to exclude"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Unavailable Entity Exclusions",
+            "name": "📡 Unavailable Entity Exclusions",
             "description": "Ignore specific entities or with wildcards, or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Entities to exclude",
@@ -58,9 +57,15 @@
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Offline Device Exclusions",
+            "name": "📴 Offline Device Exclusions",
             "data": {
               "excluded_offline": "Devices to exclude"
+            }
+          },
+          "section_exclusions_battery": {
+            "name": "🔋 Low Batteries Exclusions",
+            "data": {
+              "excluded_batteries": "Battery sensors to exclude"
             }
           }
         }
@@ -113,7 +118,7 @@
             }
           },
           "section_thresholds": {
-            "name": "📏 Thresholds",
+            "name": "📊 Thresholds",
             "data": {
               "offline_timeout": "Offline device inactivity threshold (in hours)",
               "battery_low_threshold": "Low battery threshold (in percents)"
@@ -135,36 +140,41 @@
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
-              "excluded_repairs": "Repairs to exclude (platform or name or keyword)",
-              "excluded_batteries": "Battery sensors to exclude"
+              "excluded_repairs": "Repairs to exclude (platform or name or keyword)"
             }
           },
           "section_exclusions_updates": {
-            "name": "🏷️ Update Exclusions",
+            "name": "⬆️ Update Exclusions",
             "data": {
               "excluded_updates": "Updates to exclude"
             }
           },
           "section_exclusions_scripts": {
-            "name": "🏷️ Automation & Script Exclusions",
+            "name": "📜 Automation & Script Exclusions",
             "data": {
               "excluded_automations": "Automations to exclude",
               "excluded_scripts": "Scripts to exclude"
             }
           },
           "section_exclusions_offline": {
-            "name": "🏷️ Offline Device Exclusions",
+            "name": "📴 Offline Device Exclusions",
             "data": {
               "excluded_offline": "Devices to exclude"
             }
           },
           "section_exclusions_unavailable": {
-            "name": "🏷️ Unavailable Entity Exclusions",
+            "name": "📡 Unavailable Entity Exclusions",
             "description": "Ignore specific entities or with wildcards, or entire domains.",
             "data": {
               "excluded_unavailable_entities": "Entities to exclude",
               "excluded_unavailable_globs": "Names or IDs matching these patterns to exclude",
               "excluded_unavailable_domains": "Domains to exclude"
+            }
+          },
+          "section_exclusions_battery": {
+            "name": "🔋 Low Batteries Exclusions",
+            "data": {
+              "excluded_batteries": "Battery sensors to exclude"
             }
           }
         }
