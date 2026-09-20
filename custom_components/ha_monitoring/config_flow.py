@@ -615,7 +615,7 @@ def get_exclusions_schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_BATTERIES,
-                            default=current_excluded_batteries,
+                            default=options.get(CONF_EXCLUDED_BATTERIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
