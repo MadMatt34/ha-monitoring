@@ -3,11 +3,11 @@
 import logging
 from typing import Any
 
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.data_entry_flow import FlowResult, section
 from homeassistant.helpers import selector
+import voluptuous as vol
 
 from .const import (
     CONF_BATTERY_LOW_THRESHOLD,
