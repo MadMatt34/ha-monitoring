@@ -119,9 +119,7 @@ def get_schema(
         all_domains = {entity_id.split(".", 1)[0] for entity_id in entity_ids}
 
         domain_options = sorted(all_domains)
-        allowed_domains = sorted(
-            all_domains - set(current_excluded_domains)
-        )
+        allowed_domains = sorted(all_domains - set(current_excluded_domains))
 
     return vol.Schema(
         {
@@ -288,9 +286,7 @@ def get_schema(
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
                             default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(multiple=True)
-                        ),
+                        ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                     }
                 ),
                 {"collapsed": True},
@@ -311,8 +307,7 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_GLOBS,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS)
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -322,17 +317,12 @@ def get_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_ENTITIES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
                                 filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain=allowed_domains
-                                    )
+                                    selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
                                 ),
@@ -587,9 +577,7 @@ def get_exclusions_schema(
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
                             default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(multiple=True)
-                        ),
+                        ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                     }
                 ),
                 {"collapsed": True},
@@ -610,8 +598,7 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_GLOBS,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS)
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -621,17 +608,12 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_ENTITIES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
                                 filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain=allowed_domains
-                                    )
+                                    selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
                                 ),

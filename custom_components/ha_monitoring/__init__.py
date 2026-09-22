@@ -206,9 +206,7 @@ async def async_setup_entry(
 
     # Le cleanup doit être enregistré AVANT le first_refresh().
     entry.async_on_unload(coordinator.async_shutdown)
-    entry.async_on_unload(
-        coordinator.async_add_listener(_handle_monitoring_update)
-    )
+    entry.async_on_unload(coordinator.async_add_listener(_handle_monitoring_update))
 
     # Charger les données persistantes avant le premier refresh.
     await coordinator.async_initialize()
@@ -256,9 +254,7 @@ async def async_remove_entry(
                     None,
                 )
 
-        backup_scan_timestamp_cache = domain_data.get(
-            "backup_scan_timestamp_cache"
-        )
+        backup_scan_timestamp_cache = domain_data.get("backup_scan_timestamp_cache")
         if isinstance(backup_scan_timestamp_cache, dict):
             backup_scan_timestamp_cache.pop(
                 entry.entry_id,
@@ -271,9 +267,7 @@ async def async_remove_entry(
                     None,
                 )
 
-        backup_scan_duration_cache = domain_data.get(
-            "backup_scan_duration_cache"
-        )
+        backup_scan_duration_cache = domain_data.get("backup_scan_duration_cache")
         if isinstance(backup_scan_duration_cache, dict):
             backup_scan_duration_cache.pop(
                 entry.entry_id,
