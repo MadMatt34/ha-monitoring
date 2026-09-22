@@ -14,7 +14,7 @@
               "system_info_scan_interval": "System info scan interval (in hours)",
               "traces_scan_interval": "Traces scan interval (in minutes)",
               "offline_timeout": "Offline device inactivity threshold (in hours)",
-              "battery_low_threshold": "Low battery threshold (en pourcents)"
+              "battery_low_threshold": "Low battery threshold (in percents)"
             },
             "data_description": {
               "startup_delay": "Duration during which scanning is bypassed after startup (default: 2 minutes).",
@@ -27,7 +27,7 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore from scans specific Applications, Integrations, or Repairs.",
+            "description": "Ignore specific Applications, Integrations, or Repairs.",
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
@@ -88,6 +88,7 @@
         "menu_options": {
           "timings": "⏱️ Timings, Delays, and Thresholds",
           "exclusions": "🚫 Exclusions lists",
+          "events": "📣 Monitoring Events",
           "done": "✅ Save & Done"
         }
       },
@@ -136,7 +137,7 @@
         "sections": {
           "section_exclusions_system": {
             "name": "⚙️ System Component Exclusions",
-            "description": "Ignore specific Applications, Integrations, Repairs, or Battery Sensors.",
+            "description": "Ignore specific Applications, Integrations, or Repairs.",
             "data": {
               "excluded_addons": "Applications to exclude (name or keyword)",
               "excluded_integrations": "Integrations to exclude (name or domain)",
@@ -175,6 +176,42 @@
             "name": "🔋 Low Batteries Exclusions",
             "data": {
               "excluded_batteries": "Battery sensors to exclude"
+            }
+          }
+        }
+      },
+      "events": {
+        "title": "Monitoring Events",
+        "description": "Enable an event when a monitoring counter increases or decreases. All events are disabled by default.",
+        "sections": {
+          "section_events_increase": {
+            "name": "📈 Events on Increase",
+            "description": "Generate an event when one of these monitoring counters increases.",
+            "data": {
+              "event_addons_increase": "Applications",
+              "event_integrations_increase": "Integrations",
+              "event_automations_increase": "Automations",
+              "event_scripts_increase": "Scripts",
+              "event_updates_increase": "Updates",
+              "event_repairs_increase": "Repairs",
+              "event_unavailable_increase": "Unavailable entities",
+              "event_offline_increase": "Offline devices",
+              "event_battery_increase": "Low batteries"
+            }
+          },
+          "section_events_decrease": {
+            "name": "📉 Events on Decrease",
+            "description": "Generate an event when one of these monitoring counters decreases.",
+            "data": {
+              "event_addons_decrease": "Applications",
+              "event_integrations_decrease": "Integrations",
+              "event_automations_decrease": "Automations",
+              "event_scripts_decrease": "Scripts",
+              "event_updates_decrease": "Updates",
+              "event_repairs_decrease": "Repairs",
+              "event_unavailable_decrease": "Unavailable entities",
+              "event_offline_decrease": "Offline devices",
+              "event_battery_decrease": "Low batteries"
             }
           }
         }

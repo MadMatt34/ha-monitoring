@@ -27,7 +27,7 @@
           },
           "section_exclusions_system": {
             "name": "⚙️ Exclusions des composants système",
-            "description": "Ignorer lors des scans certaines Applications, Intégrations, Réparations ou batteries.",
+            "description": "Ignorer certaines Applications, Intégrations ou Réparations.",
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
@@ -88,6 +88,7 @@
         "menu_options": {
           "timings": "⏱️ Délais, fréquences et seuils",
           "exclusions": "🚫 Listes d'exclusions",
+          "events": "📣 Événements de surveillance",
           "done": "✅ Enregistrer & Terminer"
         }
       },
@@ -136,7 +137,7 @@
         "sections": {
           "section_exclusions_system": {
             "name": "⚙️ Exclusions des composants système",
-            "description": "Ignorer certaines Applications, Intégrations, Réparations ou batteries.",
+            "description": "Ignorer certaines Applications, Intégrations ou Réparations.",
             "data": {
               "excluded_addons": "Applications à exclure (nom ou mot-clé)",
               "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
@@ -175,6 +176,42 @@
             "name": "🔋 Exclusions des batteries faibles",
             "data": {
               "excluded_batteries": "Capteurs de batterie à exclure"
+            }
+          }
+        }
+      },
+      "events": {
+        "title": "Événements de surveillance",
+        "description": "Activez un événement lorsqu'un compteur de surveillance augmente ou diminue. Tous les événements sont désactivés par défaut.",
+        "sections": {
+          "section_events_increase": {
+            "name": "📈 Événements lors d'une augmentation",
+            "description": "Générer un événement lorsqu'un des compteurs de surveillance augmente.",
+            "data": {
+              "event_addons_increase": "Applications",
+              "event_integrations_increase": "Intégrations",
+              "event_automations_increase": "Automatisations",
+              "event_scripts_increase": "Scripts",
+              "event_updates_increase": "Mises à jour",
+              "event_repairs_increase": "Réparations",
+              "event_unavailable_increase": "Entités indisponibles",
+              "event_offline_increase": "Appareils hors ligne",
+              "event_battery_increase": "Batteries faibles"
+            }
+          },
+          "section_events_decrease": {
+            "name": "📉 Événements lors d'une diminution",
+            "description": "Générer un événement lorsqu'un des compteurs de surveillance diminue.",
+            "data": {
+              "event_addons_decrease": "Applications",
+              "event_integrations_decrease": "Intégrations",
+              "event_automations_decrease": "Automatisations",
+              "event_scripts_decrease": "Scripts",
+              "event_updates_decrease": "Mises à jour",
+              "event_repairs_decrease": "Réparations",
+              "event_unavailable_decrease": "Entités indisponibles",
+              "event_offline_decrease": "Appareils hors ligne",
+              "event_battery_decrease": "Batteries faibles"
             }
           }
         }
