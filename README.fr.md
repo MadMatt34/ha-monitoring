@@ -30,6 +30,7 @@
   - ⚠️ **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
   - 📡 **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
 - 🏠 **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
+- 📣 **Événements de surveillance :** Déclenche des événements Home Assistant lorsqu'un des compteurs de surveillance augmente ou diminue, selon les options configurées.
 - ⏳ **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
 - 🔄 **Scan Forcé Manuellement :** Permet de forcer un rafraîchissement immédiat de toutes les collectes.
 - 🔧 **Mode Maintenance :** Permet de suspendre temporairement les scans de supervision pendant une opération de maintenance sur HA.
@@ -69,7 +70,7 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 ## ⚙️ Modification des paramètres
 
-Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
+Vous pouvez modifier les paramètres de surveillance, les événements et les listes d'exclusions à tout moment :
 
 1. Aller dans **Paramètres** > **Appareils et services** > **HA Monitoring**.
 2. Cliquer sur le bouton **CONFIGURER** *(roue crantée)*.
@@ -84,18 +85,43 @@ Vous pouvez modifier les seuils et les listes d'exclusions à tout moment :
       - Applications,
       - Intégrations,
       - Réparations,
-      - Batteries,
       - Mises à jour,
       - Automatisations,
       - Scripts,
       - Appareils,
-      - Entités.
+      - Entités,
+      - Batteries.
+    - **Événements de surveillance :** Activez indépendamment les événements lors de l'augmentation ou de la diminution de chacun des compteurs :
+      - Applications,
+      - Intégrations,
+      - Automatisations,
+      - Scripts,
+      - Mises à jour,
+      - Réparations,
+      - Entités indisponibles,
+      - Appareils hors ligne,
+      - Batteries faibles.
 
 ---
 
 ## 📦 Entités fournies
 
 Toutes les entités sont rattachées à l'appareil **Home Assistant** :
+
+### 📡 Événement  : `ha_monitoring_event`
+
+Émis instantanément à l'arrivée dès l'augmentation ou la réduction d'un compteur, suivant les options choisies.
+
+**Données transmises dans** `trigger.event.data`:
+
+- `type`: la valeur est toujours `counter_changed`.
+- `counter`: compteur de monitoring concerné\
+(peut être : `applications`, `integrations`, `automations`, `scripts`, `updates`, `repairs`, `unavailable_entities`, `offline_devices`, ou `low_battery`).
+- `change`: la valeur est `increase` ou `decrease`.
+- `previous`: valeur de compteur précédente.
+- `current`: valeur de compteur actuelle.
+- `delta`: différence de valeur entre `previous` et `current`.
+- `entity_id`: entité de monitoring entity associée au compteur concerné.
 
 ### 📊 Capteurs (`sensor.*`)
 
@@ -148,6 +174,8 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 > [!TIP]
 > Utilisez l'attribut `startup_delay = False` comme condition pour le lancement de vos scripts/automatisations ou pour l'affichage de vos tableaux de bord.
 
+---
+
 ### 🕒 Précisions sur les délais d'actualisation des données
 
 - **Attributs informations système :** ces attributs du capteur `binary_sensor.monitoring_global_status` sont actualisés suivant le fréquence définie dans les paramètres (par défaut 24 heures).
@@ -156,6 +184,8 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 
 > [!NOTE]
 > L'ensemble des capteurs et leurs attributs sont actualisés au démarrage de l'intégration, lors de l'utilisation du bouton `Forcer le scan` ou après la modification de paramètres de l'intégration.
+
+---
 
 ### 🔎 Précisions sur certains capteurs et attributs
 
@@ -169,6 +199,8 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
   - Taille de la base de donnée : uniquement l'installation standard est considérée (SQLLite)
 - **Capteur Batteries :** Le scan se base sur les entités de type `sensor` et de classe `battery`.\
 Lorsqu'un appareil expose plusieurs capteurs de batterie, il n'est signalé qu'une seule fois, avec le niveau de batterie le plus faible.
+
+---
 
 ### 🚫 Précisions sur les exclusions en texte-libre
 
@@ -184,6 +216,19 @@ Lorsqu'un appareil expose plusieurs capteurs de batterie, il n'est signalé qu'u
 > - \* → n'importe quelle séquence de caractères.
 > - ? → un seul caractère.
 > - Une chaîne sans caractère générique est cherchée comme une correspondance exacte.
+
+---
+
+### 📣 Précisions sur les événements de surveillance
+
+HA Monitoring peut générer l'événement `ha_monitoring_event` lorsqu'un compteur de surveillance augmente ou diminue.
+
+Chaque direction (`augmentation` / `diminution`) peut être activée ou désactivée indépendamment dans les options de l'intégration pour chacun des compteurs.
+
+> [!NOTE]
+> Aucun événement n'est généré lors du premier scan après le démarrage ou le rechargement de l'intégration : celui-ci sert uniquement à établir la valeur de référence.
+
+---
 
 ### 🔧 Précisions sur le Mode Maintenance
 
@@ -225,8 +270,6 @@ action:
 mode: single
 ```
 
----
-
 ### - Exemple 2 : Notification en cas d'échec de sauvegarde
 
 ```yaml
@@ -242,8 +285,6 @@ action:
       title: "🚨 Échec de Sauvegarde Home Assistant"
       message: "La dernière sauvegarde a échoué ou aucune sauvegarde n'a été trouvée."
 ```
-
----
 
 ### - Exemple 3 : Carte Markdown Dashboard
 
@@ -288,6 +329,28 @@ content: >
   ---
   💾 **Dernière sauvegarde :** {{ state_attr('binary_sensor.monitoring_backup', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup', 'size') }})
 ```
+
+### - Exemple 4 : Notification sur augmentation d'un compteur
+
+```yaml
+alias: "Alerte : nouvel élément indisponible"
+description: "Notifie lorsqu'un nouvel élément devient indisponible"
+trigger:
+  - platform: event
+    event_type: ha_monitoring_event
+    event_data:
+      counter: unavailable_entities
+      change: increased
+action:
+  - action: notify.notify
+    data:
+      title: "⚠️ HA Monitoring"
+      message: >
+        Le nombre d'entités indisponibles est passé de
+        {{ trigger.event.data.previous }}
+        à
+        {{ trigger.event.data.current }}.
+mode: single
 
 ---
 
