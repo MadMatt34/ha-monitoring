@@ -3,11 +3,11 @@
     "step": {
       "user": {
         "title": "HA Monitoring",
-        "description": "Configurez les délais, les seuils et les listes d'exclusions par type de surveillance.",
+        "description": "Configurez les fréquences de scan, les délais, les temporisations et les seuils.\n👉 Des options complémentaires, notamment les listes d’exclusions et les événements de surveillance, sont disponibles après l’installation.",
         "sections": {
           "section_timings": {
             "name": "⏱️ Fréquences, délais et seuils",
-            "description": "Ajustez les intervalles de rafraîchissement, les seuils et le délai de démarrage.",
+            "description": "Ajustez les fréquences de scan, le délai de démarrage, la temporisation hors ligne et le seuil de batterie faible.",
             "data": {
               "startup_delay": "Délai de grâce au démarrage (en secondes)",
               "scan_interval": "Intervalle de rafraîchissement (en secondes)",
@@ -23,49 +23,6 @@
               "traces_scan_interval": "Fréquence à laquelle le système vérifie les erreurs dans les traces d'automatisations et de scripts (par défaut : 30 min).",
               "offline_timeout": "Durée après laquelle un appareil est considéré comme hors ligne (par défaut : 24 heures).",
               "battery_low_threshold": "Les niveaux de batterie strictement inférieurs à ce pourcentage sont signalés comme faibles (par défaut : 15 %)."
-            }
-          },
-          "section_exclusions_system": {
-            "name": "⚙️ Exclusions des composants système",
-            "description": "Ignorer certaines Applications, Intégrations ou Réparations.",
-            "data": {
-              "excluded_addons": "Applications à exclure (nom ou mot-clé)",
-              "excluded_integrations": "Intégrations à exclure (nom ou domaine)",
-              "excluded_repairs": "Réparations à exclure (plateforme, nom ou mot-clé)"
-            }
-          },
-          "section_exclusions_scripts": {
-            "name": "📜 Exclusions des automatisations et scripts",
-            "data": {
-              "excluded_automations": "Automatisations à exclure",
-              "excluded_scripts": "Scripts à exclure"
-            }
-          },
-          "section_exclusions_updates": {
-            "name": "⬆️ Exclusions des mises à jour",
-            "data": {
-              "excluded_updates": "Mises à jour à exclure"
-            }
-          },
-          "section_exclusions_unavailable": {
-            "name": "📡 Exclusions des entités indisponibles",
-            "description": "Ignorer des entités spécifiques, correspondant à des caractères génériques, ou des domaines complets.",
-            "data": {
-              "excluded_unavailable_entities": "Entités à exclure",
-              "excluded_unavailable_globs": "Noms ou IDs correspondant à ces motifs à exclure",
-              "excluded_unavailable_domains": "Domaines à exclure"
-            }
-          },
-          "section_exclusions_offline": {
-            "name": "📴 Exclusions des appareils hors ligne",
-            "data": {
-              "excluded_offline": "Appareils à exclure"
-            }
-          },
-          "section_exclusions_battery": {
-            "name": "🔋 Exclusions des batteries faibles",
-            "data": {
-              "excluded_batteries": "Capteurs de batterie à exclure"
             }
           }
         }
