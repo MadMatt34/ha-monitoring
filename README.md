@@ -30,6 +30,7 @@
   - ⚠️ **Automation & Script Traces:** Detection of execution errors.
   - 📡 **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
 - 🏠 **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
+- 📣 **Monitoring events:** Triggers Home Assistant events whenever one of the monitoring counters increases or decreases, according to the configured options.
 - ⏳ **Startup Grace Period:** Prevents false alarms during Home Assistant's boot sequence.
 - 🔄 **Manual Force Scan:** Trigger an immediate full refresh on demand.
 - 🔧 **Maintenance Mode:** Temporarily pauses the monitoring scans while maintenance is being performed on HA.
@@ -69,7 +70,7 @@ Configuration is **100% UI-based** within Home Assistant.
 
 ## ⚙️ Modifying Settings
 
-You can adjust thresholds and exclusion lists at any time:
+You can adjust monitoring settings, events, and exclusion lists at any time:
 
 1. Go to **Settings** > **Devices & Services** > **HA Monitoring**.
 2. Click the **CONFIGURE** button *(gear icon)*.
@@ -90,12 +91,36 @@ You can adjust thresholds and exclusion lists at any time:
       - Scripts,
       - Devices,
       - Entities.
+    - **Monitoring events**: Independently enable events when any of the counters increase or decrease:
+      - Applications
+      - Integrations
+      - Automations
+      - Scripts
+      - Updates
+      - Repairs
+      - Unavailable entities
+      - Offline devices
 
 ---
 
-## 📦 Provided Entities
+## 📦 Provided Events and Entities
 
 All entities are attached to the **Home Assistant** device.
+
+### 📡 Event: `ha_monitoring_event`
+
+Fired instantaneously as soon as counter increase or decrease, regarding selected options.
+
+**Event payload in** `trigger.event.data`:
+
+- `type`: value is always `counter_changed`.
+- `counter`: affected monitoring counter\
+(can be: `applications`, `integrations`, `automations`, `scripts`, `updates`, `repairs`, `unavailable_entities`, `offline_devices`, or `low_battery`).
+- `change`: value is `increase` or `decrease`.
+- `previous`: previous counter value.
+- `current`: current counter value.
+- `delta`: value difference from `previous` to `current`.
+- `entity_id`: monitoring entity associated with the affected counter.
 
 ### 📊 Sensors (`sensor.*`)
 
@@ -148,6 +173,8 @@ The first scan following a Home Assistant boot will wait until the configured gr
 > [!TIP]
 > Use the attribute `startup_delay = False` as a condition in your scripts/automations or dashboard visibility.
 
+---
+
 ### 🕒 Data Refresh Intervals Details
 
 - **System Info Attributes:** Those attributes of `binary_sensor.monitoring_global_status` are updated according to the frequency defined in options (default 24 hours).
@@ -156,6 +183,8 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 > [!NOTE]
 > All sensors and attributes are refreshed upon integration startup, when clicking the `Force Refresh` button, or when changing integration settings.
+
+---
 
 ### 🔎 Specific Sensor & Attribute Notes
 
@@ -169,6 +198,8 @@ The first scan following a Home Assistant boot will wait until the configured gr
   - Database Size: Only the standard installation using SQLite is supported.
 - **Low Battery Sensor:** The scan relies on entities of type `sensor` with the `battery` device class.\
 When a device exposes multiple battery sensors, the device is reported once using its lowest battery level.
+
+---
 
 ### 🚫 Details on Free-text Exclusions
 
@@ -184,6 +215,19 @@ When a device exposes multiple battery sensors, the device is reported once usin
 > - \* → any sequence of characters.
 > - ? → a single character.
 > - A string without wildcards is searched as an exact match.
+
+---
+
+### 📣 Clarifications about monitoring events
+
+HA Monitoring can generate the `ha_monitoring_event` event whenever a monitoring counter increases or decreases.
+
+Each direction (`increase` / `decrease`) can be enabled or disabled independently in the integration options for each counter.
+
+> **Note**
+> No event is generated during the first scan after startup or after reloading the integration; this initial scan is only used to establish the reference value.
+
+---
 
 ### 🔧 Maintenance Mode Details
 
@@ -225,8 +269,6 @@ action:
 mode: single
 ```
 
----
-
 ### - Example 2: Notification on Backup Failure
 
 ```yaml
@@ -242,8 +284,6 @@ action:
       title: "🚨 Home Assistant Backup Failure"
       message: "The latest backup failed or no backup was found."
 ```
-
----
 
 ### - Example 3: Dashboard Markdown Card
 
@@ -287,6 +327,29 @@ content: >
 
   ---
   💾 **Last Backup:** {{ state_attr('binary_sensor.monitoring_backup', 'date_last_run') }} ({{ state_attr('binary_sensor.monitoring_backup', 'size') }})
+```
+
+### - Exemple 4: Notification on counter increased
+
+```yaml
+alias: "Alert: new unavailable item"
+description: "Notify when a new item becomes unavailable"
+trigger:
+  - platform: event
+    event_type: ha_monitoring_event
+    event_data:
+      counter: unavailable_entities
+      change: increased
+action:
+  - action: notify.notify
+    data:
+      title: "⚠️ HA Monitoring"
+      message: >
+        The number of unavailable entities has changed from
+        {{ trigger.event.data.previous }}
+        to
+        {{ trigger.event.data.current }}.
+mode: single
 ```
 
 ---

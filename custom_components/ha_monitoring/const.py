@@ -38,6 +38,32 @@ CONF_EXCLUDED_UNAVAILABLE_GLOBS = "excluded_unavailable_globs"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
 CONF_EXCLUDED_BATTERIES = "excluded_batteries"
 
+# Options des événements de surveillance
+CONF_EVENT_ADDONS_INCREASE = "event_addons_increase"
+CONF_EVENT_INTEGRATIONS_INCREASE = "event_integrations_increase"
+CONF_EVENT_AUTOMATIONS_INCREASE = "event_automations_increase"
+CONF_EVENT_SCRIPTS_INCREASE = "event_scripts_increase"
+CONF_EVENT_UPDATES_INCREASE = "event_updates_increase"
+CONF_EVENT_REPAIRS_INCREASE = "event_repairs_increase"
+CONF_EVENT_UNAVAILABLE_INCREASE = "event_unavailable_increase"
+CONF_EVENT_OFFLINE_INCREASE = "event_offline_increase"
+CONF_EVENT_BATTERY_INCREASE = "event_battery_increase"
+
+CONF_EVENT_ADDONS_DECREASE = "event_addons_decrease"
+CONF_EVENT_INTEGRATIONS_DECREASE = "event_integrations_decrease"
+CONF_EVENT_AUTOMATIONS_DECREASE = "event_automations_decrease"
+CONF_EVENT_SCRIPTS_DECREASE = "event_scripts_decrease"
+CONF_EVENT_UPDATES_DECREASE = "event_updates_decrease"
+CONF_EVENT_REPAIRS_DECREASE = "event_repairs_decrease"
+CONF_EVENT_UNAVAILABLE_DECREASE = "event_unavailable_decrease"
+CONF_EVENT_OFFLINE_DECREASE = "event_offline_decrease"
+CONF_EVENT_BATTERY_DECREASE = "event_battery_decrease"
+
+EVENT_NAME = f"{DOMAIN}_event"
+EVENT_TYPE_COUNTER_CHANGED = "counter_changed"
+EVENT_CHANGE_INCREASED = "increased"
+EVENT_CHANGE_DECREASED = "decreased"
+
 # Domaines indésirables masqués par défaut
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "assist_satellite",
