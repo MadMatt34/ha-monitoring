@@ -382,9 +382,7 @@ def get_exclusions_schema(
                         vol.Optional(
                             CONF_EXCLUDED_OFFLINE,
                             default=options.get(CONF_EXCLUDED_OFFLINE) or [],
-                        ): selector.DeviceSelector(
-                            selector.DeviceSelectorConfig(multiple=True)
-                        ),
+                        ): selector.DeviceSelector(selector.DeviceSelectorConfig(multiple=True)),
                     }
                 ),
                 {"collapsed": True},
@@ -405,8 +403,7 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_GLOBS,
-                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS)
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_GLOBS) or [],
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=[],
@@ -416,17 +413,12 @@ def get_exclusions_schema(
                         ),
                         vol.Optional(
                             CONF_EXCLUDED_UNAVAILABLE_ENTITIES,
-                            default=options.get(
-                                CONF_EXCLUDED_UNAVAILABLE_ENTITIES
-                            )
-                            or [],
+                            default=options.get(CONF_EXCLUDED_UNAVAILABLE_ENTITIES) or [],
                         ): selector.EntitySelector(
                             selector.EntitySelectorConfig(
                                 multiple=True,
                                 filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain=allowed_domains
-                                    )
+                                    selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
                                     else None
                                 ),
