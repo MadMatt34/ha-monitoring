@@ -30,6 +30,11 @@ TO_REDACT: set[str] = {
     "username",
     "serial",
     "device_id",
+    "entry_name",
+    "device",
+    "device_name",
+    "name",
+    "entity_id",
 }
 
 
