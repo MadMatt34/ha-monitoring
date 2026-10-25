@@ -389,6 +389,12 @@ To remove the integration from Home Assistant
 
 ---
 
+## ❤️ Support this project
+
+Find this integration useful? Give it a ⭐ on GitHub.
+
+---
+
 ## ⚖️ License
 
 This project is under the **MIT License**; see the [LICENSE](LICENSE) file for details.

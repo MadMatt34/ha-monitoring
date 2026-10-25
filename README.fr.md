@@ -391,6 +391,12 @@ Pour supprimer l'intégration de Home Assistant
 
 ---
 
+## ❤️ Soutenir ce projet
+
+Vous trouvez cette intégration utile ? Ajoutez une ⭐ au projet sur GitHub !
+
+---
+
 ## ⚖️ Licence
 
 Ce projet est sous **Licence MIT** ; voir le fichier [LICENSE](LICENSE) pour les details.
