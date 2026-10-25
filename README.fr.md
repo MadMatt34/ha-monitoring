@@ -388,3 +388,9 @@ Pour supprimer l'intégration de Home Assistant
 ## 🌐 Langues prises en charge
 
 🇬🇧 English • 🇫🇷 Français
+
+---
+
+## ⚖️ Licence
+
+Ce projet est sous **Licence MIT** ; voir le fichier [LICENSE](LICENSE) pour les details.

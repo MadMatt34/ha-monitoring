@@ -386,3 +386,9 @@ To remove the integration from Home Assistant
 ## 🌐 Supported Languages
 
 🇬🇧 English • 🇫🇷 Français
+
+---
+
+## ⚖️ License
+
+This project is under the **MIT License**; see the [LICENSE](LICENSE) file for details.
