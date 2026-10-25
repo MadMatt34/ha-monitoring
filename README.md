@@ -376,6 +376,7 @@ To remove the integration from Home Assistant
 
 - Check your logs: **Settings → System → Logs**\
 [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
+- Bugs & feature requests: [GitHub Issues](https://github.com/MadMatt34/ha-monitoring/issues)
 
 > [!NOTE]
 > **Diagnostics & Privacy**:\

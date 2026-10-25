@@ -378,6 +378,7 @@ Pour supprimer l'intégration de Home Assistant
 
 - Consultez les logs : **Paramètres → Système → Journaux**\
 [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
+- Bugs & demandes de fonctionnalités : [GitHub Issues](https://github.com/MadMatt34/ha-monitoring/issues)
 
 > [!NOTE]
 > **Diagnostics & Vie privée** :\
