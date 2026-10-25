@@ -8,9 +8,9 @@
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
-![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/docs/logo.png)
+![HA Monitoring for Home Assistant](docs/logo.png)
 
-[❗ README en FRANÇAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
+[❗ README en FRANÇAIS 🇫🇷 ❗](README.fr.md)
 
 **HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across applications, integrations, automations, scripts, unavailable entities, offline devices, low batteries, pending updates, active repairs, and backup statuses.
 
@@ -40,15 +40,22 @@
 
 ## 🧩 Installation
 
-### Option 1: Installation via HACS (Custom Repository - 📌 Recommended)
+### Option 1: HACS Installation (Included Repository - 📌 Recommended)
 
-1. Open **HACS**.
-2. Click the 3 dots in the top right corner > **Custom repositories**.
+1. Search and open **HA Monitoring** integration in **HACS** in Home Assistant.\
+    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-monitoring)
+2. Click **Download**, then restart Home Assistant.
+
+### Option 2: HACS Installation (Custom Repository)
+
+1. Open **HACS** in Home Assistant.
+2. Click the menu ⋮ *(three dots)* on top right, then select **Custom Repositories**.
 3. Add: `https://github.com/MadMatt34/ha-monitoring`
 4. Select category **Integration** and click **Add**.
-5. Click **Download**, then restart Home Assistant.
+5. Find and download **HA Monitoring**.
+6. Restart Home Assistant.
 
-### Option 2: Manual Installation
+### Option 3: Manual Installation
 
 1. Download the latest *Release* from this repository.
 2. Copy the `ha_monitoring` folder into your `/config/custom_components/` directory.
@@ -60,7 +67,7 @@
 
 Configuration is **100% UI-based** within Home Assistant.
 
-1. Go to **Settings** > **Devices & Services**.\
+1. Go to **Settings** → **Devices & Services**.\
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Click **Add Integration** (bottom right).
 3. Search for **HA Monitoring** and select it.
@@ -72,7 +79,8 @@ Configuration is **100% UI-based** within Home Assistant.
 
 You can adjust monitoring settings, events, and exclusion lists at any time:
 
-1. Go to **Settings** > **Devices & Services** > **HA Monitoring**.
+1. Go to **Settings** → **Devices & Services** → **HA Monitoring**.\
+   [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=ha_monitoring)
 2. Click the **CONFIGURE** button *(gear icon)*.
 3. Adjust the desired parameters:
     - **Startup Grace Period** (in seconds): Waiting time upon boot before enabling first scan (default: 2 min).
@@ -138,7 +146,7 @@ Fired instantaneously as soon as counter increase or decrease, regarding selecte
 
 > [!TIP]
 > Each entity contains a list attribute detailing the items detected.\
-> Use **Settings** > **Tools** > **States** to explore all attributes.\
+> Use **Settings** → **Tools** → **States** to explore all attributes.\
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
 ### 🔘 Binary Sensors (`binary_sensor.*`)
@@ -301,26 +309,26 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_applications') | int > 0 %}
+  {% if states('sensor.monitoring_applications') | int → 0 %}
   **Errored Applications:**
   {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations') | int > 0 %}
+  {% if states('sensor.monitoring_integrations') | int → 0 %}
   **Errored Integrations:**
   {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_unavailable_entities') | int > 0 %}
+  {% if states('sensor.monitoring_unavailable_entities') | int → 0 %}
   **Unavailable Entities ({{ states('sensor.monitoring_unavailable_entities') }}):**
   {% for item in state_attr('sensor.monitoring_unavailable_entities', 'list')[:5] %}
     - {{ item }}
   {% endfor %}
-  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count > 5 %}
+  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count → 5 %}
     *...and {{ state_attr('sensor.monitoring_unavailable_entities', 'list') | count - 5 }} more.*
   {% endif %}
   {% endif %}
@@ -354,14 +362,40 @@ mode: single
 
 ---
 
+## 🗑️ Removing the integration
+
+To remove the integration from Home Assistant
+
+1. Go to **Settings → Devices & Services → HA Monitoring**.\
+   [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=ha_monitoring)
+2. Click ⋮ the three dots menu of the device. Then, select **Delete**.
+
+---
+
 ## 🛠️ Troubleshooting
 
 - Check your logs: **Settings → System → Logs**\
 [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
-- Diagnostics & Privacy: Safe diagnostic export is supported when opening an issue on GitHub. Access tokens, credentials, and personal data are automatically anonymized.
+- Bugs & feature requests: [GitHub Issues](https://github.com/MadMatt34/ha-monitoring/issues)
+
+> [!NOTE]
+> **Diagnostics & Privacy**:\
+> Safe diagnostic export is supported when opening an issue on GitHub. Access tokens, credentials, and personal data are automatically anonymized.
 
 ---
 
 ## 🌐 Supported Languages
 
 🇬🇧 English • 🇫🇷 Français
+
+---
+
+## ❤️ Support this project
+
+Find this integration useful? Give it a ⭐ on GitHub.
+
+---
+
+## ⚖️ License
+
+This project is under the **MIT License**; see the [LICENSE](LICENSE) file for details.
