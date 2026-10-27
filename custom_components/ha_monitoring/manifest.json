@@ -6,6 +6,9 @@
     "recorder",
     "trace"
   ],
+  "categories": [
+    "computers_network.monitoring"
+  ],
   "codeowners": [
     "@MadMatt34"
   ],
