@@ -8,9 +8,9 @@
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
-![HA Monitoring for Home Assistant](https://github.com/MadMatt34/ha-monitoring/blob/main/docs/logo.png)
+![HA Monitoring for Home Assistant](docs/logo_en.png)
 
-[❗ README en FRANÇAIS 🇫🇷 ❗](https://github.com/MadMatt34/ha-monitoring/blob/main/README.fr.md)
+[❗ README en FRANÇAIS 🇫🇷 ❗](README.fr.md)
 
 **HA Monitoring** is a custom integration for Home Assistant designed to monitor system health and components in real time. It centralizes system information and tracks issues across applications, integrations, automations, scripts, unavailable entities, offline devices, low batteries, pending updates, active repairs, and backup statuses.
 
