@@ -40,7 +40,8 @@
 
 ## 🧩 Installation
 
-### Option 1 : Installation via Marketplace (HA 2026.11+) / HACS (versions antérieures)\ (dépôt personnalisé - 📌 recommandée)
+### Option 1 : Installation via Marketplace (HA 2026.11+) / HACS (versions antérieures)\
+### (dépôt personnalisé - 📌 recommandée)
 
 1. Ouvrir **HACS**  
 2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
