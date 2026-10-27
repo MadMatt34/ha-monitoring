@@ -40,18 +40,24 @@
 
 ## 🧩 Installation
 
-### Option 1 : Installation via Marketplace (HA 2026.11+) / HACS (versions antérieures)\
-### (dépôt personnalisé - 📌 recommandée)
+### Option 1 : Installation via HACS (dépôt inclus - 📌 recommandée)
 
-1. Ouvrir **HACS**  
-2. Cliquer sur les 3 points en haut à droite > **Dépôts personnalisés**.
+1. Ouvrir l'intégration **HA Monitoring** dans **HACS**\
+    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-monitoring)
+2. Cliquer sur **Télécharger**, puis redémarrer Home Assistant.
+
+### Option 2 : Installation via HACS (dépôt personnalisé)
+
+1. Ouvrir **HACS**
+2. Cliquer sur le menu ⋮ *(trois points)* en haut à droite, puis sélectionner **Dépôts personnalisés**.
 3. Ajouter : `https://github.com/MadMatt34/ha-monitoring`
 4. Choisir la catégorie **Intégration** et valider
-5. Cliquer sur **Télécharger**, puis redémarrer Home Assistant.
+5. Chercher et télécharger **HA Monitoring**.
+6. Redémarrer Home Assistant.
 
-### Option 2 : Installation manuelle
+### Option 3 : Installation manuelle
 
-1. Télécharger la dernière *Release* de ce dépôt.
+1. Télécharger la dernière **Release** de ce dépôt.
 2. Copier le dossier `ha_monitoring` dans `/config/custom_components/`.
 3. Redémarrer Home Assistant pour faire détecter la nouvelle intégration.
 
@@ -61,7 +67,7 @@
 
 L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
-1. Dans Home Assistant, aller dans **Paramètres** > **Appareils et services**.\
+1. Dans Home Assistant, aller dans **Paramètres** → **Appareils et services**.\
    [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
 2. Cliquer sur **Ajouter une intégration** (en bas à droite).
 3. Rechercher **HA Monitoring** et sélectionner.
@@ -73,7 +79,8 @@ L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
 Vous pouvez modifier les paramètres de surveillance, les événements et les listes d'exclusions à tout moment :
 
-1. Aller dans **Paramètres** > **Appareils et services** > **HA Monitoring**.
+1. Aller dans **Paramètres** → **Appareils et services** → **HA Monitoring**.\
+   [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=ha_monitoring)
 2. Cliquer sur le bouton **CONFIGURER** *(roue crantée)*.
 3. Régler les paramètres souhaités :
     - **Délai de grâce au démarrage** (en secondes) : Temps d'attente au boot avant d'activer le premier scan (par défaut : 2 min).
@@ -140,7 +147,7 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 
 > [!TIP]
 > Chaque entité contient des attributs listant les éléments détectés.\
-> Utilisez **Paramètres** > **Outils** > **Etats** pour explorer tous les attributs.\
+> Utilisez **Paramètres** → **Outils** → **Etats** pour explorer tous les attributs.\
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
 ### 🔘 Capteurs binaires (`binary_sensor.*`)
@@ -303,26 +310,26 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_applications') | int > 0 %}
+  {% if states('sensor.monitoring_applications') | int → 0 %}
   **Applications en erreur :**
   {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations') | int > 0 %}
+  {% if states('sensor.monitoring_integrations') | int → 0 %}
   **Intégrations en erreur :**
   {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_unavailable_entities') | int > 0 %}
+  {% if states('sensor.monitoring_unavailable_entities') | int → 0 %}
   **Entités indisponibles ({{ states('sensor.monitoring_unavailable_entities') }}) :**
   {% for item in state_attr('sensor.monitoring_unavailable_entities', 'list')[:5] %}
     - {{ item }}
   {% endfor %}
-  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count > 5 %}
+  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count → 5 %}
     *...et {{ state_attr('sensor.monitoring_unavailable_entities', 'list') | count - 5 }} autre(s).*
   {% endif %}
   {% endif %}
@@ -352,6 +359,18 @@ action:
         à
         {{ trigger.event.data.current }}.
 mode: single
+```
+
+---
+
+## 🗑️ Supprimer l'intégration
+
+Pour supprimer l'intégration de Home Assistant
+
+1. Aller dans **Paramètres → Appareils et services** et choisir la carte de l'intégration **HA Monitoring**.\
+   [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=ha_monitoring)
+2. Dans la liste des appareils, pointer l'instance à supprimer.
+3. A côté de cette entrée, sélectionner le menu ⋮ avec trois points. Puis, choisir **Supprimer**.
 
 ---
 
@@ -359,10 +378,26 @@ mode: single
 
 - Consultez les logs : **Paramètres → Système → Journaux**\
 [![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
-- Diagnostics & Vie privée : Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
+- Bugs & demandes de fonctionnalités : [GitHub Issues](https://github.com/MadMatt34/ha-monitoring/issues)
+
+> [!NOTE]
+> **Diagnostics & Vie privée** :\
+> Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
 
 ---
 
 ## 🌐 Langues prises en charge
 
 🇬🇧 English • 🇫🇷 Français
+
+---
+
+## ❤️ Soutenir ce projet
+
+Vous trouvez cette intégration utile ? Ajoutez une ⭐ au projet sur GitHub !
+
+---
+
+## ⚖️ Licence
+
+Ce projet est sous **Licence MIT** ; voir le fichier [LICENSE](LICENSE) pour les details.
