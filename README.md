@@ -8,7 +8,7 @@
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
 
-![HA Monitoring for Home Assistant](docs/logo.png)
+![HA Monitoring for Home Assistant](docs/logo_en.png)
 
 [❗ README en FRANÇAIS 🇫🇷 ❗](README.fr.md)
 

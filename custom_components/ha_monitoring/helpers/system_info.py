@@ -115,7 +115,7 @@ async def async_get_system_stats(
     dev_reg = dr.async_get(hass)
     ent_reg = er.async_get(hass)
 
-    devices_count = sum(1 for device in dev_reg.devices.values() if device.disabled_by is None)
+    devices_count = sum(1 for device in dev_reg.devices if device.disabled_by is None)
 
     entities_count = sum(
         1
