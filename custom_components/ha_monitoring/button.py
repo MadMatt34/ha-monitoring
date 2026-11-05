@@ -102,6 +102,11 @@ class HAMonitoringForceScanButton(
         )
 
     @callback
+    def async_entity_id_changed(self, old_entity_id: str) -> None:
+        """Gère le changement d'identifiant d'entité sans perdre le cycle de vie."""
+        super().async_entity_id_changed(old_entity_id)
+
+    @callback
     def _handle_scan_timestamp_update(self) -> None:
         """Actualise les attributs liés aux scans."""
         self.async_write_ha_state()

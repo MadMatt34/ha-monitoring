@@ -304,26 +304,26 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_applications') | int → 0 %}
+  {% if states('sensor.monitoring_applications') | int > 0 %}
   **Applications en erreur :**
   {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations') | int → 0 %}
+  {% if states('sensor.monitoring_integrations') | int > 0 %}
   **Intégrations en erreur :**
   {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_unavailable_entities') | int → 0 %}
+  {% if states('sensor.monitoring_unavailable_entities') | int > 0 %}
   **Entités indisponibles ({{ states('sensor.monitoring_unavailable_entities') }}) :**
   {% for item in state_attr('sensor.monitoring_unavailable_entities', 'list')[:5] %}
     - {{ item }}
   {% endfor %}
-  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count → 5 %}
+  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count > 5 %}
     *...et {{ state_attr('sensor.monitoring_unavailable_entities', 'list') | count - 5 }} autre(s).*
   {% endif %}
   {% endif %}
@@ -357,7 +357,7 @@ mode: single
 
 ---
 
-## ⚠️ Limitations and problèmes connus
+## ⚠️ Limitations et problèmes connus
 
 - L'intégration utilise certains mécanismes non documentés.
 
