@@ -14,37 +14,23 @@ class HAMonitoringBaseEntity(CoordinatorEntity[HAMonitoringCoordinator]):
 
     _attr_has_entity_name = True
 
-    def __init__(
-        self,
-        coordinator: HAMonitoringCoordinator,
-    ) -> None:
-        """Initialise l'entité de base."""
-        super().__init__(coordinator)
-        self._cached_device_info: DeviceInfo | None = None
-
     @property
     def device_info(self) -> DeviceInfo:
-        """Retourne les informations de l'appareil unique en cache."""
-        if self._cached_device_info is not None:
-            return self._cached_device_info
-
+        """Retourne les informations de l'appareil Home Assistant."""
         config_url: str | None = None
 
-        if self.hass:
-            try:
-                config_url = get_url(
-                    self.hass,
-                    prefer_external=True,
-                )
-            except NoURLAvailableError:
-                config_url = None
+        try:
+            config_url = get_url(
+                self.hass,
+                prefer_external=True,
+            )
+        except NoURLAvailableError:
+            pass
 
-        self._cached_device_info = DeviceInfo(
+        return DeviceInfo(
             identifiers={(DOMAIN, self.coordinator.entry.entry_id)},
             name=DEVICE_NAME,
             manufacturer=DEVICE_MANUFACTURER,
             model=f"Core {HA_VERSION}",
             configuration_url=config_url,
         )
-
-        return self._cached_device_info
