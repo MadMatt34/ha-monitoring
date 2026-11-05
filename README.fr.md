@@ -40,26 +40,21 @@
 
 ## 🧩 Installation
 
-### Option 1 : Installation via HACS (dépôt inclus - 📌 recommandée)
+### Option 1 : Installation via Marketplace (📌 recommandée)
 
-1. Ouvrir l'intégration **HA Monitoring** dans **HACS**\
-    [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=MadMatt34&repository=ha-monitoring)
-2. Cliquer sur **Télécharger**, puis redémarrer Home Assistant.
+1. Ouvrir l'intégration **HA Monitoring** dans **Marketplace** dans Home Assistant\
+    [![Open your Home Assistant instance and open a repository in the Marketplace.](https://my.home-assistant.io/badges/marketplace_repository.svg)](https://my.home-assistant.io/redirect/marketplace_repository/?owner=MadMatt34&repository=ha-monitoring)
+2. Cliquer sur **Installer**, puis suivre les étapes de Configuration de l'Intégration.
 
-### Option 2 : Installation via HACS (dépôt personnalisé)
-
-1. Ouvrir **HACS**
-2. Cliquer sur le menu ⋮ *(trois points)* en haut à droite, puis sélectionner **Dépôts personnalisés**.
-3. Ajouter : `https://github.com/MadMatt34/ha-monitoring`
-4. Choisir la catégorie **Intégration** et valider
-5. Chercher et télécharger **HA Monitoring**.
-6. Redémarrer Home Assistant.
-
-### Option 3 : Installation manuelle
+### Option 2 : Installation manuelle
 
 1. Télécharger la dernière **Release** de ce dépôt.
 2. Copier le dossier `ha_monitoring` dans `/config/custom_components/`.
 3. Redémarrer Home Assistant pour faire détecter la nouvelle intégration.
+4. Après le redémarrage, aller dans **Paramètres** → **Appareils et services**.\
+   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
+5. Cliquer sur **Ajouter une intégration** (en bas à droite).
+6. Rechercher **HA Monitoring** et le sélectionner, puis suivre les étapes de Configuration de l'Intégration.
 
 ---
 
@@ -67,11 +62,7 @@
 
 L'installation se fait **100 % via l'interface graphique** de Home Assistant.
 
-1. Dans Home Assistant, aller dans **Paramètres** → **Appareils et services**.\
-   [![Open your Home Assistant instance and show your integrations.](https://my.home-assistant.io/badges/integrations.svg)](https://my.home-assistant.io/redirect/integrations/)
-2. Cliquer sur **Ajouter une intégration** (en bas à droite).
-3. Rechercher **HA Monitoring** et sélectionner.
-4. Renseigner les paramètres initiaux (ou laisser les valeurs par défaut) et valider.
+1. Renseigner les paramètres initiaux (ou laisser les valeurs par défaut) et valider.
 
 ---
 
@@ -110,9 +101,12 @@ Vous pouvez modifier les paramètres de surveillance, les événements et les li
       - Appareils hors ligne,
       - Batteries faibles.
 
+> [!IMPORTANT]
+> Ne pas oublier de cliquer **Enregistre & Terminer** pour valider les changements.
+
 ---
 
-## 📦 Entités fournies
+## 📦 Événements et Entités fournis
 
 Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 
@@ -363,6 +357,24 @@ mode: single
 
 ---
 
+## ⚠️ Limitations and problèmes connus
+
+- L'intégration utilise certains mécanismes non documentés.
+
+---
+
+## 🛠️ Dépannage
+
+- Consultez les logs : **Paramètres → Système → Journaux**\
+[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
+- Déclaration de bugs & demandes de fonctionnalités : [ouvrir un suivi sur GitHub](https://github.com/MadMatt34/ha-monitoring/issues/new), avec le maximum d'informations pour aider à l'analyse.
+
+> [!NOTE]
+> **Diagnostics & Vie privée** :\
+> Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
+
+---
+
 ## 🗑️ Supprimer l'intégration
 
 Pour supprimer l'intégration de Home Assistant
@@ -371,18 +383,6 @@ Pour supprimer l'intégration de Home Assistant
    [![Open your Home Assistant instance and show an integration.](https://my.home-assistant.io/badges/integration.svg)](https://my.home-assistant.io/redirect/integration/?domain=ha_monitoring)
 2. Dans la liste des appareils, pointer l'instance à supprimer.
 3. A côté de cette entrée, sélectionner le menu ⋮ avec trois points. Puis, choisir **Supprimer**.
-
----
-
-## 🛠️ Dépannage
-
-- Consultez les logs : **Paramètres → Système → Journaux**\
-[![Open your Home Assistant instance and show your Home Assistant logs.](https://my.home-assistant.io/badges/logs.svg)](https://my.home-assistant.io/redirect/logs/)
-- Bugs & demandes de fonctionnalités : [GitHub Issues](https://github.com/MadMatt34/ha-monitoring/issues)
-
-> [!NOTE]
-> **Diagnostics & Vie privée** :\
-> Exportez vos fichiers de diagnostic en toute sécurité lors de l'ouverture d'un ticket sur GitHub ; vos jetons d'accès, identifiants et données personnelles sont automatiquement anonymisés.
 
 ---
 
@@ -401,3 +401,9 @@ Vous trouvez cette intégration utile ? Ajoutez une ⭐ au projet sur GitHub !
 ## ⚖️ Licence
 
 Ce projet est sous **Licence MIT** ; voir le fichier [LICENSE](LICENSE) pour les details.
+
+---
+
+\
+***Avertissement***\
+*Cette intégration n'est pas officielle. Elle n'est ni affiliée à Home Assistant, ni approuvée ou prise en charge par Home Assistant.*
