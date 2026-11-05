@@ -303,26 +303,26 @@ content: >
 
   ---
 
-  {% if states('sensor.monitoring_applications') | int → 0 %}
+  {% if states('sensor.monitoring_applications') | int > 0 %}
   **Errored Applications:**
   {% for item in state_attr('sensor.monitoring_applications', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_integrations') | int → 0 %}
+  {% if states('sensor.monitoring_integrations') | int > 0 %}
   **Errored Integrations:**
   {% for item in state_attr('sensor.monitoring_integrations', 'list') %}
     - {{ item }}
   {% endfor %}
   {% endif %}
 
-  {% if states('sensor.monitoring_unavailable_entities') | int → 0 %}
+  {% if states('sensor.monitoring_unavailable_entities') | int > 0 %}
   **Unavailable Entities ({{ states('sensor.monitoring_unavailable_entities') }}):**
   {% for item in state_attr('sensor.monitoring_unavailable_entities', 'list')[:5] %}
     - {{ item }}
   {% endfor %}
-  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count → 5 %}
+  {% if state_attr('sensor.monitoring_unavailable_entities', 'list') | count > 5 %}
     *...and {{ state_attr('sensor.monitoring_unavailable_entities', 'list') | count - 5 }} more.*
   {% endif %}
   {% endif %}
