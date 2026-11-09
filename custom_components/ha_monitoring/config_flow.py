@@ -614,9 +614,6 @@ class HAMonitoringConfigFlow(
         user_input: dict[str, Any] | None = None,
     ) -> FlowResult:
         """Formulaire initial d'ajout de l'intégration."""
-        if self._async_current_entries():
-            return self.async_abort(reason="already_configured")
-
         if user_input is not None:
             cleaned_input = _flatten_options(user_input)
 
