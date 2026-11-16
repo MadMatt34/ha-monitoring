@@ -69,7 +69,7 @@ from .const import (
     STORAGE_VERSION_MAINTENANCE,
 )
 from .helpers.backup import async_get_backup_info
-from .helpers.id_naming import get_entity_id_format, get_id_id_naming_issues
+from .helpers.id_naming import get_entity_id_format, get_id_naming_issues
 from .helpers.system import (
     _snapshot_states,
     async_get_addons,
@@ -783,7 +783,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         # Registry access and ID regeneration must remain on the HA event loop.
-        id_naming_issues, id_naming_checked, id_naming_total = get_id_id_naming_issues(
+        id_naming_issues, id_naming_checked, id_naming_total = get_id_naming_issues(
             self.hass,
             entity_registry,
             excluded_entities=excluded_id_entities,
