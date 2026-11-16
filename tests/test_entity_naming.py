@@ -81,7 +81,7 @@ def test_entity_naming_applies_entity_domain_and_glob_exclusions() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked = get_entity_naming_issues(
+    issues, checked, total = get_entity_naming_issues(
         hass,
         registry,
         excluded_entities=["sensor.explicit"],
@@ -90,6 +90,7 @@ def test_entity_naming_applies_entity_domain_and_glob_exclusions() -> None:
     )
 
     assert checked == 1
+    assert total == 1
     assert issues == [
         {
             "entity_id": "sensor.checked",
