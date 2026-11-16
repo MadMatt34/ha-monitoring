@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from fnmatch import fnmatch
 
-from custom_components.ha_monitoring.const import MAX_SENSOR_LIST_ITEMS
+from ..const import MAX_SENSOR_LIST_ITEMS
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
