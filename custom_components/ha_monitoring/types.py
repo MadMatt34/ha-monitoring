@@ -163,6 +163,7 @@ class MonitoringEntityNamingData(TypedDict):
     items: list[EntityNamingData]
     total: int
     checked: int
+    entity_id_format: str
 
 
 class MonitoringOfflineData(TypedDict):
