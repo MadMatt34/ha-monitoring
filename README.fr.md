@@ -1,14 +1,14 @@
 # HA Monitoring - Intégration pour Home Assistant
 
+![HA Monitoring for Home Assistant](docs/logo_fr.png)
+
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-monitoring?color=green)](https://github.com/MadMatt34/ha-monitoring/releases)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
-[![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Integration-blue.svg)](https://www.home-assistant.io/)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Default-blue)](https://github.com/hacs/default)
 ![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&color=41BDF5&cacheSeconds=15600&url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.ha_monitoring.total)
 \
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
-
-![HA Monitoring for Home Assistant](docs/logo_fr.png)
 
 [❗ README in ENGLISH 🇬🇧 ❗](README.md)
 
@@ -29,7 +29,7 @@
   - 🔋 **Appareils alimentés par batterie :** Signaler ceux dont le niveau de batterie passe sous un seuil configurable.
   - ⚠️ **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
   - 📡 **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
-  - 🏷️ **Nommage des IDs d'entités :** Détecte les entités actives du registre dont l'ID actuel diffère de celui généré par le format de nommage configuré dans Home Assistant.
+  - 🏷️ **Nommage des IDs d'entités :** Détecte les entités dont l'ID actuel diffère de celui attendu par le format de nommage configuré dans Home Assistant.
 - 🏠 **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
 - 📣 **Événements de surveillance :** Déclenche des événements Home Assistant lorsqu'un des compteurs de surveillance augmente ou diminue, selon les options configurées.
 - ⏳ **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
@@ -90,8 +90,7 @@ Vous pouvez modifier les paramètres de surveillance, les événements et les li
       - Scripts,
       - Appareils,
       - Entités,
-      - Nommage des IDs d'entités (entités spécifiques, motifs génériques et domaines ; par défaut : `script`, `automation`, `scene`, `conversation`, `stt`, `tts` et `update`),
-      - Nommage des IDs d'entités (entités spécifiques, motifs génériques et domaines ; par défaut : `script`, `automation`, `scene`, `conversation`, `stt`, `tts` et `update`),
+      - Nommage des IDs d'entités,
       - Batteries.
     - **Événements de surveillance :** Activez indépendamment les événements lors de l'augmentation ou de la diminution de chacun des compteurs :
       - Applications,
@@ -140,11 +139,14 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 | `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre et liste de réparations en attente. |
 | `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre et liste de scripts ayant levé une erreur. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
-| `sensor.monitoring_id_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives du registre dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked` et `entity_id_format`. |
+| `sensor.monitoring_id_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked` et `entity_id_format`. |
 | `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
 
+> [!NOTE]
+> La liste `list` de chaque capteur de surveillance est limitée aux **100** premiers éléments. L'attribut `total` conserve toujours le nombre complet d'éléments détectés et `list_truncated` vaut `true` lorsque des éléments supplémentaires ne sont pas exposés (`false` dans le cas contraire).\
+> Cette limite s'applique à tous les capteurs de surveillance qui exposent une liste.
+
 > [!TIP]
-> Pour limiter la taille des attributs d'état, la liste `list` de chaque capteur de surveillance est limitée aux 100 premiers éléments. L'attribut `total` conserve toujours le nombre complet d'éléments détectés et `list_truncated` vaut `true` lorsque des éléments supplémentaires ne sont pas exposés (`false` dans le cas contraire). Cette limite s'applique à tous les capteurs de surveillance qui exposent une liste.\
 > Utilisez **Paramètres** → **Outils** → **Etats** pour explorer tous les attributs.\
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
@@ -196,7 +198,6 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 ### 🔎 Précisions sur certains capteurs et attributs
 
 - **Capteur Nommage des IDs d'entités :** Contrôle les entrées actives du registre avec le mécanisme natif de régénération de Home Assistant et le format d'ID courant. Les entités désactivées sont ignorées. Aucun ID n'est modifié. `checked` indique le nombre d'entités contrôlées. Les entités sans entrée dans le registre ne peuvent pas être évaluées. L'attribut `entity_id_format` affiche l'ordre effectif des éléments du format défini dans les paramètres Home Assistant, ou l'ordre par défaut si aucun format personnalisé n'est configuré.
-
 - **Capteur Sauvegarde :** Seule l'intégration `Backup` officielle est prise en compte ; son fonctionnement actuel ne permet pas d'avoir des messages d'échec explicites. L'état de sauvegarde en échec est perdu au redémarrage.
 - **Capteur Appareils hors ligne :** Le scan se base sur une entité de l'appareil, de type `sensor`, de classe `timestamp` avec un suffixe `last_seen` ou localisé, et son état est une date au format ISO *(ce qui est fait par Z-Wave, Zigbee2MQTT par exemple)*.
 - **Capteur Applications :** Le scan remonte les applications configurées avec les paramètres `Lancer au démarrage` et `Chien de garde` activés, et qui ne seraient pas démarrées.
@@ -215,7 +216,7 @@ Lorsqu'un appareil expose plusieurs capteurs de batterie, il n'est signalé qu'u
 - **Exclusion Applications :** Par nom convivial ou une partie, par nom technique ou une partie.
 - **Exclusions Intégrations :** Par nom convivial ou une partie, par nom technique ou une partie, par domaine, par ID ou une partie.
 - **Exclusions Réparations :** Par nom convivial ou une partie, par domaine, par ID ou une partie.
-- **Exclusions Entités :** Par nom convivial ou une partie, par ID ou une partie.
+- **Exclusions Entités et ID d'entités :** Par nom convivial ou une partie, par ID ou une partie.
 
 > [!NOTE]
 > ***Filtrage par partie (Globs) :***
@@ -410,6 +411,5 @@ Ce projet est sous **Licence MIT** ; voir le fichier [LICENSE](LICENSE) pour les
 
 ---
 
-\
 ***Avertissement***\
-*Cette intégration n'est pas officielle. Elle n'est ni affiliée à Home Assistant, ni approuvée ou prise en charge par Home Assistant.*
+*Cette intégration n'est pas officielle. Elle n'est ni affiliée à, ni approuvée, ou prise en charge par Home Assistant.*
