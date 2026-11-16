@@ -3,12 +3,12 @@
 from collections.abc import Sequence
 from fnmatch import fnmatch
 
+from custom_components.ha_monitoring.const import MAX_SENSOR_LIST_ITEMS
+
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
 from ..types import IdNamingData
-
-MAX_ID_NAMING_LIST_ITEMS = 100
 
 _DEFAULT_ENTITY_ID_PARTS = (
     EntityNamePart.AREA,
@@ -77,7 +77,7 @@ def get_id_naming_issues(
 
         if entry.entity_id != expected_entity_id:
             total += 1
-            if len(issues) < MAX_ID_NAMING_LIST_ITEMS:
+            if len(issues) < MAX_SENSOR_LIST_ITEMS:
                 issues.append(
                     {
                         "entity_id": entry.entity_id,
