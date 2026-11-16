@@ -36,9 +36,9 @@ CONF_EXCLUDED_OFFLINE = "excluded_offline"
 CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
 CONF_EXCLUDED_UNAVAILABLE_GLOBS = "excluded_unavailable_globs"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
-CONF_EXCLUDED_NAMING_ENTITIES = "excluded_naming_entities"
-CONF_EXCLUDED_NAMING_GLOBS = "excluded_naming_globs"
-CONF_EXCLUDED_NAMING_DOMAINS = "excluded_naming_domains"
+CONF_EXCLUDED_NAMING_ENTITIES = "excluded_id_entities"
+CONF_EXCLUDED_NAMING_GLOBS = "excluded_id_globs"
+CONF_EXCLUDED_NAMING_DOMAINS = "excluded_id_domains"
 CONF_EXCLUDED_BATTERIES = "excluded_batteries"
 
 # Options des événements de surveillance
@@ -68,7 +68,7 @@ EVENT_CHANGE_INCREASED = "increased"
 EVENT_CHANGE_DECREASED = "decreased"
 
 # Domaines indésirables masqués par défaut
-DEFAULT_EXCLUDED_NAMING_DOMAINS = [
+DEFAULT_EXCLUDED_ID_DOMAINS = [
     "script",
     "automation",
     "scene",
@@ -110,7 +110,7 @@ ICON_BACKUP = "mdi:backup-restore"
 ICON_REFRESH = "mdi:refresh"
 ICON_MAINTENANCE = "mdi:wrench-clock"
 ICON_BATTERY = "mdi:battery-alert"
-ICON_NAMING = "mdi:format-list-checks"
+ICON_ID_NAMING = "mdi:format-list-checks"
 
 # Identifiants uniques
 UNIQUE_ID_ADDONS = "monitoring_applications"
@@ -126,7 +126,7 @@ UNIQUE_ID_BACKUP = "monitoring_backup"
 UNIQUE_ID_REFRESH = "monitoring_force_scan"
 UNIQUE_ID_MAINTENANCE = "monitoring_maintenance"
 UNIQUE_ID_BATTERY = "monitoring_low_battery"
-UNIQUE_ID_NAMING = "monitoring_entity_naming"
+UNIQUE_ID_ID_NAMING = "monitoring_id_naming"
 
 # Clés de traduction
 TRANSLATION_KEY_ADDONS = "applications"
@@ -142,7 +142,7 @@ TRANSLATION_KEY_BACKUP = "backup"
 TRANSLATION_KEY_REFRESH = "force_scan"
 TRANSLATION_KEY_MAINTENANCE = "maintenance"
 TRANSLATION_KEY_BATTERY = "low_battery"
-TRANSLATION_KEY_NAMING = "entity_naming"
+TRANSLATION_KEY_ID_NAMING = "id_naming"
 
 # Suffixes utilisés pour la détection Hors-ligne
 DEFAULT_LAST_SEEN_SUFFIX = (
