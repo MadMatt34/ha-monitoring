@@ -783,7 +783,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         # Registry access and ID regeneration must remain on the HA event loop.
-        naming_issues, naming_checked = get_entity_naming_issues(
+        naming_issues, naming_checked, naming_total = get_entity_naming_issues(
             self.hass,
             entity_registry,
             excluded_entities=excluded_naming_entities,
@@ -895,7 +895,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             },
             "monitoring_entity_naming": {
                 "items": naming_issues,
-                "total": len(naming_issues),
+                "total": naming_total,
                 "checked": naming_checked,
                 "entity_id_format": entity_id_format,
             },
