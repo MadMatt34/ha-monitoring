@@ -55,7 +55,7 @@ from .const import (
     CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_BATTERY_LOW_THRESHOLD,
-    DEFAULT_EXCLUDED_NAMING_DOMAINS,
+    DEFAULT_EXCLUDED_ID_DOMAINS,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_LAST_SEEN_SUFFIX,
     DEFAULT_OFFLINE_TIMEOUT,
@@ -69,7 +69,7 @@ from .const import (
     STORAGE_VERSION_MAINTENANCE,
 )
 from .helpers.backup import async_get_backup_info
-from .helpers.entity_naming import get_entity_id_format, get_entity_naming_issues
+from .helpers.id_naming import get_entity_id_format, get_id_id_naming_issues
 from .helpers.system import (
     _snapshot_states,
     async_get_addons,
@@ -601,7 +601,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             results = self._empty_results(in_startup_delay=True)
 
             results["monitoring_backup"] = current_backup_info
-            results["monitoring_entity_naming"]["entity_id_format"] = entity_id_format
+            results["monitoring_id_naming"]["entity_id_format"] = entity_id_format
 
             results["maintenance_mode"] = self._maintenance_mode
 
@@ -693,7 +693,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     "items": [],
                     "total": 0,
                 },
-                "monitoring_entity_naming": {
+                "monitoring_id_naming": {
                     "items": [],
                     "total": 0,
                     "checked": 0,
@@ -732,12 +732,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             [],
         )
 
-        excluded_naming_entities = options.get(CONF_EXCLUDED_NAMING_ENTITIES, [])
-        excluded_naming_domains = options.get(
+        excluded_id_entities = options.get(CONF_EXCLUDED_NAMING_ENTITIES, [])
+        excluded_id_domains = options.get(
             CONF_EXCLUDED_NAMING_DOMAINS,
-            DEFAULT_EXCLUDED_NAMING_DOMAINS,
+            DEFAULT_EXCLUDED_ID_DOMAINS,
         )
-        excluded_naming_globs = options.get(CONF_EXCLUDED_NAMING_GLOBS, [])
+        excluded_id_globs = options.get(CONF_EXCLUDED_NAMING_GLOBS, [])
 
         last_seen_suffixes = self._get_last_seen_suffixes()
 
@@ -783,12 +783,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         # Registry access and ID regeneration must remain on the HA event loop.
-        naming_issues, naming_checked, naming_total = get_entity_naming_issues(
+        id_naming_issues, id_naming_checked, id_naming_total = get_id_id_naming_issues(
             self.hass,
             entity_registry,
-            excluded_entities=excluded_naming_entities,
-            excluded_domains=excluded_naming_domains,
-            excluded_globs=excluded_naming_globs,
+            excluded_entities=excluded_id_entities,
+            excluded_domains=excluded_id_domains,
+            excluded_globs=excluded_id_globs,
         )
 
         # ------------------------------------------------------------------
@@ -893,10 +893,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": unavailable,
                 "total": len(unavailable),
             },
-            "monitoring_entity_naming": {
-                "items": naming_issues,
-                "total": naming_total,
-                "checked": naming_checked,
+            "monitoring_id_naming": {
+                "items": id_naming_issues,
+                "total": id_naming_total,
+                "checked": id_naming_checked,
                 "entity_id_format": entity_id_format,
             },
             "monitoring_offline": {
@@ -964,7 +964,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": [],
                 "total": 0,
             },
-            "monitoring_entity_naming": {
+            "monitoring_id_naming": {
                 "items": [],
                 "total": 0,
                 "checked": 0,
