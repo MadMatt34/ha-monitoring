@@ -8,6 +8,8 @@ from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
 from ..types import EntityNamingData
 
+MAX_ENTITY_NAMING_LIST_ITEMS = 100
+
 _DEFAULT_ENTITY_ID_PARTS = (
     EntityNamePart.AREA,
     EntityNamePart.PARENT_DEVICE,
@@ -43,6 +45,7 @@ def get_entity_naming_issues(
 
     reserved_entity_ids: set[str] = set()
     issues: list[EntityNamingData] = []
+    total = 0
     checked = 0
 
     for entry in sorted(registry.entities.values(), key=lambda item: item.entity_id):
@@ -73,11 +76,13 @@ def get_entity_naming_issues(
         reserved_entity_ids.add(expected_entity_id)
 
         if entry.entity_id != expected_entity_id:
-            issues.append(
-                {
-                    "entity_id": entry.entity_id,
-                    "expected_entity_id": expected_entity_id,
-                }
-            )
+            total += 1
+            if len(issues) < MAX_ENTITY_NAMING_LIST_ITEMS:
+                issues.append(
+                    {
+                        "entity_id": entry.entity_id,
+                        "expected_entity_id": expected_entity_id,
+                    }
+                )
 
-    return issues, checked
+    return issues, checked, total
