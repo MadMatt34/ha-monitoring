@@ -697,7 +697,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     "items": [],
                     "total": 0,
                     "checked": 0,
-                    "entity_id_format": "",
+                    "entity_id_format": entity_id_format,
                 },
                 "monitoring_offline": {
                     "items": [],
