@@ -472,9 +472,7 @@ def get_exclusions_schema(
                             selector.EntitySelectorConfig(
                                 multiple=True,
                                 filter=(
-                                    selector.EntityFilterSelectorConfig(
-                                        domain=allowed_id_domains
-                                    )
+                                    selector.EntityFilterSelectorConfig(domain=allowed_id_domains)
                                     if allowed_id_domains
                                     else None
                                 ),
