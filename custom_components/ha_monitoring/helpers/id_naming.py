@@ -24,7 +24,7 @@ def get_entity_id_format(registry: EntityRegistry) -> str:
     return " > ".join(part.value for part in parts)
 
 
-def get_id_id_naming_issues(
+def get_id_naming_issues(
     hass: HomeAssistant,
     registry: EntityRegistry,
     *,
