@@ -8,6 +8,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    ATTR_CHECKED,
     ATTR_LIST,
     ATTR_MAINTENANCE,
     ATTR_STARTUP_DELAY,
@@ -148,7 +149,7 @@ async def async_setup_entry(
             translation_key=TRANSLATION_KEY_NAMING,
             icon=ICON_NAMING,
             extra_attributes=lambda data: {
-                "checked": data["checked"],
+                ATTR_CHECKED: data["checked"],
             },
         ),
         HAMonitoringGenericSensor(
