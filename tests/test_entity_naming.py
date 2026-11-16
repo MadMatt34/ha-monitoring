@@ -5,9 +5,9 @@ from unittest.mock import Mock
 
 from homeassistant.helpers.entity_registry import EntityNamePart
 
-from custom_components.ha_monitoring.helpers.entity_naming import (
+from custom_components.ha_monitoring.helpers.id_naming import (
     get_entity_id_format,
-    get_entity_naming_issues,
+    get_id_naming_issues,
 )
 
 
@@ -28,7 +28,7 @@ def _entry(
     )
 
 
-def test_entity_naming_uses_native_generator_and_skips_disabled() -> None:
+def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
     """Only enabled registry entries are checked using the HA generator."""
     first = _entry("sensor.old_name", "sensor.area_temperature")
     disabled = _entry("sensor.disabled", "sensor.expected", disabled=True)
@@ -43,7 +43,7 @@ def test_entity_naming_uses_native_generator_and_skips_disabled() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked, total = get_entity_naming_issues(
+    issues, checked, total = get_id_naming_issues(
         hass,
         registry,
         excluded_entities=[],
@@ -65,7 +65,7 @@ def test_entity_naming_uses_native_generator_and_skips_disabled() -> None:
     )
 
 
-def test_entity_naming_applies_entity_domain_and_glob_exclusions() -> None:
+def test_id_naming_applies_entity_domain_and_glob_exclusions() -> None:
     """Configured entity, domain and wildcard exclusions are applied."""
     entries = [
         _entry("sensor.explicit", "sensor.expected"),
@@ -81,7 +81,7 @@ def test_entity_naming_applies_entity_domain_and_glob_exclusions() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked, total = get_entity_naming_issues(
+    issues, checked, total = get_id_naming_issues(
         hass,
         registry,
         excluded_entities=["sensor.explicit"],
@@ -122,7 +122,7 @@ def test_entity_id_format_uses_configured_order() -> None:
     assert get_entity_id_format(registry) == "floor > area > device > entity"
 
 
-def test_entity_naming_limits_list_but_counts_all_issues() -> None:
+def test_id_naming_limits_list_but_counts_all_issues() -> None:
     """Only the first 100 issues are retained while the total stays accurate."""
     entries = [_entry(f"sensor.old_{index:03}", f"sensor.new_{index:03}") for index in range(105)]
     registry = Mock()
@@ -133,7 +133,7 @@ def test_entity_naming_limits_list_but_counts_all_issues() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked, total = get_entity_naming_issues(
+    issues, checked, total = get_id_naming_issues(
         hass,
         registry,
         excluded_entities=[],
