@@ -134,6 +134,15 @@
             "data": {
               "excluded_batteries": "Capteurs de batterie à exclure"
             }
+          },
+          "section_exclusions_naming": {
+            "name": "🏷️ Exclusions du nommage des IDs",
+            "description": "Ignorer des entités spécifiques, des IDs ou noms correspondant à des motifs, ou des domaines complets.",
+            "data": {
+              "excluded_naming_domains": "Domaines à exclure",
+              "excluded_naming_globs": "Noms ou IDs correspondant à ces motifs à exclure",
+              "excluded_naming_entities": "Entités à exclure"
+            }
           }
         }
       },
@@ -203,6 +212,9 @@
       },
       "low_battery": {
         "name": "Monitoring Batteries faibles"
+      },
+      "id_naming": {
+        "name": "Monitoring Nommage des IDs"
       }
     },
     "binary_sensor": {

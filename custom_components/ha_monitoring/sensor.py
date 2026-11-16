@@ -8,7 +8,10 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
+    ATTR_CHECKED,
+    ATTR_ENTITY_ID_FORMAT,
     ATTR_LIST,
+    ATTR_LIST_TRUNCATED,
     ATTR_MAINTENANCE,
     ATTR_STARTUP_DELAY,
     ATTR_THRESHOLD,
@@ -16,15 +19,18 @@ from .const import (
     ICON_ADDONS,
     ICON_AUTOMATIONS,
     ICON_BATTERY,
+    ICON_ID_NAMING,
     ICON_INTEGRATIONS,
     ICON_OFFLINE,
     ICON_REPAIRS,
     ICON_SCRIPTS,
     ICON_UNAVAILABLE,
     ICON_UPDATES,
+    MAX_SENSOR_LIST_ITEMS,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_AUTOMATIONS,
     TRANSLATION_KEY_BATTERY,
+    TRANSLATION_KEY_ID_NAMING,
     TRANSLATION_KEY_INTEGRATIONS,
     TRANSLATION_KEY_OFFLINE,
     TRANSLATION_KEY_REPAIRS,
@@ -34,6 +40,7 @@ from .const import (
     UNIQUE_ID_ADDONS,
     UNIQUE_ID_AUTOMATIONS,
     UNIQUE_ID_BATTERY,
+    UNIQUE_ID_ID_NAMING,
     UNIQUE_ID_INTEGRATIONS,
     UNIQUE_ID_OFFLINE,
     UNIQUE_ID_REPAIRS,
@@ -50,6 +57,7 @@ from .types import (
     HAMonitoringData,
     MonitoringAddonData,
     MonitoringBatteryData,
+    MonitoringIdNamingData,
     MonitoringIntegrationData,
     MonitoringOfflineData,
     MonitoringRepairData,
@@ -58,6 +66,18 @@ from .types import (
     MonitoringUpdateData,
 )
 
+
+def _get_list_attributes[T](
+    items: list[T],
+    total: int,
+    *,
+    maintenance: bool,
+) -> tuple[list[T], bool]:
+    """Return the bounded list and whether any items were omitted."""
+    visible_items = [] if maintenance else items[:MAX_SENSOR_LIST_ITEMS]
+    return visible_items, not maintenance and total > len(visible_items)
+
+
 type SensorData = (
     MonitoringAddonData
     | MonitoringIntegrationData
@@ -65,6 +85,7 @@ type SensorData = (
     | MonitoringUpdateData
     | MonitoringRepairData
     | MonitoringUnavailableData
+    | MonitoringIdNamingData
     | MonitoringOfflineData
     | MonitoringBatteryData
 )
@@ -134,6 +155,18 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_UNAVAILABLE,
             translation_key=TRANSLATION_KEY_UNAVAILABLE,
             icon=ICON_UNAVAILABLE,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator=coordinator,
+            entry=entry,
+            data_getter=lambda data: data["monitoring_id_naming"],
+            unique_key=UNIQUE_ID_ID_NAMING,
+            translation_key=TRANSLATION_KEY_ID_NAMING,
+            icon=ICON_ID_NAMING,
+            extra_attributes=lambda data: {
+                ATTR_CHECKED: data["checked"],
+                ATTR_ENTITY_ID_FORMAT: data["entity_id_format"],
+            },
         ),
         HAMonitoringGenericSensor(
             coordinator=coordinator,
@@ -217,8 +250,14 @@ class HAMonitoringGenericSensor[T: SensorData](
         data = self._sensor_data
         maintenance = self.coordinator.maintenance_mode
 
+        items, list_truncated = _get_list_attributes(
+            data["items"],
+            data["total"],
+            maintenance=maintenance,
+        )
         attributes: dict[str, object] = {
-            ATTR_LIST: ([] if maintenance else data["items"]),
+            ATTR_LIST: items,
+            ATTR_LIST_TRUNCATED: list_truncated,
             ATTR_TOTAL: (0 if maintenance else data["total"]),
             ATTR_STARTUP_DELAY: (self.coordinator.data["startup_delay"]),
             ATTR_MAINTENANCE: maintenance,

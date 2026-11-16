@@ -1,14 +1,14 @@
 # HA Monitoring - Home Assistant Integration
 
+![HA Monitoring for Home Assistant](docs/logo_en.png)
+
 [![Latest Release](https://img.shields.io/github/v/release/MadMatt34/ha-monitoring?color=green)](https://github.com/MadMatt34/ha-monitoring/releases)
-[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-blue.svg)](https://www.home-assistant.io/)
-[![HACS](https://img.shields.io/badge/HACS-Default-blue)](https://github.com/hacs/default)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Integration-blue.svg)](https://www.home-assistant.io/)
+[![Marketplace](https://img.shields.io/badge/Marketplace-Default-blue)](https://github.com/hacs/default)
 ![Installs](https://img.shields.io/badge/dynamic/json?label=Installations&color=41BDF5&cacheSeconds=15600&url=https%3A%2F%2Fanalytics.home-assistant.io%2Fcustom_integrations.json&query=%24.ha_monitoring.total)
 \
 [![HACS Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hacs.yml)
 [![Hassfest Check](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml/badge.svg)](https://github.com/MadMatt34/ha-monitoring/actions/workflows/hassfest.yml)
-
-![HA Monitoring for Home Assistant](docs/logo_en.png)
 
 [❗ README en FRANÇAIS 🇫🇷 ❗](README.fr.md)
 
@@ -29,6 +29,7 @@
   - 🔋 **Battery-powered devices:** Report devices whose battery level falls below a configurable threshold.
   - ⚠️ **Automation & Script Traces:** Detection of execution errors.
   - 📡 **Entities & Devices:** Tracking of `unavailable` entities and `offline` devices.
+  - 🏷️ **ID naming:** Detects entities whose current IDs differ from the IDs expected by Home Assistant's configured naming format.
 - 🏠 **Centralized Device ("Home Assistant"):** All entities (sensors, buttons, binary sensors) are grouped under a single device card displaying the current HA Core version along with a direct link to your instance.
 - 📣 **Monitoring events:** Triggers Home Assistant events whenever one of the monitoring counters increases or decreases, according to the configured options.
 - ⏳ **Startup Grace Period:** Prevents false alarms during Home Assistant's boot sequence.
@@ -89,16 +90,17 @@ You can adjust monitoring settings, events, and exclusion lists at any time:
       - Automations,
       - Scripts,
       - Devices,
-      - Entities.
+      - Entities,
+      - ID naming.
     - **Monitoring events**: Independently enable events when any of the counters increase or decrease:
-      - Applications
-      - Integrations
-      - Automations
-      - Scripts
-      - Updates
-      - Repairs
-      - Unavailable entities
-      - Offline devices
+      - Applications,
+      - Integrations,
+      - Automations,
+      - Scripts,
+      - Updates,
+      - Repairs,
+      - Unavailable entities,
+      - Offline devices.
 
 > [!IMPORTANT]
 > Don't forget to click **Save & Finish** to apply the changes.
@@ -136,10 +138,13 @@ Fired instantaneously as soon as counter increase or decrease, regarding selecte
 | `sensor.monitoring_repairs` | Monitoring Pending Repairs | Count and list of active repair issues. |
 | `sensor.monitoring_scripts` | Monitoring Failed Scripts | Count and list of scripts that threw an error. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Unavailable Entities | Count and list of currently unavailable entities. |
+| `sensor.monitoring_id_naming` | Monitoring ID Naming | Count and list of enabled entities whose current IDs differ from Home Assistant's expected IDs; includes the `checked` and `entity_id_format` attributes. |
 | `sensor.monitoring_updates` | Monitoring Pending Updates | Count and list of pending updates. |
 
+> [!NOTE]
+> Every monitoring sensor that exposes a `list` attribute is limited to the first **100** items. The `total` attribute always retains the full number of detected items, and `list_truncated` is `true` when additional items are omitted (`false` otherwise).
+
 > [!TIP]
-> Each entity contains a list attribute detailing the items detected.\
 > Use **Settings** → **Tools** → **States** to explore all attributes.\
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
@@ -190,6 +195,7 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 ### 🔎 Specific Sensor & Attribute Notes
 
+- **Entity ID Naming Sensor:** Checks active registry entries using Home Assistant's native ID regeneration mechanism and the current entity ID format. Disabled entities are ignored. No IDs are modified. `checked` indicates the number of entities checked. Entities without a registry entry cannot be evaluated. The `entity_id_format` attribute displays the effective order of the format elements defined in Home Assistant settings, or the default order if no custom format is configured.
 - **Backup Sensor:** Only the official `Backup` integration is taken into account; its current implementation does not provide explicit failure messages. The backup failure state is lost after a restart.
 - **Offline Devices Sensor:** The scan relies on a device entity of type `sensor`, with the `timestamp` device class, an `last_seen` or localized suffix, and whose state is an ISO-formatted date *(which is handled by Z-Wave or Zigbee2MQTT, for example)*.
 - **Applications Sensor:** The scan reports applications configured with both `Start on boot` and `Watchdog` enabled that are not currently started.
@@ -208,7 +214,7 @@ When a device exposes multiple battery sensors, the device is reported once usin
 - **Applications Exclusions:** By friendly name or part of it, by technical name or part of it.
 - **Intégrations Exclusions:** By friendly name or part of it, by technical name or part of it, by domain, by ID or part of it.
 - **Repairs Exclusions:** By friendly name or part of it, by domain, by ID or part of it.
-- **Entities Exclusions:** By friendly name or part of it, by ID or part of it.
+- **Entities and Entities ID Exclusions:** By friendly name or part of it, by ID or part of it.
 
 > [!NOTE]
 > ***Partial matching (globs):***
@@ -402,6 +408,5 @@ This project is under the **MIT License**; see the [LICENSE](LICENSE) file for d
 
 ---
 
-\
 ***Disclaimer***\
 *This is an unofficial integration and is not affiliated with, endorsed by, or supported by Home Assistant.*

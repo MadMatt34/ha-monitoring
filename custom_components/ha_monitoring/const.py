@@ -36,6 +36,9 @@ CONF_EXCLUDED_OFFLINE = "excluded_offline"
 CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
 CONF_EXCLUDED_UNAVAILABLE_GLOBS = "excluded_unavailable_globs"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
+CONF_EXCLUDED_NAMING_ENTITIES = "excluded_naming_entities"
+CONF_EXCLUDED_NAMING_GLOBS = "excluded_naming_globs"
+CONF_EXCLUDED_NAMING_DOMAINS = "excluded_naming_domains"
 CONF_EXCLUDED_BATTERIES = "excluded_batteries"
 
 # Options des événements de surveillance
@@ -65,6 +68,16 @@ EVENT_CHANGE_INCREASED = "increased"
 EVENT_CHANGE_DECREASED = "decreased"
 
 # Domaines indésirables masqués par défaut
+DEFAULT_EXCLUDED_ID_DOMAINS = [
+    "script",
+    "automation",
+    "scene",
+    "conversation",
+    "stt",
+    "tts",
+    "update",
+]
+
 DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS = [
     "assist_satellite",
     "automation",
@@ -97,6 +110,7 @@ ICON_BACKUP = "mdi:backup-restore"
 ICON_REFRESH = "mdi:refresh"
 ICON_MAINTENANCE = "mdi:wrench-clock"
 ICON_BATTERY = "mdi:battery-alert"
+ICON_ID_NAMING = "mdi:format-list-checks"
 
 # Identifiants uniques
 UNIQUE_ID_ADDONS = "monitoring_applications"
@@ -112,6 +126,7 @@ UNIQUE_ID_BACKUP = "monitoring_backup"
 UNIQUE_ID_REFRESH = "monitoring_force_scan"
 UNIQUE_ID_MAINTENANCE = "monitoring_maintenance"
 UNIQUE_ID_BATTERY = "monitoring_low_battery"
+UNIQUE_ID_ID_NAMING = "monitoring_id_naming"
 
 # Clés de traduction
 TRANSLATION_KEY_ADDONS = "applications"
@@ -127,6 +142,7 @@ TRANSLATION_KEY_BACKUP = "backup"
 TRANSLATION_KEY_REFRESH = "force_scan"
 TRANSLATION_KEY_MAINTENANCE = "maintenance"
 TRANSLATION_KEY_BATTERY = "low_battery"
+TRANSLATION_KEY_ID_NAMING = "id_naming"
 
 # Suffixes utilisés pour la détection Hors-ligne
 DEFAULT_LAST_SEEN_SUFFIX = (
@@ -143,6 +159,9 @@ LOCALIZED_LAST_SEEN_SUFFIX: dict[str, str] = {
     "de": "letztes_gesehen",
 }
 
+# Limite commune des listes exposées dans les attributs des capteurs
+MAX_SENSOR_LIST_ITEMS = 100
+
 # Attributs
 ATTR_STARTUP_DELAY = "startup_delay"
 ATTR_DATE_LAST_RUN = "date_last_run"
@@ -154,6 +173,9 @@ ATTR_TOTAL = "total"
 ATTR_LIST = "list"
 ATTR_MAINTENANCE = "maintenance"
 ATTR_THRESHOLD = "threshold"
+ATTR_CHECKED = "checked"
+ATTR_ENTITY_ID_FORMAT = "entity_id_format"
+ATTR_LIST_TRUNCATED = "list_truncated"
 
 # Persistance
 STORAGE_KEY_MAINTENANCE = f"{DOMAIN}.maintenance_mode"

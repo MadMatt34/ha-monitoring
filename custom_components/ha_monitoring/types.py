@@ -61,6 +61,13 @@ class UnavailableEntityData(TypedDict):
     state: str
 
 
+class IdNamingData(TypedDict):
+    """Entité dont l'ID diffère de celui généré par Home Assistant."""
+
+    entity_id: str
+    expected_entity_id: str
+
+
 class OfflineDeviceData(TypedDict):
     """Structure d'un appareil hors ligne."""
 
@@ -150,6 +157,15 @@ class MonitoringUnavailableData(TypedDict):
     total: int
 
 
+class MonitoringIdNamingData(TypedDict):
+    """Données du capteur de conformité du nommage des entités."""
+
+    items: list[IdNamingData]
+    total: int
+    checked: int
+    entity_id_format: str
+
+
 class MonitoringOfflineData(TypedDict):
     """Données du capteur des appareils hors ligne."""
 
@@ -179,6 +195,7 @@ class HAMonitoringData(TypedDict):
     monitoring_updates: MonitoringUpdateData
     monitoring_repairs: MonitoringRepairData
     monitoring_unavailable: MonitoringUnavailableData
+    monitoring_id_naming: MonitoringIdNamingData
     monitoring_offline: MonitoringOfflineData
     monitoring_battery: MonitoringBatteryData
     monitoring_backup: MonitoringBackupData
