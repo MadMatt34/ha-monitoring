@@ -136,7 +136,7 @@
             }
           },
           "section_exclusions_naming": {
-            "name": "🏷️ Exclusions du nommage des entités",
+            "name": "🏷️ Exclusions du nommage des IDs",
             "description": "Ignorer des entités spécifiques, des IDs ou noms correspondant à des motifs, ou des domaines complets.",
             "data": {
               "excluded_naming_domains": "Domaines à exclure",
@@ -214,7 +214,7 @@
         "name": "Monitoring Batteries faibles"
       },
       "id_naming": {
-        "name": "Monitoring Nommage des IDs d'entités"
+        "name": "Monitoring Nommage des IDs"
       }
     },
     "binary_sensor": {
