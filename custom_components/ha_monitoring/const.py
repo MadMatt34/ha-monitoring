@@ -170,6 +170,7 @@ ATTR_TOTAL = "total"
 ATTR_LIST = "list"
 ATTR_MAINTENANCE = "maintenance"
 ATTR_THRESHOLD = "threshold"
+ATTR_CHECKED = "checked"
 
 # Persistance
 STORAGE_KEY_MAINTENANCE = f"{DOMAIN}.maintenance_mode"
