@@ -49,7 +49,7 @@ from .const import (
     CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_BATTERY_LOW_THRESHOLD,
-    DEFAULT_EXCLUDED_NAMING_DOMAINS,
+    DEFAULT_EXCLUDED_ID_DOMAINS,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
@@ -300,14 +300,14 @@ def get_exclusions_schema(
     domain_options = sorted(all_domains)
     allowed_domains = sorted(all_domains - set(current_excluded_domains))
 
-    current_excluded_naming_domains = options.get(
+    current_excluded_id_domains = options.get(
         CONF_EXCLUDED_NAMING_DOMAINS,
-        DEFAULT_EXCLUDED_NAMING_DOMAINS,
+        DEFAULT_EXCLUDED_ID_DOMAINS,
     )
     naming_domain_options = sorted(
-        all_domains | set(DEFAULT_EXCLUDED_NAMING_DOMAINS) | set(current_excluded_naming_domains)
+        all_domains | set(DEFAULT_EXCLUDED_ID_DOMAINS) | set(current_excluded_id_domains)
     )
-    allowed_naming_domains = sorted(all_domains - set(current_excluded_naming_domains))
+    allowed_id_domains = sorted(all_domains - set(current_excluded_id_domains))
 
     return vol.Schema(
         {
@@ -446,7 +446,7 @@ def get_exclusions_schema(
                     {
                         vol.Optional(
                             CONF_EXCLUDED_NAMING_DOMAINS,
-                            default=current_excluded_naming_domains,
+                            default=current_excluded_id_domains,
                         ): selector.SelectSelector(
                             selector.SelectSelectorConfig(
                                 options=naming_domain_options,
@@ -473,9 +473,9 @@ def get_exclusions_schema(
                                 multiple=True,
                                 filter=(
                                     selector.EntityFilterSelectorConfig(
-                                        domain=allowed_naming_domains
+                                        domain=allowed_id_domains
                                     )
-                                    if allowed_naming_domains
+                                    if allowed_id_domains
                                     else None
                                 ),
                             )
