@@ -159,6 +159,9 @@ LOCALIZED_LAST_SEEN_SUFFIX: dict[str, str] = {
     "de": "letztes_gesehen",
 }
 
+# Limite commune des listes exposées dans les attributs des capteurs
+MAX_SENSOR_LIST_ITEMS = 100
+
 # Attributs
 ATTR_STARTUP_DELAY = "startup_delay"
 ATTR_DATE_LAST_RUN = "date_last_run"
