@@ -43,7 +43,7 @@ def test_entity_naming_uses_native_generator_and_skips_disabled() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked = get_entity_naming_issues(
+    issues, checked, total = get_entity_naming_issues(
         hass,
         registry,
         excluded_entities=[],
@@ -58,6 +58,7 @@ def test_entity_naming_uses_native_generator_and_skips_disabled() -> None:
         }
     ]
     assert checked == 1
+    assert total == 1
     registry.async_regenerate_entity_id.assert_called_once_with(
         first,
         reserved_entity_ids={"sensor.area_temperature"},
@@ -118,3 +119,31 @@ def test_entity_id_format_uses_configured_order() -> None:
     )
 
     assert get_entity_id_format(registry) == "floor > area > device > entity"
+
+
+
+def test_entity_naming_limits_list_but_counts_all_issues() -> None:
+    """Only the first 100 issues are retained while the total stays accurate."""
+    entries = [
+        _entry(f"sensor.old_{index:03}", f"sensor.new_{index:03}")
+        for index in range(105)
+    ]
+    registry = Mock()
+    registry.entities = {entry.entity_id: entry for entry in entries}
+    registry.async_regenerate_entity_id.side_effect = lambda entry, *, reserved_entity_ids: (
+        entry.expected_entity_id
+    )
+    hass = Mock()
+    hass.states.get.return_value = None
+
+    issues, checked, total = get_entity_naming_issues(
+        hass,
+        registry,
+        excluded_entities=[],
+        excluded_domains=[],
+        excluded_globs=[],
+    )
+
+    assert checked == 105
+    assert total == 105
+    assert len(issues) == 100
