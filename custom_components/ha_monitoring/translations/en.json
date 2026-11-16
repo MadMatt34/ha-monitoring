@@ -136,12 +136,12 @@
             }
           },
           "section_exclusions_naming": {
-            "name": "🏷️ Entity ID Naming Exclusions",
+            "name": "🏷️ ID Naming Exclusions",
             "description": "Ignore specific entities, matching IDs or names with wildcards, or entire domains.",
             "data": {
-              "excluded_naming_domains": "Domains to exclude",
-              "excluded_naming_globs": "Names or IDs matching these patterns to exclude",
-              "excluded_naming_entities": "Entities to exclude"
+              "excluded_id_domains": "Domains to exclude",
+              "excluded_id_globs": "Names or IDs matching these patterns to exclude",
+              "excluded_id_entities": "Entities to exclude"
             }
           }
         }
@@ -213,8 +213,8 @@
       "low_battery": {
         "name": "Monitoring Low Battery"
       },
-      "entity_naming": {
-        "name": "Monitoring Entity ID Naming"
+      "id_naming": {
+        "name": "Monitoring ID Naming"
       }
     },
     "binary_sensor": {
