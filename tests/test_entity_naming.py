@@ -3,11 +3,12 @@
 from types import SimpleNamespace
 from unittest.mock import Mock
 
+from homeassistant.helpers.entity_registry import EntityNamePart
+
 from custom_components.ha_monitoring.helpers.entity_naming import (
     get_entity_id_format,
     get_entity_naming_issues,
 )
-from homeassistant.helpers.entity_registry import EntityNamePart
 
 
 def _entry(
@@ -94,7 +95,6 @@ def test_entity_naming_applies_entity_domain_and_glob_exclusions() -> None:
             "expected_entity_id": "sensor.expected_checked",
         }
     ]
-
 
 
 def test_entity_id_format_uses_home_assistant_default() -> None:
