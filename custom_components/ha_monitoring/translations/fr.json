@@ -213,7 +213,7 @@
       "low_battery": {
         "name": "Monitoring Batteries faibles"
       },
-      "entity_naming": {
+      "id_naming": {
         "name": "Monitoring Nommage des IDs d'entités"
       }
     },
