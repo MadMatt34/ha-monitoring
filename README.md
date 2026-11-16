@@ -144,7 +144,7 @@ Fired instantaneously as soon as counter increase or decrease, regarding selecte
 - **ID Naming Sensor:** Checks enabled entity-registry entries using Home Assistant's native ID regeneration logic and the current Entity ID format. Disabled entities are ignored. It never changes entity IDs. `checked` is the number of eligible entities examined. Entities without an entity-registry entry cannot be evaluated. The `entity_id_format` attribute displays the effective order of parts from Home Assistant's Entity ID format settings (or the default order when no custom format is configured).
 
 > [!TIP]
-> Each entity contains a list attribute detailing the items detected.\
+> Every monitoring sensor that exposes a `list` attribute is limited to the first 100 items to keep state attributes small. The `total` attribute always retains the full number of detected items, and `list_truncated` is `true` when additional items are omitted (`false` otherwise).\
 > Use **Settings** → **Tools** → **States** to explore all attributes.\
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
