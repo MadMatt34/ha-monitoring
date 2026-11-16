@@ -140,7 +140,7 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 | `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre et liste de réparations en attente. |
 | `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre et liste de scripts ayant levé une erreur. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
-| `sensor.monitoring_entity_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives du registre dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked` et `entity_id_format`. |
+| `sensor.monitoring_id_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives du registre dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked` et `entity_id_format`. |
 | `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
 
 > [!TIP]
