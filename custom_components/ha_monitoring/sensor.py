@@ -26,6 +26,7 @@ from .const import (
     ICON_SCRIPTS,
     ICON_UNAVAILABLE,
     ICON_UPDATES,
+    MAX_SENSOR_LIST_ITEMS,
     TRANSLATION_KEY_ADDONS,
     TRANSLATION_KEY_AUTOMATIONS,
     TRANSLATION_KEY_BATTERY,
@@ -150,11 +151,9 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_ID_NAMING,
             translation_key=TRANSLATION_KEY_ID_NAMING,
             icon=ICON_ID_NAMING,
-            list_limit=100,
             extra_attributes=lambda data: {
                 ATTR_CHECKED: data["checked"],
                 ATTR_ENTITY_ID_FORMAT: data["entity_id_format"],
-                ATTR_LIST_TRUNCATED: data["total"] > len(data["items"]),
             },
         ),
         HAMonitoringGenericSensor(
@@ -203,14 +202,12 @@ class HAMonitoringGenericSensor[T: SensorData](
             dict[str, object],
         ]
         | None = None,
-        list_limit: int | None = None,
     ) -> None:
         """Initialise le capteur générique."""
         super().__init__(coordinator)
 
         self._data_getter = data_getter
         self._extra_attributes_getter = extra_attributes
-        self._list_limit = list_limit
 
         self._attr_translation_key = translation_key
         self._attr_icon = icon
@@ -241,14 +238,10 @@ class HAMonitoringGenericSensor[T: SensorData](
         data = self._sensor_data
         maintenance = self.coordinator.maintenance_mode
 
+        items = [] if maintenance else data["items"][:MAX_SENSOR_LIST_ITEMS]
         attributes: dict[str, object] = {
-            ATTR_LIST: (
-                []
-                if maintenance
-                else data["items"][: self._list_limit]
-                if self._list_limit is not None
-                else data["items"]
-            ),
+            ATTR_LIST: items,
+            ATTR_LIST_TRUNCATED: not maintenance and data["total"] > len(items),
             ATTR_TOTAL: (0 if maintenance else data["total"]),
             ATTR_STARTUP_DELAY: (self.coordinator.data["startup_delay"]),
             ATTR_MAINTENANCE: maintenance,
