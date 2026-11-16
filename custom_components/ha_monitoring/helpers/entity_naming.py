@@ -31,7 +31,7 @@ def get_entity_naming_issues(
     excluded_entities: Sequence[str],
     excluded_domains: Sequence[str],
     excluded_globs: Sequence[str],
-) -> tuple[list[EntityNamingData], int]:
+) -> tuple[list[EntityNamingData], int, int]:
     """Return enabled registry entries whose IDs differ from HA's generated IDs.
 
     Home Assistant's registry generator is the source of truth. The reserved set
