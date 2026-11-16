@@ -144,7 +144,7 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 | `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
 
 > [!TIP]
-> Chaque entité contient des attributs listant les éléments détectés.\
+> Pour limiter la taille des attributs d'état, la liste `list` de chaque capteur de surveillance est limitée aux 100 premiers éléments. L'attribut `total` conserve toujours le nombre complet d'éléments détectés et `list_truncated` vaut `true` lorsque des éléments supplémentaires ne sont pas exposés (`false` dans le cas contraire). Cette limite s'applique à tous les capteurs de surveillance qui exposent une liste.\
 > Utilisez **Paramètres** → **Outils** → **Etats** pour explorer tous les attributs.\
 > [![Open your Home Assistant instance and show your state tools.](https://my.home-assistant.io/badges/tools_states.svg)](https://my.home-assistant.io/redirect/tools_states/)
 
