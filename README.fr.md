@@ -30,7 +30,6 @@
   - ⚠️ **Traces d'Automatisations et de Scripts :** Détection des erreurs d'exécution.
   - 📡 **Entités & Appareils :** Suivi des entités indisponibles (`unavailable`) et des appareils hors ligne (`offline`).
   - 🏷️ **Nommage des IDs d'entités :** Détecte les entités actives du registre dont l'ID actuel diffère de celui généré par le format de nommage configuré dans Home Assistant.
-  - 🏷️ **Nommage des IDs d'entités :** Détecte les entités actives du registre dont l'ID actuel diffère de celui généré par le format de nommage configuré dans Home Assistant.
 - 🏠 **Appareil centralisé ("Home Assistant") :** Toutes les entités (capteurs, boutons, binaires) sont regroupées sous une seule fiche d'appareil qui affiche la version actuelle de HA Core ainsi qu'un lien direct vers votre instance.
 - 📣 **Événements de surveillance :** Déclenche des événements Home Assistant lorsqu'un des compteurs de surveillance augmente ou diminue, selon les options configurées.
 - ⏳ **Temporisation au démarrage :** Évite les fausses alertes pendant le chargement initial de Home Assistant.
@@ -141,8 +140,7 @@ Toutes les entités sont rattachées à l'appareil **Home Assistant** :
 | `sensor.monitoring_repairs` | Monitoring Réparations en attente | Nombre et liste de réparations en attente. |
 | `sensor.monitoring_scripts` | Monitoring Scripts en erreur | Nombre et liste de scripts ayant levé une erreur. |
 | `sensor.monitoring_unavailable_entities` | Monitoring Entités indisponibles | Nombre et liste des entités actuellement indisponibles. |
-| `sensor.monitoring_entity_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives du registre dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked`. |
-| `sensor.monitoring_entity_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives du registre dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked`. |
+| `sensor.monitoring_entity_naming` | Monitoring Nommage des IDs d'entités | Nombre et liste des entités actives du registre dont l'ID diffère de celui attendu ; expose aussi l'attribut `checked` et `entity_id_format`. |
 | `sensor.monitoring_updates` | Monitoring Mises à jour en attente | Nombre et liste de mises à jour en attente. |
 
 > [!TIP]
@@ -197,9 +195,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 
 ### 🔎 Précisions sur certains capteurs et attributs
 
-- **Capteur Nommage des IDs d'entités :** Contrôle les entrées actives du registre avec le mécanisme natif de régénération de Home Assistant et le format d'ID courant. Les entités désactivées sont ignorées. Aucun ID n'est modifié. L'attribut `list` contient `entity_id` et `expected_entity_id` ; `checked` indique le nombre d'entités contrôlées. Les entités sans entrée dans le registre ne peuvent pas être évaluées.
-
-- **Capteur Nommage des IDs d'entités :** Contrôle les entrées actives du registre avec le mécanisme natif de régénération de Home Assistant et le format d'ID courant. Les entités désactivées sont ignorées. Aucun ID n'est modifié. L'attribut `list` contient `entity_id` et `expected_entity_id` ; `checked` indique le nombre d'entités contrôlées. Les entités sans entrée dans le registre ne peuvent pas être évaluées.
+- **Capteur Nommage des IDs d'entités :** Contrôle les entrées actives du registre avec le mécanisme natif de régénération de Home Assistant et le format d'ID courant. Les entités désactivées sont ignorées. Aucun ID n'est modifié. L'attribut `list` contient `entity_id` et `expected_entity_id` ; `checked` indique le nombre d'entités contrôlées. Les entités sans entrée dans le registre ne peuvent pas être évaluées. L'attribut `entity_id_format` affiche l'ordre effectif des éléments du format défini dans les paramètres Home Assistant, ou l'ordre par défaut si aucun format personnalisé n'est configuré.
 
 - **Capteur Sauvegarde :** Seule l'intégration `Backup` officielle est prise en compte ; son fonctionnement actuel ne permet pas d'avoir des messages d'échec explicites. L'état de sauvegarde en échec est perdu au redémarrage.
 - **Capteur Appareils hors ligne :** Le scan se base sur une entité de l'appareil, de type `sensor`, de classe `timestamp` avec un suffixe `last_seen` ou localisé, et son état est une date au format ISO *(ce qui est fait par Z-Wave, Zigbee2MQTT par exemple)*.
