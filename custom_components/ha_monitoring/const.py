@@ -171,6 +171,7 @@ ATTR_LIST = "list"
 ATTR_MAINTENANCE = "maintenance"
 ATTR_THRESHOLD = "threshold"
 ATTR_CHECKED = "checked"
+ATTR_ENTITY_ID_FORMAT = "entity_id_format"
 
 # Persistance
 STORAGE_KEY_MAINTENANCE = f"{DOMAIN}.maintenance_mode"
