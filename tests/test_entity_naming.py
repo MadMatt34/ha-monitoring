@@ -121,13 +121,9 @@ def test_entity_id_format_uses_configured_order() -> None:
     assert get_entity_id_format(registry) == "floor > area > device > entity"
 
 
-
 def test_entity_naming_limits_list_but_counts_all_issues() -> None:
     """Only the first 100 issues are retained while the total stays accurate."""
-    entries = [
-        _entry(f"sensor.old_{index:03}", f"sensor.new_{index:03}")
-        for index in range(105)
-    ]
+    entries = [_entry(f"sensor.old_{index:03}", f"sensor.new_{index:03}") for index in range(105)]
     registry = Mock()
     registry.entities = {entry.entity_id: entry for entry in entries}
     registry.async_regenerate_entity_id.side_effect = lambda entry, *, reserved_entity_ids: (
