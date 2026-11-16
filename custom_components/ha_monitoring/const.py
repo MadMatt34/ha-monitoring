@@ -36,9 +36,9 @@ CONF_EXCLUDED_OFFLINE = "excluded_offline"
 CONF_EXCLUDED_UNAVAILABLE_ENTITIES = "excluded_unavailable_entities"
 CONF_EXCLUDED_UNAVAILABLE_GLOBS = "excluded_unavailable_globs"
 CONF_EXCLUDED_UNAVAILABLE_DOMAINS = "excluded_unavailable_domains"
-CONF_EXCLUDED_NAMING_ENTITIES = "excluded_id_entities"
-CONF_EXCLUDED_NAMING_GLOBS = "excluded_id_globs"
-CONF_EXCLUDED_NAMING_DOMAINS = "excluded_id_domains"
+CONF_EXCLUDED_NAMING_ENTITIES = "excluded_naming_entities"
+CONF_EXCLUDED_NAMING_GLOBS = "excluded_naming_globs"
+CONF_EXCLUDED_NAMING_DOMAINS = "excluded_naming_domains"
 CONF_EXCLUDED_BATTERIES = "excluded_batteries"
 
 # Options des événements de surveillance
