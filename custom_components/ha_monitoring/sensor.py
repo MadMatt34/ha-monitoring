@@ -66,6 +66,17 @@ from .types import (
     MonitoringUpdateData,
 )
 
+def _get_list_attributes[T](
+    items: list[T],
+    total: int,
+    *,
+    maintenance: bool,
+) -> tuple[list[T], bool]:
+    """Return the bounded list and whether any items were omitted."""
+    visible_items = [] if maintenance else items[:MAX_SENSOR_LIST_ITEMS]
+    return visible_items, not maintenance and total > len(visible_items)
+
+
 type SensorData = (
     MonitoringAddonData
     | MonitoringIntegrationData
@@ -238,10 +249,14 @@ class HAMonitoringGenericSensor[T: SensorData](
         data = self._sensor_data
         maintenance = self.coordinator.maintenance_mode
 
-        items = [] if maintenance else data["items"][:MAX_SENSOR_LIST_ITEMS]
+        items, list_truncated = _get_list_attributes(
+            data["items"],
+            data["total"],
+            maintenance=maintenance,
+        )
         attributes: dict[str, object] = {
             ATTR_LIST: items,
-            ATTR_LIST_TRUNCATED: not maintenance and data["total"] > len(items),
+            ATTR_LIST_TRUNCATED: list_truncated,
             ATTR_TOTAL: (0 if maintenance else data["total"]),
             ATTR_STARTUP_DELAY: (self.coordinator.data["startup_delay"]),
             ATTR_MAINTENANCE: maintenance,
