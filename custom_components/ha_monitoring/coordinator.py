@@ -69,7 +69,7 @@ from .const import (
     STORAGE_VERSION_MAINTENANCE,
 )
 from .helpers.backup import async_get_backup_info
-from .helpers.entity_naming import get_entity_naming_issues
+from .helpers.entity_naming import get_entity_id_format, get_entity_naming_issues
 from .helpers.system import (
     _snapshot_states,
     async_get_addons,
@@ -694,6 +694,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     "items": [],
                     "total": 0,
                     "checked": 0,
+                    "entity_id_format": "",
                 },
                 "monitoring_offline": {
                     "items": [],
@@ -779,9 +780,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         # Registry access and ID regeneration must remain on the HA event loop.
+        entity_registry = er.async_get(self.hass)
+        entity_id_format = get_entity_id_format(entity_registry)
         naming_issues, naming_checked = get_entity_naming_issues(
             self.hass,
-            er.async_get(self.hass),
+            entity_registry,
             excluded_entities=excluded_naming_entities,
             excluded_domains=excluded_naming_domains,
             excluded_globs=excluded_naming_globs,
@@ -893,6 +896,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": naming_issues,
                 "total": len(naming_issues),
                 "checked": naming_checked,
+                "entity_id_format": entity_id_format,
             },
             "monitoring_offline": {
                 "items": offline,
