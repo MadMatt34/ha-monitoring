@@ -17,6 +17,7 @@ from .const import (
     ICON_AUTOMATIONS,
     ICON_BATTERY,
     ICON_INTEGRATIONS,
+    ICON_NAMING,
     ICON_OFFLINE,
     ICON_REPAIRS,
     ICON_SCRIPTS,
@@ -26,6 +27,7 @@ from .const import (
     TRANSLATION_KEY_AUTOMATIONS,
     TRANSLATION_KEY_BATTERY,
     TRANSLATION_KEY_INTEGRATIONS,
+    TRANSLATION_KEY_NAMING,
     TRANSLATION_KEY_OFFLINE,
     TRANSLATION_KEY_REPAIRS,
     TRANSLATION_KEY_SCRIPTS,
@@ -35,6 +37,7 @@ from .const import (
     UNIQUE_ID_AUTOMATIONS,
     UNIQUE_ID_BATTERY,
     UNIQUE_ID_INTEGRATIONS,
+    UNIQUE_ID_NAMING,
     UNIQUE_ID_OFFLINE,
     UNIQUE_ID_REPAIRS,
     UNIQUE_ID_SCRIPTS,
@@ -50,6 +53,7 @@ from .types import (
     HAMonitoringData,
     MonitoringAddonData,
     MonitoringBatteryData,
+    MonitoringEntityNamingData,
     MonitoringIntegrationData,
     MonitoringOfflineData,
     MonitoringRepairData,
@@ -65,6 +69,7 @@ type SensorData = (
     | MonitoringUpdateData
     | MonitoringRepairData
     | MonitoringUnavailableData
+    | MonitoringEntityNamingData
     | MonitoringOfflineData
     | MonitoringBatteryData
 )
@@ -134,6 +139,17 @@ async def async_setup_entry(
             unique_key=UNIQUE_ID_UNAVAILABLE,
             translation_key=TRANSLATION_KEY_UNAVAILABLE,
             icon=ICON_UNAVAILABLE,
+        ),
+        HAMonitoringGenericSensor(
+            coordinator=coordinator,
+            entry=entry,
+            data_getter=lambda data: data["monitoring_entity_naming"],
+            unique_key=UNIQUE_ID_NAMING,
+            translation_key=TRANSLATION_KEY_NAMING,
+            icon=ICON_NAMING,
+            extra_attributes=lambda data: {
+                "checked": data["checked"],
+            },
         ),
         HAMonitoringGenericSensor(
             coordinator=coordinator,

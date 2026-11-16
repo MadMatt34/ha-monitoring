@@ -33,6 +33,9 @@ from .const import (
     CONF_EXCLUDED_AUTOMATIONS,
     CONF_EXCLUDED_BATTERIES,
     CONF_EXCLUDED_INTEGRATIONS,
+    CONF_EXCLUDED_NAMING_DOMAINS,
+    CONF_EXCLUDED_NAMING_ENTITIES,
+    CONF_EXCLUDED_NAMING_GLOBS,
     CONF_EXCLUDED_OFFLINE,
     CONF_EXCLUDED_REPAIRS,
     CONF_EXCLUDED_SCRIPTS,
@@ -46,6 +49,7 @@ from .const import (
     CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_BATTERY_LOW_THRESHOLD,
+    DEFAULT_EXCLUDED_NAMING_DOMAINS,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_OFFLINE_TIMEOUT,
     DEFAULT_SCAN_INTERVAL,
@@ -296,6 +300,15 @@ def get_exclusions_schema(
     domain_options = sorted(all_domains)
     allowed_domains = sorted(all_domains - set(current_excluded_domains))
 
+    current_excluded_naming_domains = options.get(
+        CONF_EXCLUDED_NAMING_DOMAINS,
+        DEFAULT_EXCLUDED_NAMING_DOMAINS,
+    )
+    naming_domain_options = sorted(
+        all_domains | set(DEFAULT_EXCLUDED_NAMING_DOMAINS) | set(current_excluded_naming_domains)
+    )
+    allowed_naming_domains = sorted(all_domains - set(current_excluded_naming_domains))
+
     return vol.Schema(
         {
             vol.Required("section_exclusions_system"): section(
@@ -420,6 +433,49 @@ def get_exclusions_schema(
                                 filter=(
                                     selector.EntityFilterSelectorConfig(domain=allowed_domains)
                                     if allowed_domains
+                                    else None
+                                ),
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required("section_exclusions_naming"): section(
+                vol.Schema(
+                    {
+                        vol.Optional(
+                            CONF_EXCLUDED_NAMING_DOMAINS,
+                            default=current_excluded_naming_domains,
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=naming_domain_options,
+                                custom_value=False,
+                                multiple=True,
+                                mode=selector.SelectSelectorMode.DROPDOWN,
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_NAMING_GLOBS,
+                            default=options.get(CONF_EXCLUDED_NAMING_GLOBS) or [],
+                        ): selector.SelectSelector(
+                            selector.SelectSelectorConfig(
+                                options=[],
+                                custom_value=True,
+                                multiple=True,
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXCLUDED_NAMING_ENTITIES,
+                            default=options.get(CONF_EXCLUDED_NAMING_ENTITIES) or [],
+                        ): selector.EntitySelector(
+                            selector.EntitySelectorConfig(
+                                multiple=True,
+                                filter=(
+                                    selector.EntityFilterSelectorConfig(
+                                        domain=allowed_naming_domains
+                                    )
+                                    if allowed_naming_domains
                                     else None
                                 ),
                             )

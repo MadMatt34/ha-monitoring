@@ -21,6 +21,7 @@ from homeassistant.core import (
     callback,
 )
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.event import async_call_later
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.translation import (
@@ -38,6 +39,9 @@ from .const import (
     CONF_EXCLUDED_AUTOMATIONS,
     CONF_EXCLUDED_BATTERIES,
     CONF_EXCLUDED_INTEGRATIONS,
+    CONF_EXCLUDED_NAMING_DOMAINS,
+    CONF_EXCLUDED_NAMING_ENTITIES,
+    CONF_EXCLUDED_NAMING_GLOBS,
     CONF_EXCLUDED_OFFLINE,
     CONF_EXCLUDED_REPAIRS,
     CONF_EXCLUDED_SCRIPTS,
@@ -51,6 +55,7 @@ from .const import (
     CONF_SYSTEM_INFO_SCAN_INTERVAL,
     CONF_TRACES_SCAN_INTERVAL,
     DEFAULT_BATTERY_LOW_THRESHOLD,
+    DEFAULT_EXCLUDED_NAMING_DOMAINS,
     DEFAULT_EXCLUDED_UNAVAILABLE_DOMAINS,
     DEFAULT_LAST_SEEN_SUFFIX,
     DEFAULT_OFFLINE_TIMEOUT,
@@ -64,6 +69,7 @@ from .const import (
     STORAGE_VERSION_MAINTENANCE,
 )
 from .helpers.backup import async_get_backup_info
+from .helpers.entity_naming import get_entity_naming_issues
 from .helpers.system import (
     _snapshot_states,
     async_get_addons,
@@ -684,6 +690,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     "items": [],
                     "total": 0,
                 },
+                "monitoring_entity_naming": {
+                    "items": [],
+                    "total": 0,
+                    "checked": 0,
+                },
                 "monitoring_offline": {
                     "items": [],
                     "total": 0,
@@ -716,6 +727,13 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             CONF_EXCLUDED_BATTERIES,
             [],
         )
+
+        excluded_naming_entities = options.get(CONF_EXCLUDED_NAMING_ENTITIES, [])
+        excluded_naming_domains = options.get(
+            CONF_EXCLUDED_NAMING_DOMAINS,
+            DEFAULT_EXCLUDED_NAMING_DOMAINS,
+        )
+        excluded_naming_globs = options.get(CONF_EXCLUDED_NAMING_GLOBS, [])
 
         last_seen_suffixes = self._get_last_seen_suffixes()
 
@@ -758,6 +776,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 last_seen_suffixes=(last_seen_suffixes),
                 excluded_unavailable_globs=(excluded_unavailable_globs),
             )
+        )
+
+        # Registry access and ID regeneration must remain on the HA event loop.
+        naming_issues, naming_checked = get_entity_naming_issues(
+            self.hass,
+            er.async_get(self.hass),
+            excluded_entities=excluded_naming_entities,
+            excluded_domains=excluded_naming_domains,
+            excluded_globs=excluded_naming_globs,
         )
 
         # ------------------------------------------------------------------
@@ -862,6 +889,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": unavailable,
                 "total": len(unavailable),
             },
+            "monitoring_entity_naming": {
+                "items": naming_issues,
+                "total": len(naming_issues),
+                "checked": naming_checked,
+            },
             "monitoring_offline": {
                 "items": offline,
                 "total": len(offline),
@@ -926,6 +958,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             "monitoring_unavailable": {
                 "items": [],
                 "total": 0,
+            },
+            "monitoring_entity_naming": {
+                "items": [],
+                "total": 0,
+                "checked": 0,
             },
             "monitoring_offline": {
                 "items": [],
