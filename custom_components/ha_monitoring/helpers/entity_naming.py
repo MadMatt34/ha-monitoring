@@ -4,9 +4,23 @@ from collections.abc import Sequence
 from fnmatch import fnmatch
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_registry import EntityRegistry
+from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
 from ..types import EntityNamingData
+
+_DEFAULT_ENTITY_ID_PARTS = (
+    EntityNamePart.AREA,
+    EntityNamePart.PARENT_DEVICE,
+    EntityNamePart.DEVICE,
+    EntityNamePart.ENTITY,
+)
+
+
+def get_entity_id_format(registry: EntityRegistry) -> str:
+    """Return the effective entity ID format configured in Home Assistant."""
+    parts = registry.settings.entity_id_parts or _DEFAULT_ENTITY_ID_PARTS
+    return " > ".join(part.value for part in parts)
+
 
 
 def get_entity_naming_issues(
