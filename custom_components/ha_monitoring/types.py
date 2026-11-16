@@ -61,7 +61,7 @@ class UnavailableEntityData(TypedDict):
     state: str
 
 
-class EntityNamingData(TypedDict):
+class IdNamingData(TypedDict):
     """Entité dont l'ID diffère de celui généré par Home Assistant."""
 
     entity_id: str
@@ -157,10 +157,10 @@ class MonitoringUnavailableData(TypedDict):
     total: int
 
 
-class MonitoringEntityNamingData(TypedDict):
+class MonitoringIdNamingData(TypedDict):
     """Données du capteur de conformité du nommage des entités."""
 
-    items: list[EntityNamingData]
+    items: list[IdNamingData]
     total: int
     checked: int
     entity_id_format: str
@@ -195,7 +195,7 @@ class HAMonitoringData(TypedDict):
     monitoring_updates: MonitoringUpdateData
     monitoring_repairs: MonitoringRepairData
     monitoring_unavailable: MonitoringUnavailableData
-    monitoring_entity_naming: MonitoringEntityNamingData
+    monitoring_id_naming: MonitoringIdNamingData
     monitoring_offline: MonitoringOfflineData
     monitoring_battery: MonitoringBatteryData
     monitoring_backup: MonitoringBackupData
