@@ -553,6 +553,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
     ) -> HAMonitoringData:
         """Récupère les métriques de HA Monitoring."""
         now = dt_util.utcnow()
+        entity_registry = er.async_get(self.hass)
+        entity_id_format = get_entity_id_format(entity_registry)
 
         self._scan_timestamps_changed = False
 
@@ -599,6 +601,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             results = self._empty_results(in_startup_delay=True)
 
             results["monitoring_backup"] = current_backup_info
+            results["monitoring_entity_naming"]["entity_id_format"] = entity_id_format
 
             results["maintenance_mode"] = self._maintenance_mode
 
@@ -780,8 +783,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         # Registry access and ID regeneration must remain on the HA event loop.
-        entity_registry = er.async_get(self.hass)
-        entity_id_format = get_entity_id_format(entity_registry)
         naming_issues, naming_checked = get_entity_naming_issues(
             self.hass,
             entity_registry,
@@ -967,6 +968,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": [],
                 "total": 0,
                 "checked": 0,
+                "entity_id_format": "",
             },
             "monitoring_offline": {
                 "items": [],
