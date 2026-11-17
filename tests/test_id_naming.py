@@ -29,6 +29,15 @@ def _entry(
     )
 
 
+def _get_id_naming_issues(*args: object, **kwargs: object) -> tuple[list[dict[str, str | None]], int, int]:
+    """Run the helper with a test double for HA's effective-area resolver."""
+    with patch(
+        "custom_components.ha_monitoring.helpers.id_naming.er.async_get_effective_area_id",
+        side_effect=lambda hass, entry: entry.area_id,
+    ):
+        return get_id_naming_issues(*args, **kwargs)  # type: ignore[arg-type]
+
+
 def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
     """Only enabled registry entries are checked using the HA generator."""
     first = _entry("sensor.old_name", "sensor.area_temperature")
@@ -44,7 +53,7 @@ def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked, total = get_id_naming_issues(
+    issues, checked, total = _get_id_naming_issues(
         hass,
         registry,
         excluded_entities=[],
@@ -84,7 +93,7 @@ def test_id_naming_includes_area_name() -> None:
         "custom_components.ha_monitoring.helpers.id_naming.ar.async_get",
         return_value=area_registry,
     ):
-        issues, checked, total = get_id_naming_issues(
+        issues, checked, total = _get_id_naming_issues(
             hass,
             registry,
             excluded_entities=[],
@@ -120,7 +129,7 @@ def test_id_naming_applies_entity_domain_and_glob_exclusions() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked, total = get_id_naming_issues(
+    issues, checked, total = _get_id_naming_issues(
         hass,
         registry,
         excluded_entities=["sensor.explicit"],
@@ -174,7 +183,7 @@ def test_id_naming_limits_list_but_counts_all_issues() -> None:
     hass = Mock()
     hass.states.get.return_value = None
 
-    issues, checked, total = get_id_naming_issues(
+    issues, checked, total = _get_id_naming_issues(
         hass,
         registry,
         excluded_entities=[],
@@ -198,7 +207,7 @@ def test_id_naming_checks_friendly_name_only_when_globs_are_configured() -> None
         attributes={"friendly_name": "Living Room Temperature"}
     )
 
-    issues, checked, total = get_id_naming_issues(
+    issues, checked, total = _get_id_naming_issues(
         hass,
         registry,
         excluded_entities=[],
@@ -236,7 +245,7 @@ def test_id_naming_resolves_each_area_name_only_once() -> None:
         "custom_components.ha_monitoring.helpers.id_naming.ar.async_get",
         return_value=area_registry,
     ) as get_area_registry:
-        issues, checked, total = get_id_naming_issues(
+        issues, checked, total = _get_id_naming_issues(
             hass,
             registry,
             excluded_entities=[],
@@ -248,4 +257,45 @@ def test_id_naming_resolves_each_area_name_only_once() -> None:
     assert total == 2
     assert [issue["area"] for issue in issues] == ["Living Room", "Living Room"]
     get_area_registry.assert_called_once_with(hass)
+    area_registry.async_get_area.assert_called_once_with("living_room")
+
+
+def test_id_naming_uses_effective_area_inherited_from_device() -> None:
+    """An area inherited from a device is included even without entity.area_id."""
+    entry = _entry("sensor.old_name", "sensor.area_temperature")
+    registry = Mock()
+    registry.entities = {entry.entity_id: entry}
+    registry.async_regenerate_entity_id.return_value = "sensor.area_temperature"
+    hass = Mock()
+    area_registry = Mock()
+    area_registry.async_get_area.return_value = SimpleNamespace(name="Living Room")
+
+    with (
+        patch(
+            "custom_components.ha_monitoring.helpers.id_naming.er.async_get_effective_area_id",
+            return_value="living_room",
+        ) as get_effective_area,
+        patch(
+            "custom_components.ha_monitoring.helpers.id_naming.ar.async_get",
+            return_value=area_registry,
+        ),
+    ):
+        issues, checked, total = get_id_naming_issues(
+            hass,
+            registry,
+            excluded_entities=[],
+            excluded_domains=[],
+            excluded_globs=[],
+        )
+
+    assert issues == [
+        {
+            "entity_id": "sensor.old_name",
+            "expected_entity_id": "sensor.area_temperature",
+            "area": "Living Room",
+        }
+    ]
+    assert checked == 1
+    assert total == 1
+    get_effective_area.assert_called_once_with(hass, entry)
     area_registry.async_get_area.assert_called_once_with("living_room")
