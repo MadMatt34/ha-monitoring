@@ -211,3 +211,41 @@ def test_id_naming_checks_friendly_name_only_when_globs_are_configured() -> None
     assert total == 0
     hass.states.get.assert_called_once_with("sensor.old_name")
     registry.async_regenerate_entity_id.assert_not_called()
+
+def test_id_naming_resolves_each_area_name_only_once() -> None:
+    """Repeated issues in one area reuse its already resolved display name."""
+    entries = [
+        _entry("sensor.first", "sensor.expected_first"),
+        _entry("sensor.second", "sensor.expected_second"),
+    ]
+    for entry in entries:
+        entry.area_id = "living_room"
+
+    registry = Mock()
+    registry.entities = {entry.entity_id: entry for entry in entries}
+    registry.async_regenerate_entity_id.side_effect = lambda entry, *, reserved_entity_ids: (
+        entry.expected_entity_id
+    )
+    hass = Mock()
+    hass.states.get.return_value = None
+    area_registry = Mock()
+    area_registry.async_get_area.return_value = SimpleNamespace(name="Living Room")
+
+    with patch(
+        "custom_components.ha_monitoring.helpers.id_naming.ar.async_get",
+        return_value=area_registry,
+    ) as get_area_registry:
+        issues, checked, total = get_id_naming_issues(
+            hass,
+            registry,
+            excluded_entities=[],
+            excluded_domains=[],
+            excluded_globs=[],
+        )
+
+    assert checked == 2
+    assert total == 2
+    assert [issue["area"] for issue in issues] == ["Living Room", "Living Room"]
+    get_area_registry.assert_called_once_with(hass)
+    area_registry.async_get_area.assert_called_once_with("living_room")
+
