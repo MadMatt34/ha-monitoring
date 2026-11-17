@@ -187,6 +187,7 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 ### 🕒 Précisions sur les délais d'actualisation des données
 
 - **Informations système et contrôle du nommage des IDs :** ces données sont actualisées suivant la fréquence du scan système définie dans les paramètres (24 heures par défaut).
+- **Durée du scan système :** la durée du dernier scan système inclut la collecte des informations système et le contrôle du nommage des IDs, exécutés au cours du même scan.
 - **Capteur backup :** ce capteur et ses attributs sont actualisés après l'exécution d'une sauvegarde.
 - **Tous les autres capteurs :** ils sont actualisés suivant la fréquence de rafraîchissement définie dans les paramètres (3 min par défaut).
 
