@@ -40,8 +40,8 @@
 ---
 
 ## 🧩 Installation
-> **Prérequis :** Home Assistant **2026.11.0 ou supérieur** est requis.
 
+> **Prérequis :** Home Assistant **2026.11.0 ou supérieur** est requis.
 
 ### Option 1 : Installation via Marketplace (📌 recommandée)
 
