@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from custom_components.ha_monitoring import async_reload_entry
 from custom_components.ha_monitoring.coordinator import HAMonitoringCoordinator
 
 
@@ -170,3 +171,37 @@ async def test_combined_scan_duration_includes_naming() -> None:
         )
 
     assert coordinator._last_system_info_scan_duration == 6.5
+
+
+
+async def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
+    """The public forced-refresh method invalidates System Info and naming cadence."""
+    coordinator = SimpleNamespace(
+        _unsub_ha_started=None,
+        _startup_timer_unsub=None,
+        _is_ready=False,
+        _last_trace_check_time=datetime(2025, 12, 31, tzinfo=UTC),
+        _last_system_stats_check_time=datetime(2025, 12, 31, tzinfo=UTC),
+        _cached_system_stats={"uptime": 1},
+        async_refresh=AsyncMock(),
+    )
+
+    await HAMonitoringCoordinator.async_force_refresh(coordinator)
+
+    assert coordinator._is_ready is True
+    assert coordinator._last_trace_check_time is None
+    assert coordinator._last_system_stats_check_time is None
+    assert coordinator._cached_system_stats is None
+    coordinator.async_refresh.assert_awaited_once()
+
+
+async def test_config_entry_options_reload_integration() -> None:
+    """A configuration update reloads the integration and rebuilds its scan cache."""
+    hass = SimpleNamespace(
+        config_entries=SimpleNamespace(async_reload=AsyncMock()),
+    )
+    entry = SimpleNamespace(entry_id="ha_monitoring_entry")
+
+    await async_reload_entry(hass, entry)
+
+    hass.config_entries.async_reload.assert_awaited_once_with(entry.entry_id)
