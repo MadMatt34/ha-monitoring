@@ -173,7 +173,6 @@ async def test_combined_scan_duration_includes_naming() -> None:
     assert coordinator._last_system_info_scan_duration == 6.5
 
 
-
 async def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
     """The public forced-refresh method invalidates System Info and naming cadence."""
     coordinator = SimpleNamespace(
