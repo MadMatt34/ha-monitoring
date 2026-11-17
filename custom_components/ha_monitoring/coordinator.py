@@ -439,7 +439,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         return tuple(suffixes)
 
-
     async def _async_get_no_area_translation(self) -> str:
         """Return the translated label used when an entity has no area."""
         language = self.hass.config.language
@@ -454,9 +453,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "common",
                 integrations={DOMAIN},
             )
-            self._cached_no_area_translation = translations[
-                f"component.{DOMAIN}.common.no_area"
-            ]
+            self._cached_no_area_translation = translations[f"component.{DOMAIN}.common.no_area"]
             self._cached_no_area_translation_language = language
 
         return self._cached_no_area_translation
@@ -964,9 +961,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "items": [
                     {
                         **issue,
-                        "area": (
-                            no_area_translation if issue["area"] is None else issue["area"]
-                        ),
+                        "area": (no_area_translation if issue["area"] is None else issue["area"]),
                     }
                     for issue in self._cached_id_naming_issues
                 ],
