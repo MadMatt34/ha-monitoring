@@ -48,7 +48,5 @@ jobs:
         env:
           PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
         run: >-
-          .venv/bin/python -m pytest
-          -p pytest_homeassistant_custom_component.plugins
-          -p pytest_asyncio.plugin
-          -q
+          .venv/bin/python -c
+          "import homeassistant; import pytest; raise SystemExit(pytest.main(['-p', 'pytest_homeassistant_custom_component.plugins', '-p', 'pytest_asyncio.plugin', '-q']))"
