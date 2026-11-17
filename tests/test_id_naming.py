@@ -1,7 +1,7 @@
 """Tests for entity ID naming checks."""
 
 from types import SimpleNamespace
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 from homeassistant.helpers.entity_registry import EntityNamePart
 
@@ -25,6 +25,7 @@ def _entry(
         domain=entity_id.split(".", 1)[0],
         disabled=disabled,
         name=name,
+        area_id=None,
     )
 
 
@@ -55,6 +56,7 @@ def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
         {
             "entity_id": "sensor.old_name",
             "expected_entity_id": "sensor.area_temperature",
+            "area": None,
         }
     ]
     assert checked == 1
@@ -63,6 +65,42 @@ def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
         first,
         reserved_entity_ids={"sensor.area_temperature"},
     )
+
+
+def test_id_naming_includes_area_name() -> None:
+    """The issue entry includes the assigned area's display name."""
+    entry = _entry("sensor.old_name", "sensor.area_temperature")
+    entry.area_id = "living_room"
+    registry = Mock()
+    registry.entities = {entry.entity_id: entry}
+    registry.async_regenerate_entity_id.return_value = "sensor.area_temperature"
+    hass = Mock()
+    hass.states.get.return_value = None
+    area_registry = Mock()
+    area_registry.async_get_area.return_value = SimpleNamespace(name="Living Room")
+
+    with patch(
+        "custom_components.ha_monitoring.helpers.id_naming.ar.async_get",
+        return_value=area_registry,
+    ):
+        issues, checked, total = get_id_naming_issues(
+            hass,
+            registry,
+            excluded_entities=[],
+            excluded_domains=[],
+            excluded_globs=[],
+        )
+
+    assert issues == [
+        {
+            "entity_id": "sensor.old_name",
+            "expected_entity_id": "sensor.area_temperature",
+            "area": "Living Room",
+        }
+    ]
+    assert checked == 1
+    assert total == 1
+    area_registry.async_get_area.assert_called_once_with("living_room")
 
 
 def test_id_naming_applies_entity_domain_and_glob_exclusions() -> None:
@@ -95,6 +133,7 @@ def test_id_naming_applies_entity_domain_and_glob_exclusions() -> None:
         {
             "entity_id": "sensor.checked",
             "expected_entity_id": "sensor.expected_checked",
+            "area": None,
         }
     ]
 
