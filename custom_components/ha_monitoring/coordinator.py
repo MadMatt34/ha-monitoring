@@ -731,7 +731,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         no_area_translation = (
             await self._async_get_no_area_translation()
-            if any(issue["area"] is None for issue in self._cached_id_naming_issues)
+            if (
+                not self._maintenance_mode
+                and any(issue["area"] is None for issue in self._cached_id_naming_issues)
+            )
             else None
         )
 
