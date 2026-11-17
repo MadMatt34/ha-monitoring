@@ -266,6 +266,7 @@
   "common": {
     "unknown": "Inconnu",
     "unknown_version": "Inconnue",
+    "no_area": "Aucun",
     "unknown_os_version": "N/A (Core/Container)"
   }
 }
