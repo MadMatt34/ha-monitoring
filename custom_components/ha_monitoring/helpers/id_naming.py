@@ -57,18 +57,24 @@ def get_id_naming_issues(
         if entry.entity_id in excluded_entity_ids or entry.domain in excluded_domain_names:
             continue
 
-        state = hass.states.get(entry.entity_id)
-        friendly_name = str(state.attributes.get("friendly_name", "")) if state is not None else ""
-        names_to_check = (
-            entry.entity_id.lower(),
-            friendly_name.lower(),
-            (entry.name or "").lower(),
-        )
+        if excluded_patterns:
+            names_to_check = (
+                entry.entity_id.lower(),
+                (entry.name or "").lower(),
+            )
+            if any(
+                fnmatch(value, pattern)
+                for value in names_to_check
+                for pattern in excluded_patterns
+            ):
+                continue
 
-        if any(
-            fnmatch(value, pattern) for value in names_to_check for pattern in excluded_patterns
-        ):
-            continue
+            state = hass.states.get(entry.entity_id)
+            friendly_name = (
+                str(state.attributes.get("friendly_name", "")) if state is not None else ""
+            )
+            if any(fnmatch(friendly_name.lower(), pattern) for pattern in excluded_patterns):
+                continue
 
         checked += 1
         expected_entity_id = registry.async_regenerate_entity_id(
