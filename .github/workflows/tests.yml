@@ -12,7 +12,7 @@ jobs:
       fail-fast: false
       matrix:
         ha-version:
-          - "2026.1.0"
+          - "2026.11.0"
           - "latest"
     steps:
       - name: Checkout code
@@ -34,10 +34,11 @@ jobs:
           HA_VERSION: ${{ matrix.ha-version }}
         run: |
           if [ "$HA_VERSION" = "latest" ]; then
-            python -m pip install --upgrade homeassistant
+            python -m pip install --upgrade --force-reinstall --index-url https://pypi.org/simple homeassistant
           else
-            python -m pip install --upgrade "homeassistant==$HA_VERSION"
+            python -m pip install --force-reinstall --index-url https://pypi.org/simple "homeassistant==$HA_VERSION"
           fi
+          python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); print(f'Home Assistant installed: {installed}'); assert Version(installed) >= Version('2026.11.0'), 'Installed Home Assistant is older than the supported minimum 2026.11.0'"
 
       - name: Run tests
         run: python -m pytest -q
