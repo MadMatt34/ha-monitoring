@@ -5,6 +5,7 @@ from fnmatch import fnmatch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.area_registry import AreaRegistry
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
@@ -89,13 +90,14 @@ def get_id_naming_issues(
             total += 1
             if len(issues) < MAX_SENSOR_LIST_ITEMS:
                 area_name: str | None = None
-                if entry.area_id:
-                    if entry.area_id not in area_names:
+                area_id = er.async_get_effective_area_id(hass, entry)
+                if area_id is not None:
+                    if area_id not in area_names:
                         if area_registry is None:
                             area_registry = ar.async_get(hass)
-                        area = area_registry.async_get_area(entry.area_id)
-                        area_names[entry.area_id] = area.name if area is not None else ""
-                    area_name = area_names[entry.area_id] or None
+                        area = area_registry.async_get_area(area_id)
+                        area_names[area_id] = area.name if area is not None else ""
+                    area_name = area_names[area_id] or None
 
                 issues.append(
                     {
