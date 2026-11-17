@@ -193,7 +193,6 @@ def test_combined_scan_duration_includes_naming() -> None:
     assert coordinator._last_system_info_scan_duration == 6.5
 
 
-
 def test_ha_entity_id_format_change_triggers_immediate_combined_scan() -> None:
     """A changed HA naming format bypasses the System Info interval."""
     now = datetime(2026, 1, 1, tzinfo=UTC)
