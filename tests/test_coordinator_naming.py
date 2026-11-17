@@ -34,6 +34,7 @@ def test_system_info_and_naming_follow_shared_interval(
         _cached_id_naming_issues=[],
         _cached_id_naming_checked=0,
         _cached_id_naming_total=0,
+        _last_scanned_entity_id_format="area > device > entity",
         _last_system_info_scan_duration=None,
         _scan_timestamps_changed=False,
     )
@@ -67,6 +68,7 @@ def test_system_info_and_naming_follow_shared_interval(
                 excluded_entities=[],
                 excluded_domains=[],
                 excluded_globs=[],
+                entity_id_format="area > device > entity",
                 now=now,
             )
         )
@@ -131,6 +133,7 @@ def test_forced_refresh_invalidates_shared_scan_cache() -> None:
                 excluded_entities=[],
                 excluded_domains=[],
                 excluded_globs=[],
+                entity_id_format="area > device > entity",
                 now=now,
             )
         )
@@ -180,6 +183,7 @@ def test_combined_scan_duration_includes_naming() -> None:
                 excluded_entities=[],
                 excluded_domains=[],
                 excluded_globs=[],
+                entity_id_format="area > device > entity",
                 now=now,
             )
         )
