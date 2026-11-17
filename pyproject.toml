@@ -25,3 +25,12 @@ force-sort-within-sections = true
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+# Home Assistant must install its httpx alias before the respx pytest plugin is imported.
+# Tests can still import and use respx directly when needed.
+addopts = "-p no:respx"
+pythonpath = ["."]
+testpaths = ["tests"]
