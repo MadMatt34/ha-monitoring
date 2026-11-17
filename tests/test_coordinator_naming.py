@@ -59,15 +59,17 @@ def test_system_info_and_naming_follow_shared_interval(
             return_value=now,
         ),
     ):
-        asyncio.run(HAMonitoringCoordinator._async_refresh_system_info_and_naming(
-            coordinator,
-            entity_registry,
-            scan_interval_sec=24 * 60 * 60,
-            excluded_entities=[],
-            excluded_domains=[],
-            excluded_globs=[],
-            now=now,
-        ))
+        asyncio.run(
+            HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+                coordinator,
+                entity_registry,
+                scan_interval_sec=24 * 60 * 60,
+                excluded_entities=[],
+                excluded_domains=[],
+                excluded_globs=[],
+                now=now,
+            )
+        )
 
     assert system_stats.await_count == expected_calls
     assert naming_check.call_count == expected_calls
@@ -121,15 +123,17 @@ def test_forced_refresh_invalidates_shared_scan_cache() -> None:
             return_value=now,
         ),
     ):
-        asyncio.run(HAMonitoringCoordinator._async_refresh_system_info_and_naming(
-            coordinator,
-            Mock(),
-            scan_interval_sec=24 * 60 * 60,
-            excluded_entities=[],
-            excluded_domains=[],
-            excluded_globs=[],
-            now=now,
-        ))
+        asyncio.run(
+            HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+                coordinator,
+                Mock(),
+                scan_interval_sec=24 * 60 * 60,
+                excluded_entities=[],
+                excluded_domains=[],
+                excluded_globs=[],
+                now=now,
+            )
+        )
 
     system_stats.assert_awaited_once()
     naming_check.assert_called_once()
@@ -168,15 +172,17 @@ def test_combined_scan_duration_includes_naming() -> None:
             return_value=now,
         ),
     ):
-        asyncio.run(HAMonitoringCoordinator._async_refresh_system_info_and_naming(
-            coordinator,
-            Mock(),
-            scan_interval_sec=24 * 60 * 60,
-            excluded_entities=[],
-            excluded_domains=[],
-            excluded_globs=[],
-            now=now,
-        ))
+        asyncio.run(
+            HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+                coordinator,
+                Mock(),
+                scan_interval_sec=24 * 60 * 60,
+                excluded_entities=[],
+                excluded_domains=[],
+                excluded_globs=[],
+                now=now,
+            )
+        )
 
     assert coordinator._last_system_info_scan_duration == 6.5
 
