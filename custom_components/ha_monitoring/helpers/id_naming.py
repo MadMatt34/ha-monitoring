@@ -1,11 +1,10 @@
-"""Helpers for checking entity IDs against Home Assistant's current naming rules."""
+""""Helpers for checking entity IDs against Home Assistant's current naming rules."""
 
 from collections.abc import Sequence
 from fnmatch import fnmatch
 
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import area_registry as ar
-from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import area_registry as ar, entity_registry as er
 from homeassistant.helpers.area_registry import AreaRegistry
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
@@ -108,3 +107,4 @@ def get_id_naming_issues(
                 )
 
     return issues, checked, total
+"
