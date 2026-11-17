@@ -5,6 +5,7 @@ from fnmatch import fnmatch
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import area_registry as ar
+from homeassistant.helpers.area_registry import AreaRegistry
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
 from ..const import MAX_SENSOR_LIST_ITEMS
@@ -43,7 +44,7 @@ def get_id_naming_issues(
         pattern.lower().strip() for pattern in excluded_globs if pattern.strip()
     )
 
-    area_registry = None
+    area_registry: AreaRegistry | None = None
     reserved_entity_ids: set[str] = set()
     issues: list[IdNamingData] = []
     total = 0
