@@ -43,7 +43,7 @@ def get_id_naming_issues(
         pattern.lower().strip() for pattern in excluded_globs if pattern.strip()
     )
 
-    area_registry = ar.async_get(hass)
+    area_registry = None
     reserved_entity_ids: set[str] = set()
     issues: list[IdNamingData] = []
     total = 0
@@ -79,16 +79,18 @@ def get_id_naming_issues(
         if entry.entity_id != expected_entity_id:
             total += 1
             if len(issues) < MAX_SENSOR_LIST_ITEMS:
+                area_name = None
+                if entry.area_id:
+                    if area_registry is None:
+                        area_registry = ar.async_get(hass)
+                    if area := area_registry.async_get_area(entry.area_id):
+                        area_name = area.name
+
                 issues.append(
                     {
                         "entity_id": entry.entity_id,
                         "expected_entity_id": expected_entity_id,
-                        "area": (
-                            area.name
-                            if entry.area_id
-                            and (area := area_registry.async_get_area(entry.area_id))
-                            else None
-                        ),
+                        "area": area_name,
                     }
                 )
 
