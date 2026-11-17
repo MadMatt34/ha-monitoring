@@ -37,7 +37,11 @@ async def test_system_info_and_naming_follow_shared_interval(
     )
     entity_registry = Mock()
     system_stats = AsyncMock(return_value={"uptime": 1})
-    naming_result = ([{"entity_id": "sensor.old", "expected_entity_id": "sensor.new", "area": None}], 4, 1)
+    naming_result = (
+        [{"entity_id": "sensor.old", "expected_entity_id": "sensor.new", "area": None}],
+        4,
+        1,
+    )
 
     with (
         patch(
