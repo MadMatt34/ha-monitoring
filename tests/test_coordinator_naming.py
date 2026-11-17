@@ -168,7 +168,7 @@ def test_combined_scan_duration_includes_naming() -> None:
             return_value=now,
         ),
     ):
-        await HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+        asyncio.run(HAMonitoringCoordinator._async_refresh_system_info_and_naming(
             coordinator,
             Mock(),
             scan_interval_sec=24 * 60 * 60,
@@ -176,7 +176,7 @@ def test_combined_scan_duration_includes_naming() -> None:
             excluded_domains=[],
             excluded_globs=[],
             now=now,
-        )
+        ))
 
     assert coordinator._last_system_info_scan_duration == 6.5
 
