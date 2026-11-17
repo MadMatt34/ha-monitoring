@@ -56,7 +56,7 @@ def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
         {
             "entity_id": "sensor.old_name",
             "expected_entity_id": "sensor.area_temperature",
-            "area": "None",
+            "area": None,
         }
     ]
     assert checked == 1
