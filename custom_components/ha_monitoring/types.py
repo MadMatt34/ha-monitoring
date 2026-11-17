@@ -66,6 +66,7 @@ class IdNamingData(TypedDict):
 
     entity_id: str
     expected_entity_id: str
+    area: str | None
 
 
 class OfflineDeviceData(TypedDict):
