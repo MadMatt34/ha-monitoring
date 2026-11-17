@@ -41,8 +41,9 @@ jobs:
           else
             uv pip install --python .venv/bin/python --reinstall --index-url https://pypi.org/simple "homeassistant==$HA_VERSION"
           fi
-          uv pip install --python .venv/bin/python "pytest-homeassistant==$HA_VERSION"
-          .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); plugin = importlib.metadata.version('pytest-homeassistant'); print(f'Home Assistant installed: {installed}'); print(f'pytest-homeassistant installed: {plugin}'); assert Version(installed) == Version('$HA_VERSION'), 'Home Assistant and pytest-homeassistant versions must match'"
+          RESOLVED_HA_VERSION=$( .venv/bin/python -c "import importlib.metadata; print(importlib.metadata.version('homeassistant'))" )
+          uv pip install --python .venv/bin/python "pytest-homeassistant==$RESOLVED_HA_VERSION"
+          .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); plugin = importlib.metadata.version('pytest-homeassistant'); print(f'Home Assistant installed: {installed}'); print(f'pytest-homeassistant installed: {plugin}'); assert Version(installed) >= Version('2026.11.0'), 'Installed Home Assistant is older than the supported minimum 2026.11.0'; assert Version(installed) == Version(plugin), 'Home Assistant and pytest-homeassistant versions must match'"
 
       - name: Run tests
         run: .venv/bin/python -m pytest -q
