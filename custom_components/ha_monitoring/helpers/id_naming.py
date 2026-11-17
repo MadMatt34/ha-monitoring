@@ -107,4 +107,3 @@ def get_id_naming_issues(
                 )
 
     return issues, checked, total
-"
