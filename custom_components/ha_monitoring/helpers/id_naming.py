@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 from ..const import MAX_SENSOR_LIST_ITEMS
 from ..types import IdNamingData
 
+# Home Assistant 2026.11 default when EntityRegistrySettings.entity_id_parts is None.
 _DEFAULT_ENTITY_ID_PARTS = (
     EntityNamePart.AREA,
     EntityNamePart.PARENT_DEVICE,
@@ -21,7 +22,9 @@ _DEFAULT_ENTITY_ID_PARTS = (
 
 def get_entity_id_format(registry: EntityRegistry) -> str:
     """Return the effective entity ID format configured in Home Assistant."""
-    parts = registry.settings.entity_id_parts or _DEFAULT_ENTITY_ID_PARTS
+    parts = registry.settings.entity_id_parts
+    if parts is None:
+        parts = _DEFAULT_ENTITY_ID_PARTS
     return " > ".join(part.value for part in parts)
 
 
