@@ -61,6 +61,7 @@ def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
     ]
     assert checked == 1
     assert total == 1
+    hass.states.get.assert_not_called()
     registry.async_regenerate_entity_id.assert_called_once_with(
         first,
         reserved_entity_ids={"sensor.area_temperature"},
@@ -183,3 +184,29 @@ def test_id_naming_limits_list_but_counts_all_issues() -> None:
     assert checked == 105
     assert total == 105
     assert len(issues) == 100
+
+
+def test_id_naming_checks_friendly_name_only_when_globs_are_configured() -> None:
+    """Friendly names are fetched only when glob exclusions need them."""
+    entry = _entry("sensor.old_name", "sensor.expected")
+    registry = Mock()
+    registry.entities = {entry.entity_id: entry}
+    registry.async_regenerate_entity_id.return_value = "sensor.expected"
+    hass = Mock()
+    hass.states.get.return_value = SimpleNamespace(
+        attributes={"friendly_name": "Living Room Temperature"}
+    )
+
+    issues, checked, total = get_id_naming_issues(
+        hass,
+        registry,
+        excluded_entities=[],
+        excluded_domains=[],
+        excluded_globs=["living room*"],
+    )
+
+    assert issues == []
+    assert checked == 0
+    assert total == 0
+    hass.states.get.assert_called_once_with("sensor.old_name")
+    registry.async_regenerate_entity_id.assert_not_called()
