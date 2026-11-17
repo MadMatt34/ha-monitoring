@@ -40,6 +40,8 @@
 ---
 
 ## 🧩 Installation
+> **Requirement:** Home Assistant **2026.11.0 or newer** is required.
+
 
 ### Option 1: Marketplace Installation (📌 Recommended)
 
