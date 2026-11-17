@@ -661,6 +661,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 self.hass,
                 self._ha_start_time,
             )
+            self._last_system_info_scan_duration = time.monotonic() - scan_system_start
 
             # Registry APIs must remain on the event loop. The naming check
             # shares the System Info cadence and is refreshed by forced scans.
@@ -676,7 +677,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 excluded_globs=excluded_id_globs,
             )
 
-            self._last_system_info_scan_duration = time.monotonic() - scan_system_start
             self._last_system_stats_check_time = dt_util.utcnow()
             self._scan_timestamps_changed = True
 
