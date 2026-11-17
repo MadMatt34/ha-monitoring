@@ -164,8 +164,8 @@ def test_combined_scan_duration_includes_naming() -> None:
             return_value=([], 3, 0),
         ),
         patch(
-            "custom_components.ha_monitoring.coordinator.time.monotonic",
-            side_effect=(10.0, 16.5),
+            "custom_components.ha_monitoring.coordinator.time",
+            SimpleNamespace(monotonic=Mock(side_effect=(10.0, 16.5))),
         ),
         patch(
             "custom_components.ha_monitoring.coordinator.dt_util.utcnow",
