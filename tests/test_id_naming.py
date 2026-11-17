@@ -153,13 +153,14 @@ def test_entity_id_format_uses_configured_order() -> None:
             entity_id_parts=(
                 EntityNamePart.FLOOR,
                 EntityNamePart.AREA,
+                EntityNamePart.PARENT_DEVICE,
                 EntityNamePart.DEVICE,
                 EntityNamePart.ENTITY,
             )
         )
     )
 
-    assert get_entity_id_format(registry) == "floor > area > device > entity"
+    assert get_entity_id_format(registry) == "floor > area > parent_device > device > entity"
 
 
 def test_id_naming_limits_list_but_counts_all_issues() -> None:
