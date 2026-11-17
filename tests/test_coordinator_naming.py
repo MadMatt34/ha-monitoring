@@ -1,5 +1,6 @@
 """Tests for the combined System Info and entity naming scan."""
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
@@ -18,7 +19,7 @@ from custom_components.ha_monitoring.coordinator import HAMonitoringCoordinator
         (datetime(2025, 12, 31, 23, 0, tzinfo=UTC), object(), 1),
     ],
 )
-async def test_system_info_and_naming_follow_shared_interval(
+def test_system_info_and_naming_follow_shared_interval(
     last_check: datetime | None,
     cached_stats: object | None,
     expected_calls: int,
@@ -58,7 +59,7 @@ async def test_system_info_and_naming_follow_shared_interval(
             return_value=now,
         ),
     ):
-        await HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+        asyncio.run(HAMonitoringCoordinator._async_refresh_system_info_and_naming(
             coordinator,
             entity_registry,
             scan_interval_sec=24 * 60 * 60,
@@ -66,7 +67,7 @@ async def test_system_info_and_naming_follow_shared_interval(
             excluded_domains=[],
             excluded_globs=[],
             now=now,
-        )
+        ))
 
     assert system_stats.await_count == expected_calls
     assert naming_check.call_count == expected_calls
@@ -78,13 +79,20 @@ async def test_system_info_and_naming_follow_shared_interval(
         assert coordinator._cached_id_naming_total == 1
         assert coordinator._last_system_stats_check_time == now
         assert coordinator._scan_timestamps_changed is True
+        naming_check.assert_called_once_with(
+            coordinator.hass,
+            entity_registry,
+            excluded_entities=[],
+            excluded_domains=[],
+            excluded_globs=[],
+        )
     else:
         assert coordinator._cached_system_stats is cached_stats
         assert coordinator._last_system_stats_check_time == last_check
         assert coordinator._scan_timestamps_changed is False
 
 
-async def test_forced_refresh_invalidates_shared_scan_cache() -> None:
+def test_forced_refresh_invalidates_shared_scan_cache() -> None:
     """A forced refresh invalidates the timestamp so naming runs immediately."""
     now = datetime(2026, 1, 1, tzinfo=UTC)
     coordinator = SimpleNamespace(
@@ -127,7 +135,7 @@ async def test_forced_refresh_invalidates_shared_scan_cache() -> None:
     naming_check.assert_called_once()
 
 
-async def test_combined_scan_duration_includes_naming() -> None:
+def test_combined_scan_duration_includes_naming() -> None:
     """The System Info duration spans both the System Info and naming calls."""
     now = datetime(2026, 1, 1, tzinfo=UTC)
     coordinator = SimpleNamespace(
@@ -173,7 +181,7 @@ async def test_combined_scan_duration_includes_naming() -> None:
     assert coordinator._last_system_info_scan_duration == 6.5
 
 
-async def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
+def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
     """The public forced-refresh method invalidates System Info and naming cadence."""
     coordinator = SimpleNamespace(
         _unsub_ha_started=None,
@@ -185,7 +193,7 @@ async def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
         async_refresh=AsyncMock(),
     )
 
-    await HAMonitoringCoordinator.async_force_refresh(coordinator)
+    asyncio.run(HAMonitoringCoordinator.async_force_refresh(coordinator))
 
     assert coordinator._is_ready is True
     assert coordinator._last_trace_check_time is None
@@ -194,13 +202,13 @@ async def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
     coordinator.async_refresh.assert_awaited_once()
 
 
-async def test_config_entry_options_reload_integration() -> None:
+def test_config_entry_options_reload_integration() -> None:
     """A configuration update reloads the integration and rebuilds its scan cache."""
     hass = SimpleNamespace(
         config_entries=SimpleNamespace(async_reload=AsyncMock()),
     )
     entry = SimpleNamespace(entry_id="ha_monitoring_entry")
 
-    await async_reload_entry(hass, entry)
+    asyncio.run(async_reload_entry(hass, entry))
 
     hass.config_entries.async_reload.assert_awaited_once_with(entry.entry_id)
