@@ -7,11 +7,11 @@ from unittest.mock import Mock, patch
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
-from custom_components.ha_monitoring.types import IdNamingData
 from custom_components.ha_monitoring.helpers.id_naming import (
     get_entity_id_format,
     get_id_naming_issues,
 )
+from custom_components.ha_monitoring.types import IdNamingData
 
 
 def _entry(
