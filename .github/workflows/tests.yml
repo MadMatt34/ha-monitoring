@@ -45,5 +45,28 @@ jobs:
           uv pip install --python .venv/bin/python "pytest-homeassistant==$RESOLVED_HA_VERSION"
           .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); plugin = importlib.metadata.version('pytest-homeassistant'); print(f'Home Assistant installed: {installed}'); print(f'pytest-homeassistant installed: {plugin}'); assert Version(installed) >= Version('2026.11.0'), 'Installed Home Assistant is older than the supported minimum 2026.11.0'; assert Version(installed) == Version(plugin), 'Home Assistant and pytest-homeassistant versions must match'"
 
+      - name: Install Home Assistant component dependencies
+        run: |
+          .venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          import homeassistant
+
+          hassio_manifest = (
+              Path(homeassistant.__file__).parent
+              / "components"
+              / "hassio"
+              / "manifest.json"
+          )
+          requirements = json.loads(hassio_manifest.read_text())["requirements"]
+          if requirements:
+              subprocess.run(
+                  ["uv", "pip", "install", "--python", ".venv/bin/python", *requirements],
+                  check=True,
+              )
+          PY
+
       - name: Run tests
         run: .venv/bin/python -m pytest -q
