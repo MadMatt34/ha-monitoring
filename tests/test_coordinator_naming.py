@@ -121,7 +121,7 @@ def test_forced_refresh_invalidates_shared_scan_cache() -> None:
             return_value=now,
         ),
     ):
-        await HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+        asyncio.run(HAMonitoringCoordinator._async_refresh_system_info_and_naming(
             coordinator,
             Mock(),
             scan_interval_sec=24 * 60 * 60,
@@ -129,7 +129,7 @@ def test_forced_refresh_invalidates_shared_scan_cache() -> None:
             excluded_domains=[],
             excluded_globs=[],
             now=now,
-        )
+        ))
 
     system_stats.assert_awaited_once()
     naming_check.assert_called_once()
