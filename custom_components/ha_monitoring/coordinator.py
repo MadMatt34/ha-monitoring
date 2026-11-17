@@ -186,6 +186,8 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._cached_id_naming_checked = 0
         self._cached_id_naming_total = 0
         self._last_scanned_entity_id_format: str | None = None
+        self._cached_no_area_translation: str | None = None
+        self._cached_no_area_translation_language: str | None = None
 
         # ------------------------------------------------------------------
         # Cache traductions utilisées par le scan principal
@@ -436,6 +438,28 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             suffixes.add(localized_suffix.lower())
 
         return tuple(suffixes)
+
+
+    async def _async_get_no_area_translation(self) -> str:
+        """Return the translated label used when an entity has no area."""
+        language = self.hass.config.language
+
+        if (
+            self._cached_no_area_translation is None
+            or self._cached_no_area_translation_language != language
+        ):
+            translations = await async_get_translations(
+                self.hass,
+                language,
+                "common",
+                integrations={DOMAIN},
+            )
+            self._cached_no_area_translation = translations[
+                f"component.{DOMAIN}.common.no_area"
+            ]
+            self._cached_no_area_translation_language = language
+
+        return self._cached_no_area_translation
 
     async def _async_get_common_translations(
         self,
@@ -708,6 +732,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             now=now,
         )
 
+        no_area_translation = (
+            await self._async_get_no_area_translation()
+            if any(issue["area"] is None for issue in self._cached_id_naming_issues)
+            else None
+        )
+
         assert self._cached_system_stats is not None
 
         # ------------------------------------------------------------------
@@ -931,7 +961,15 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "total": len(unavailable),
             },
             "monitoring_id_naming": {
-                "items": self._cached_id_naming_issues,
+                "items": [
+                    {
+                        **issue,
+                        "area": (
+                            no_area_translation if issue["area"] is None else issue["area"]
+                        ),
+                    }
+                    for issue in self._cached_id_naming_issues
+                ],
                 "total": self._cached_id_naming_total,
                 "checked": self._cached_id_naming_checked,
                 "entity_id_format": entity_id_format,
