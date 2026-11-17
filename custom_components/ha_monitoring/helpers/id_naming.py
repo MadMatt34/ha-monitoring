@@ -1,4 +1,4 @@
-""""Helpers for checking entity IDs against Home Assistant's current naming rules."""
+"""Helpers for checking entity IDs against Home Assistant's current naming rules."""
 
 from collections.abc import Sequence
 from fnmatch import fnmatch
