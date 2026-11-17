@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from fnmatch import fnmatch
 
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import area_registry as ar
 from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
 from ..const import MAX_SENSOR_LIST_ITEMS
@@ -42,6 +43,7 @@ def get_id_naming_issues(
         pattern.lower().strip() for pattern in excluded_globs if pattern.strip()
     )
 
+    area_registry = ar.async_get(hass)
     reserved_entity_ids: set[str] = set()
     issues: list[IdNamingData] = []
     total = 0
@@ -81,6 +83,12 @@ def get_id_naming_issues(
                     {
                         "entity_id": entry.entity_id,
                         "expected_entity_id": expected_entity_id,
+                        "area": (
+                            area.name
+                            if entry.area_id
+                            and (area := area_registry.async_get_area(entry.area_id))
+                            else None
+                        ),
                     }
                 )
 
