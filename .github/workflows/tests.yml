@@ -29,9 +29,8 @@ jobs:
       - name: Create virtual environment
         run: uv venv --python 3.14.2
 
-      - name: Install test dependencies
-        run: |
-          uv pip install --python .venv/bin/python pytest pytest-homeassistant-custom-component
+      - name: Install test runner
+        run: uv pip install --python .venv/bin/python pytest
 
       - name: Install Home Assistant version
         env:
@@ -42,11 +41,8 @@ jobs:
           else
             uv pip install --python .venv/bin/python --reinstall --index-url https://pypi.org/simple "homeassistant==$HA_VERSION"
           fi
-          .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); print(f'Home Assistant installed: {installed}'); assert Version(installed) >= Version('2026.11.0'), 'Installed Home Assistant is older than the supported minimum 2026.11.0'"
+          uv pip install --python .venv/bin/python "pytest-homeassistant==$HA_VERSION"
+          .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); plugin = importlib.metadata.version('pytest-homeassistant'); print(f'Home Assistant installed: {installed}'); print(f'pytest-homeassistant installed: {plugin}'); assert Version(installed) == Version('$HA_VERSION'), 'Home Assistant and pytest-homeassistant versions must match'"
 
       - name: Run tests
-        env:
-          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
-        run: >-
-          .venv/bin/python -c
-          "import homeassistant; import pytest; raise SystemExit(pytest.main(['-p', 'pytest_homeassistant_custom_component.plugins', '-p', 'pytest_asyncio.plugin', '-q']))"
+        run: .venv/bin/python -m pytest -q
