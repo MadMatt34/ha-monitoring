@@ -279,3 +279,38 @@ def test_config_entry_options_reload_integration() -> None:
     asyncio.run(async_reload_entry(hass, entry))
 
     hass.config_entries.async_reload.assert_awaited_once_with(entry.entry_id)
+
+
+def test_no_area_translation_is_cached_and_follows_ha_language() -> None:
+    """The no-area label uses common translations and refreshes when language changes."""
+    coordinator = SimpleNamespace(
+        hass=SimpleNamespace(config=SimpleNamespace(language="fr")),
+        _cached_no_area_translation=None,
+        _cached_no_area_translation_language=None,
+    )
+    translations = AsyncMock(
+        side_effect=[
+            {"component.ha_monitoring.common.no_area": "Aucun"},
+            {"component.ha_monitoring.common.no_area": "None"},
+        ]
+    )
+
+    with patch(
+        "custom_components.ha_monitoring.coordinator.async_get_translations",
+        translations,
+    ):
+        assert (
+            asyncio.run(HAMonitoringCoordinator._async_get_no_area_translation(coordinator))
+            == "Aucun"
+        )
+        assert (
+            asyncio.run(HAMonitoringCoordinator._async_get_no_area_translation(coordinator))
+            == "Aucun"
+        )
+        coordinator.hass.config.language = "en"
+        assert (
+            asyncio.run(HAMonitoringCoordinator._async_get_no_area_translation(coordinator))
+            == "None"
+        )
+
+    assert translations.await_count == 2
