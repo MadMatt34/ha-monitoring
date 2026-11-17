@@ -88,14 +88,14 @@ def get_id_naming_issues(
         if entry.entity_id != expected_entity_id:
             total += 1
             if len(issues) < MAX_SENSOR_LIST_ITEMS:
-                area_name = "None"
+                area_name: str | None = None
                 if entry.area_id:
                     if entry.area_id not in area_names:
                         if area_registry is None:
                             area_registry = ar.async_get(hass)
                         area = area_registry.async_get_area(entry.area_id)
-                        area_names[entry.area_id] = area.name if area is not None else "None"
-                    area_name = area_names[entry.area_id]
+                        area_names[entry.area_id] = area.name if area is not None else ""
+                    area_name = area_names[entry.area_id] or None
 
                 issues.append(
                     {
