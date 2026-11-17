@@ -16,7 +16,7 @@ from custom_components.ha_monitoring.coordinator import HAMonitoringCoordinator
     [
         (None, None, 1),
         (datetime(2026, 1, 1, tzinfo=UTC), object(), 0),
-        (datetime(2025, 12, 31, 23, 0, tzinfo=UTC), object(), 1),
+        (datetime(2025, 12, 31, 0, 0, tzinfo=UTC), object(), 1),
     ],
 )
 def test_system_info_and_naming_follow_shared_interval(
