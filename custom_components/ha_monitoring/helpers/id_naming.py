@@ -63,9 +63,7 @@ def get_id_naming_issues(
                 (entry.name or "").lower(),
             )
             if any(
-                fnmatch(value, pattern)
-                for value in names_to_check
-                for pattern in excluded_patterns
+                fnmatch(value, pattern) for value in names_to_check for pattern in excluded_patterns
             ):
                 continue
 
