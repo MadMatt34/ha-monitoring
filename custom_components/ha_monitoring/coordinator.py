@@ -185,6 +185,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         self._cached_id_naming_issues: list[IdNamingData] = []
         self._cached_id_naming_checked = 0
         self._cached_id_naming_total = 0
+        self._last_scanned_entity_id_format: str | None = None
 
         # ------------------------------------------------------------------
         # Cache traductions utilisées par le scan principal
@@ -560,11 +561,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         excluded_entities: list[str],
         excluded_domains: list[str],
         excluded_globs: list[str],
+        entity_id_format: str,
         now: datetime,
     ) -> None:
-        """Refresh System Info and entity naming together when their interval is due."""
+        """Refresh System Info and naming when due or when HA's format changes."""
+        naming_format_changed = self._last_scanned_entity_id_format != entity_id_format
         if (
-            self._last_system_stats_check_time is not None
+            not naming_format_changed
+            and self._last_system_stats_check_time is not None
             and self._cached_system_stats is not None
             and (now - self._last_system_stats_check_time).total_seconds() < scan_interval_sec
         ):
@@ -594,6 +598,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
 
         # The duration covers both System Info and entity ID naming.
+        self._last_scanned_entity_id_format = entity_id_format
         self._last_system_info_scan_duration = time.monotonic() - scan_system_start
         self._last_system_stats_check_time = dt_util.utcnow()
         self._scan_timestamps_changed = True
@@ -699,6 +704,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             excluded_entities=excluded_id_entities,
             excluded_domains=excluded_id_domains,
             excluded_globs=excluded_id_globs,
+            entity_id_format=entity_id_format,
             now=now,
         )
 
