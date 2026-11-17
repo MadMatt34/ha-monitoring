@@ -1,10 +1,13 @@
 """Tests for entity ID naming checks."""
 
+from collections.abc import Sequence
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from homeassistant.helpers.entity_registry import EntityNamePart
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 
+from custom_components.ha_monitoring.types import IdNamingData
 from custom_components.ha_monitoring.helpers.id_naming import (
     get_entity_id_format,
     get_id_naming_issues,
@@ -29,13 +32,26 @@ def _entry(
     )
 
 
-def _get_id_naming_issues(*args: object, **kwargs: object) -> tuple[list[dict[str, str | None]], int, int]:
+def _get_id_naming_issues(
+    hass: HomeAssistant,
+    registry: EntityRegistry,
+    *,
+    excluded_entities: Sequence[str],
+    excluded_domains: Sequence[str],
+    excluded_globs: Sequence[str],
+) -> tuple[list[IdNamingData], int, int]:
     """Run the helper with a test double for HA's effective-area resolver."""
     with patch(
         "custom_components.ha_monitoring.helpers.id_naming.er.async_get_effective_area_id",
         side_effect=lambda hass, entry: entry.area_id,
     ):
-        return get_id_naming_issues(*args, **kwargs)  # type: ignore[arg-type]
+        return get_id_naming_issues(
+            hass,
+            registry,
+            excluded_entities=excluded_entities,
+            excluded_domains=excluded_domains,
+            excluded_globs=excluded_globs,
+        )
 
 
 def test_id_naming_uses_native_generator_and_skips_disabled() -> None:
