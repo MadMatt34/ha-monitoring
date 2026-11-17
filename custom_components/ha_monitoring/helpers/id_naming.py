@@ -11,6 +11,7 @@ from homeassistant.helpers.entity_registry import EntityNamePart, EntityRegistry
 from ..const import MAX_SENSOR_LIST_ITEMS
 from ..types import IdNamingData
 
+# Home Assistant 2026.11 default when EntityRegistrySettings.entity_id_parts is None.
 _DEFAULT_ENTITY_ID_PARTS = (
     EntityNamePart.AREA,
     EntityNamePart.PARENT_DEVICE,
@@ -21,7 +22,9 @@ _DEFAULT_ENTITY_ID_PARTS = (
 
 def get_entity_id_format(registry: EntityRegistry) -> str:
     """Return the effective entity ID format configured in Home Assistant."""
-    parts = registry.settings.entity_id_parts or _DEFAULT_ENTITY_ID_PARTS
+    parts = registry.settings.entity_id_parts
+    if parts is None:
+        parts = _DEFAULT_ENTITY_ID_PARTS
     return " > ".join(part.value for part in parts)
 
 
@@ -45,6 +48,7 @@ def get_id_naming_issues(
     )
 
     area_registry: AreaRegistry | None = None
+    area_names: dict[str, str | None] = {}
     reserved_entity_ids: set[str] = set()
     issues: list[IdNamingData] = []
     total = 0
@@ -57,18 +61,22 @@ def get_id_naming_issues(
         if entry.entity_id in excluded_entity_ids or entry.domain in excluded_domain_names:
             continue
 
-        state = hass.states.get(entry.entity_id)
-        friendly_name = str(state.attributes.get("friendly_name", "")) if state is not None else ""
-        names_to_check = (
-            entry.entity_id.lower(),
-            friendly_name.lower(),
-            (entry.name or "").lower(),
-        )
+        if excluded_patterns:
+            names_to_check = (
+                entry.entity_id.lower(),
+                (entry.name or "").lower(),
+            )
+            if any(
+                fnmatch(value, pattern) for value in names_to_check for pattern in excluded_patterns
+            ):
+                continue
 
-        if any(
-            fnmatch(value, pattern) for value in names_to_check for pattern in excluded_patterns
-        ):
-            continue
+            state = hass.states.get(entry.entity_id)
+            friendly_name = (
+                str(state.attributes.get("friendly_name", "")) if state is not None else ""
+            )
+            if any(fnmatch(friendly_name.lower(), pattern) for pattern in excluded_patterns):
+                continue
 
         checked += 1
         expected_entity_id = registry.async_regenerate_entity_id(
@@ -82,10 +90,12 @@ def get_id_naming_issues(
             if len(issues) < MAX_SENSOR_LIST_ITEMS:
                 area_name = None
                 if entry.area_id:
-                    if area_registry is None:
-                        area_registry = ar.async_get(hass)
-                    if area := area_registry.async_get_area(entry.area_id):
-                        area_name = area.name
+                    if entry.area_id not in area_names:
+                        if area_registry is None:
+                            area_registry = ar.async_get(hass)
+                        area = area_registry.async_get_area(entry.area_id)
+                        area_names[entry.area_id] = area.name if area is not None else None
+                    area_name = area_names[entry.area_id]
 
                 issues.append(
                     {

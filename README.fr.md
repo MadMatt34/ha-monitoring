@@ -41,6 +41,8 @@
 
 ## 🧩 Installation
 
+> **Prérequis :** Home Assistant **2026.11.0 ou supérieur** est requis.
+
 ### Option 1 : Installation via Marketplace (📌 recommandée)
 
 1. Ouvrir l'intégration **HA Monitoring** dans **Marketplace** dans Home Assistant\
@@ -186,9 +188,10 @@ Le premier scan qui suit un démarrage de Home Assistant attendra la fin de la p
 
 ### 🕒 Précisions sur les délais d'actualisation des données
 
-- **Attributs informations système :** ces attributs du capteur `binary_sensor.monitoring_global_status` sont actualisés suivant le fréquence définie dans les paramètres (par défaut 24 heures).
+- **Informations système et contrôle du nommage des IDs :** ces données sont actualisées suivant la fréquence du scan système définie dans les paramètres (24 heures par défaut).
+- **Durée du scan système :** la durée du dernier scan système inclut la collecte des informations système et le contrôle du nommage des IDs, exécutés au cours du même scan.
 - **Capteur backup :** ce capteur et ses attributs sont actualisés après l'exécution d'une sauvegarde.
-- **Tous les autres capteurs :** tous les autres capteurs et leurs attributs sont actualisés suivant le fréquence définie dans les paramètres (par défaut 3 min).
+- **Tous les autres capteurs :** ils sont actualisés suivant la fréquence de rafraîchissement définie dans les paramètres (3 min par défaut).
 
 > [!NOTE]
 > L'ensemble des capteurs et leurs attributs sont actualisés au démarrage de l'intégration, lors de l'utilisation du bouton `Forcer le scan` ou après la modification de paramètres de l'intégration.

@@ -81,6 +81,7 @@ from .helpers.system_info import async_get_system_stats
 from .helpers.trace import get_trace_errors
 from .types import (
     HAMonitoringData,
+    IdNamingData,
     MonitoringBackupData,
     SystemStatsData,
     TraceErrorData,
@@ -181,6 +182,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         self._last_system_stats_check_time: datetime | None = None
         self._cached_system_stats: SystemStatsData | None = None
+        self._cached_id_naming_issues: list[IdNamingData] = []
+        self._cached_id_naming_checked = 0
+        self._cached_id_naming_total = 0
+        self._last_scanned_entity_id_format: str | None = None
 
         # ------------------------------------------------------------------
         # Cache traductions utilisées par le scan principal
@@ -548,6 +553,56 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         await self.async_refresh()
 
+    async def _async_refresh_system_info_and_naming(
+        self,
+        entity_registry: er.EntityRegistry,
+        *,
+        scan_interval_sec: float,
+        excluded_entities: list[str],
+        excluded_domains: list[str],
+        excluded_globs: list[str],
+        entity_id_format: str,
+        now: datetime,
+    ) -> None:
+        """Refresh System Info and naming when due or when HA's format changes."""
+        naming_format_changed = self._last_scanned_entity_id_format != entity_id_format
+        if (
+            not naming_format_changed
+            and self._last_system_stats_check_time is not None
+            and self._cached_system_stats is not None
+            and (now - self._last_system_stats_check_time).total_seconds() < scan_interval_sec
+        ):
+            return
+
+        assert self._ha_start_time is not None
+
+        scan_system_start = time.monotonic()
+
+        self._cached_system_stats = await async_get_system_stats(
+            self.hass,
+            self._ha_start_time,
+        )
+
+        # Registry APIs must remain on the event loop. Naming shares the
+        # System Info cadence and is refreshed by forced scans.
+        (
+            self._cached_id_naming_issues,
+            self._cached_id_naming_checked,
+            self._cached_id_naming_total,
+        ) = get_id_naming_issues(
+            self.hass,
+            entity_registry,
+            excluded_entities=excluded_entities,
+            excluded_domains=excluded_domains,
+            excluded_globs=excluded_globs,
+        )
+
+        # The duration covers both System Info and entity ID naming.
+        self._last_scanned_entity_id_format = entity_id_format
+        self._last_system_info_scan_duration = time.monotonic() - scan_system_start
+        self._last_system_stats_check_time = dt_util.utcnow()
+        self._scan_timestamps_changed = True
+
     async def _async_update_data(
         self,
     ) -> HAMonitoringData:
@@ -636,24 +691,22 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         system_info_scan_interval_sec = system_info_scan_interval_hours * 3600
 
-        if (
-            self._last_system_stats_check_time is None
-            or self._cached_system_stats is None
-            or (now - self._last_system_stats_check_time).total_seconds()
-            >= system_info_scan_interval_sec
-        ):
-            assert self._ha_start_time is not None
+        excluded_id_entities = options.get(CONF_EXCLUDED_NAMING_ENTITIES, [])
+        excluded_id_domains = options.get(
+            CONF_EXCLUDED_NAMING_DOMAINS,
+            DEFAULT_EXCLUDED_ID_DOMAINS,
+        )
+        excluded_id_globs = options.get(CONF_EXCLUDED_NAMING_GLOBS, [])
 
-            scan_system_start = time.monotonic()
-
-            self._cached_system_stats = await async_get_system_stats(
-                self.hass,
-                self._ha_start_time,
-            )
-
-            self._last_system_info_scan_duration = time.monotonic() - scan_system_start
-            self._last_system_stats_check_time = dt_util.utcnow()
-            self._scan_timestamps_changed = True
+        await self._async_refresh_system_info_and_naming(
+            entity_registry,
+            scan_interval_sec=system_info_scan_interval_sec,
+            excluded_entities=excluded_id_entities,
+            excluded_domains=excluded_id_domains,
+            excluded_globs=excluded_id_globs,
+            entity_id_format=entity_id_format,
+            now=now,
+        )
 
         assert self._cached_system_stats is not None
 
@@ -732,13 +785,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             [],
         )
 
-        excluded_id_entities = options.get(CONF_EXCLUDED_NAMING_ENTITIES, [])
-        excluded_id_domains = options.get(
-            CONF_EXCLUDED_NAMING_DOMAINS,
-            DEFAULT_EXCLUDED_ID_DOMAINS,
-        )
-        excluded_id_globs = options.get(CONF_EXCLUDED_NAMING_GLOBS, [])
-
         last_seen_suffixes = self._get_last_seen_suffixes()
 
         unknown_platform, unknown_version = await self._async_get_common_translations()
@@ -780,15 +826,6 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 last_seen_suffixes=(last_seen_suffixes),
                 excluded_unavailable_globs=(excluded_unavailable_globs),
             )
-        )
-
-        # Registry access and ID regeneration must remain on the HA event loop.
-        id_naming_issues, id_naming_checked, id_naming_total = get_id_naming_issues(
-            self.hass,
-            entity_registry,
-            excluded_entities=excluded_id_entities,
-            excluded_domains=excluded_id_domains,
-            excluded_globs=excluded_id_globs,
         )
 
         # ------------------------------------------------------------------
@@ -894,9 +931,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                 "total": len(unavailable),
             },
             "monitoring_id_naming": {
-                "items": id_naming_issues,
-                "total": id_naming_total,
-                "checked": id_naming_checked,
+                "items": self._cached_id_naming_issues,
+                "total": self._cached_id_naming_total,
+                "checked": self._cached_id_naming_checked,
                 "entity_id_format": entity_id_format,
             },
             "monitoring_offline": {

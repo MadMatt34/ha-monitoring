@@ -1,0 +1,72 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  pytest:
+    name: Pytest (Home Assistant ${{ matrix.ha-version }})
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        ha-version:
+          - "2026.11.0"
+          - "latest"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Install Python
+        run: uv python install 3.14.2
+
+      - name: Create virtual environment
+        run: uv venv --python 3.14.2
+
+      - name: Install test runner
+        run: uv pip install --python .venv/bin/python pytest
+
+      - name: Install Home Assistant version
+        env:
+          HA_VERSION: ${{ matrix.ha-version }}
+        run: |
+          if [ "$HA_VERSION" = "latest" ]; then
+            uv pip install --python .venv/bin/python --reinstall --index-url https://pypi.org/simple homeassistant
+          else
+            uv pip install --python .venv/bin/python --reinstall --index-url https://pypi.org/simple "homeassistant==$HA_VERSION"
+          fi
+          RESOLVED_HA_VERSION=$( .venv/bin/python -c "import importlib.metadata; print(importlib.metadata.version('homeassistant'))" )
+          uv pip install --python .venv/bin/python "pytest-homeassistant==$RESOLVED_HA_VERSION"
+          .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); plugin = importlib.metadata.version('pytest-homeassistant'); print(f'Home Assistant installed: {installed}'); print(f'pytest-homeassistant installed: {plugin}'); assert Version(installed) >= Version('2026.11.0'), 'Installed Home Assistant is older than the supported minimum 2026.11.0'; assert Version(installed) == Version(plugin), 'Home Assistant and pytest-homeassistant versions must match'"
+
+      - name: Install Home Assistant component dependencies
+        run: |
+          .venv/bin/python - <<'PY'
+          import json
+          from pathlib import Path
+          import subprocess
+
+          import homeassistant
+
+          hassio_manifest = (
+              Path(homeassistant.__file__).parent
+              / "components"
+              / "hassio"
+              / "manifest.json"
+          )
+          requirements = json.loads(hassio_manifest.read_text())["requirements"]
+          if requirements:
+              subprocess.run(
+                  ["uv", "pip", "install", "--python", ".venv/bin/python", *requirements],
+                  check=True,
+              )
+          PY
+
+      - name: Run tests
+        run: .venv/bin/python -m pytest -q
