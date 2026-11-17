@@ -552,6 +552,52 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
 
         await self.async_refresh()
 
+    async def _async_refresh_system_info_and_naming(
+        self,
+        entity_registry: er.EntityRegistry,
+        *,
+        scan_interval_sec: float,
+        excluded_entities: list[str],
+        excluded_domains: list[str],
+        excluded_globs: list[str],
+        now: datetime,
+    ) -> None:
+        """Refresh System Info and entity naming together when their interval is due."""
+        if (
+            self._last_system_stats_check_time is not None
+            and self._cached_system_stats is not None
+            and (now - self._last_system_stats_check_time).total_seconds() < scan_interval_sec
+        ):
+            return
+
+        assert self._ha_start_time is not None
+
+        scan_system_start = time.monotonic()
+
+        self._cached_system_stats = await async_get_system_stats(
+            self.hass,
+            self._ha_start_time,
+        )
+
+        # Registry APIs must remain on the event loop. Naming shares the
+        # System Info cadence and is refreshed by forced scans.
+        (
+            self._cached_id_naming_issues,
+            self._cached_id_naming_checked,
+            self._cached_id_naming_total,
+        ) = get_id_naming_issues(
+            self.hass,
+            entity_registry,
+            excluded_entities=excluded_entities,
+            excluded_domains=excluded_domains,
+            excluded_globs=excluded_globs,
+        )
+
+        # The duration covers both System Info and entity ID naming.
+        self._last_system_info_scan_duration = time.monotonic() - scan_system_start
+        self._last_system_stats_check_time = dt_util.utcnow()
+        self._scan_timestamps_changed = True
+
     async def _async_update_data(
         self,
     ) -> HAMonitoringData:
@@ -647,39 +693,14 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         )
         excluded_id_globs = options.get(CONF_EXCLUDED_NAMING_GLOBS, [])
 
-        if (
-            self._last_system_stats_check_time is None
-            or self._cached_system_stats is None
-            or (now - self._last_system_stats_check_time).total_seconds()
-            >= system_info_scan_interval_sec
-        ):
-            assert self._ha_start_time is not None
-
-            scan_system_start = time.monotonic()
-
-            self._cached_system_stats = await async_get_system_stats(
-                self.hass,
-                self._ha_start_time,
-            )
-
-            # Registry APIs must remain on the event loop. The naming check
-            # shares the System Info cadence and is refreshed by forced scans.
-            (
-                self._cached_id_naming_issues,
-                self._cached_id_naming_checked,
-                self._cached_id_naming_total,
-            ) = get_id_naming_issues(
-                self.hass,
-                entity_registry,
-                excluded_entities=excluded_id_entities,
-                excluded_domains=excluded_id_domains,
-                excluded_globs=excluded_id_globs,
-            )
-
-            # This duration covers both System Info and entity ID naming.
-            self._last_system_info_scan_duration = time.monotonic() - scan_system_start
-            self._last_system_stats_check_time = dt_util.utcnow()
-            self._scan_timestamps_changed = True
+        await self._async_refresh_system_info_and_naming(
+            entity_registry,
+            scan_interval_sec=system_info_scan_interval_sec,
+            excluded_entities=excluded_id_entities,
+            excluded_domains=excluded_id_domains,
+            excluded_globs=excluded_id_globs,
+            now=now,
+        )
 
         assert self._cached_system_stats is not None
 
