@@ -45,4 +45,10 @@ jobs:
           .venv/bin/python -c "import importlib.metadata; from packaging.version import Version; installed = importlib.metadata.version('homeassistant'); print(f'Home Assistant installed: {installed}'); assert Version(installed) >= Version('2026.11.0'), 'Installed Home Assistant is older than the supported minimum 2026.11.0'"
 
       - name: Run tests
-        run: .venv/bin/python -m pytest -q
+        env:
+          PYTEST_DISABLE_PLUGIN_AUTOLOAD: "1"
+        run: >-
+          .venv/bin/python -m pytest
+          -p pytest_homeassistant_custom_component.plugins
+          -p pytest_asyncio.plugin
+          -q
