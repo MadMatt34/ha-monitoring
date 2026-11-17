@@ -107,6 +107,7 @@ def test_forced_refresh_invalidates_shared_scan_cache() -> None:
         _cached_id_naming_issues=[],
         _cached_id_naming_checked=0,
         _cached_id_naming_total=0,
+        _last_scanned_entity_id_format="area > device > entity",
         _last_system_info_scan_duration=None,
         _scan_timestamps_changed=False,
     )
@@ -153,6 +154,7 @@ def test_combined_scan_duration_includes_naming() -> None:
         _cached_id_naming_issues=[],
         _cached_id_naming_checked=0,
         _cached_id_naming_total=0,
+        _last_scanned_entity_id_format="area > device > entity",
         _last_system_info_scan_duration=None,
         _scan_timestamps_changed=False,
     )
@@ -189,6 +191,62 @@ def test_combined_scan_duration_includes_naming() -> None:
         )
 
     assert coordinator._last_system_info_scan_duration == 6.5
+
+
+
+def test_ha_entity_id_format_change_triggers_immediate_combined_scan() -> None:
+    """A changed HA naming format bypasses the System Info interval."""
+    now = datetime(2026, 1, 1, tzinfo=UTC)
+    previous_scan = now - timedelta(minutes=5)
+    coordinator = SimpleNamespace(
+        _last_system_stats_check_time=previous_scan,
+        _cached_system_stats={"uptime": 1},
+        _ha_start_time=now - timedelta(days=1),
+        hass=Mock(),
+        _cached_id_naming_issues=[],
+        _cached_id_naming_checked=0,
+        _cached_id_naming_total=0,
+        _last_scanned_entity_id_format="area > device > entity",
+        _last_system_info_scan_duration=None,
+        _scan_timestamps_changed=False,
+    )
+    new_format = "area > parent_device > device > entity"
+    naming_result = ([], 5, 0)
+
+    with (
+        patch(
+            "custom_components.ha_monitoring.coordinator.async_get_system_stats",
+            new=AsyncMock(return_value={"uptime": 2}),
+        ) as system_stats,
+        patch(
+            "custom_components.ha_monitoring.coordinator.get_id_naming_issues",
+            return_value=naming_result,
+        ) as naming_check,
+        patch(
+            "custom_components.ha_monitoring.coordinator.dt_util.utcnow",
+            return_value=now,
+        ),
+    ):
+        asyncio.run(
+            HAMonitoringCoordinator._async_refresh_system_info_and_naming(
+                coordinator,
+                Mock(),
+                scan_interval_sec=24 * 60 * 60,
+                excluded_entities=[],
+                excluded_domains=[],
+                excluded_globs=[],
+                entity_id_format=new_format,
+                now=now,
+            )
+        )
+
+    system_stats.assert_awaited_once()
+    naming_check.assert_called_once()
+    assert coordinator._last_scanned_entity_id_format == new_format
+    assert coordinator._cached_system_stats == {"uptime": 2}
+    assert coordinator._cached_id_naming_checked == 5
+    assert coordinator._last_system_stats_check_time == now
+    assert coordinator._scan_timestamps_changed is True
 
 
 def test_force_refresh_invalidates_system_scan_and_refreshes() -> None:
