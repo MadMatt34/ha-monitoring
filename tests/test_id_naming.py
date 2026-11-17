@@ -212,6 +212,7 @@ def test_id_naming_checks_friendly_name_only_when_globs_are_configured() -> None
     hass.states.get.assert_called_once_with("sensor.old_name")
     registry.async_regenerate_entity_id.assert_not_called()
 
+
 def test_id_naming_resolves_each_area_name_only_once() -> None:
     """Repeated issues in one area reuse its already resolved display name."""
     entries = [
@@ -248,4 +249,3 @@ def test_id_naming_resolves_each_area_name_only_once() -> None:
     assert [issue["area"] for issue in issues] == ["Living Room", "Living Room"]
     get_area_registry.assert_called_once_with(hass)
     area_registry.async_get_area.assert_called_once_with("living_room")
-
