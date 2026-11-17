@@ -184,9 +184,9 @@ The first scan following a Home Assistant boot will wait until the configured gr
 
 ### 🕒 Data Refresh Intervals Details
 
-- **System Info Attributes:** Those attributes of `binary_sensor.monitoring_global_status` are updated according to the frequency defined in options (default 24 hours).
+- **System Info attributes and entity ID naming check:** Updated according to the System Info scan interval defined in options (24 hours by default).
 - **Backup Sensor:** Updated immediately following the completion of a backup execution event.
-- **All Other Sensors:** Updated according to the main scan interval defined in options (default 3 min).
+- **All Other Sensors:** Updated according to the main scan interval defined in options (3 min by default).
 
 > [!NOTE]
 > All sensors and attributes are refreshed upon integration startup, when clicking the `Force Refresh` button, or when changing integration settings.
