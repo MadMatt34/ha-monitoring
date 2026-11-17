@@ -48,6 +48,7 @@ def get_id_naming_issues(
     )
 
     area_registry: AreaRegistry | None = None
+    area_names: dict[str, str | None] = {}
     reserved_entity_ids: set[str] = set()
     issues: list[IdNamingData] = []
     total = 0
@@ -89,10 +90,12 @@ def get_id_naming_issues(
             if len(issues) < MAX_SENSOR_LIST_ITEMS:
                 area_name = None
                 if entry.area_id:
-                    if area_registry is None:
-                        area_registry = ar.async_get(hass)
-                    if area := area_registry.async_get_area(entry.area_id):
-                        area_name = area.name
+                    if entry.area_id not in area_names:
+                        if area_registry is None:
+                            area_registry = ar.async_get(hass)
+                        area = area_registry.async_get_area(entry.area_id)
+                        area_names[entry.area_id] = area.name if area is not None else None
+                    area_name = area_names[entry.area_id]
 
                 issues.append(
                     {
