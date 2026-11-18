@@ -110,7 +110,7 @@ ICON_BACKUP = "mdi:backup-restore"
 ICON_REFRESH = "mdi:refresh"
 ICON_MAINTENANCE = "mdi:wrench-clock"
 ICON_BATTERY = "mdi:battery-alert"
-ICON_ID_NAMING = "mdi:format-list-checks"
+ICON_ID_NAMING = "mdi:tag"
 
 # Identifiants uniques
 UNIQUE_ID_ADDONS = "monitoring_applications"
