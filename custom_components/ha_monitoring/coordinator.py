@@ -65,6 +65,7 @@ from .const import (
     DEFAULT_TRACES_SCAN_INTERVAL,
     DOMAIN,
     LOCALIZED_LAST_SEEN_SUFFIX,
+    MAX_SENSOR_LIST_ITEMS,
     STORAGE_KEY_MAINTENANCE,
     STORAGE_VERSION_MAINTENANCE,
 )
@@ -93,6 +94,13 @@ _HA_START_TIME_KEY = "ha_start_time"
 _BACKUP_CACHE_KEY = "backup_cache"
 _BACKUP_SCAN_TIMESTAMP_CACHE_KEY = "backup_scan_timestamp_cache"
 _BACKUP_SCAN_DURATION_CACHE_KEY = "backup_scan_duration_cache"
+
+
+def _limit_trace_error_cache(
+    errors: list[TraceErrorData],
+) -> tuple[list[TraceErrorData], int]:
+    """Keep bounded trace details while preserving the exact error count."""
+    return errors[:MAX_SENSOR_LIST_ITEMS], len(errors)
 
 
 class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
@@ -175,7 +183,9 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         # ------------------------------------------------------------------
         self._last_trace_check_time: datetime | None = None
         self._cached_automations: list[TraceErrorData] = []
+        self._cached_automation_total = 0
         self._cached_scripts: list[TraceErrorData] = []
+        self._cached_script_total = 0
 
         # ------------------------------------------------------------------
         # Cache System Info
@@ -876,7 +886,7 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
         ):
             scan_traces_start = time.monotonic()
 
-            self._cached_automations = await get_trace_errors(
+            automation_errors = await get_trace_errors(
                 self.hass,
                 "automation",
                 options.get(
@@ -884,7 +894,12 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     [],
                 ),
             )
-            self._cached_scripts = await get_trace_errors(
+            (
+                self._cached_automations,
+                self._cached_automation_total,
+            ) = _limit_trace_error_cache(automation_errors)
+
+            script_errors = await get_trace_errors(
                 self.hass,
                 "script",
                 options.get(
@@ -892,6 +907,10 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
                     [],
                 ),
             )
+            (
+                self._cached_scripts,
+                self._cached_script_total,
+            ) = _limit_trace_error_cache(script_errors)
 
             self._last_trace_scan_duration = time.monotonic() - scan_traces_start
             self._last_trace_check_time = dt_util.utcnow()
@@ -942,11 +961,11 @@ class HAMonitoringCoordinator(DataUpdateCoordinator[HAMonitoringData]):
             },
             "monitoring_automations": {
                 "items": self._cached_automations,
-                "total": len(self._cached_automations),
+                "total": self._cached_automation_total,
             },
             "monitoring_scripts": {
                 "items": self._cached_scripts,
-                "total": len(self._cached_scripts),
+                "total": self._cached_script_total,
             },
             "monitoring_updates": {
                 "items": updates,
