@@ -1,7 +1,7 @@
 """Tests for the bounded trace-error cache."""
 
-from custom_components.ha_monitoring.coordinator import _limit_trace_error_cache
 from custom_components.ha_monitoring.const import MAX_SENSOR_LIST_ITEMS
+from custom_components.ha_monitoring.coordinator import _limit_trace_error_cache
 
 
 def _error(index: int) -> dict[str, str]:
